@@ -2,6 +2,7 @@ package com.edunest.service;
 
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.auth.TenantResponse;
+import com.edunest.dto.mobile.StudentChangePasswordRequest;
 import com.edunest.dto.mobile.StudentForgotPasswordRequest;
 import com.edunest.dto.mobile.StudentLoginRequest;
 import com.edunest.dto.mobile.StudentLoginResponse;
@@ -168,6 +169,23 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         profile.setDisplayClass(
                 (className != null && sectionName != null) ? className + " - " + sectionName : className);
         profile.setRollNo(studentClass.getRollNo());
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Integer studentId, StudentChangePasswordRequest request) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new CustomException("student", "Student not found"));
+
+        String encryptedCurrent = CryptoHelper.encryptPassword(request.getCurrentPassword(), student.getHashkey());
+        if (!encryptedCurrent.equals(student.getPassword())) {
+            throw new CustomException("currentPassword", "Current password is incorrect");
+        }
+
+        String hashKey = CryptoHelper.getHashKey();
+        student.setHashkey(hashKey);
+        student.setPassword(CryptoHelper.encryptPassword(request.getNewPassword().trim(), hashKey));
+        studentRepository.save(student);
     }
 
     private String buildStudentName(Student student) {
