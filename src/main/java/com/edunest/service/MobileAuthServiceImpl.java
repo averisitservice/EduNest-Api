@@ -143,7 +143,6 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         emailService.sendStudentPasswordResetEmail(email, accounts);
     }
 
-    /// Fills in the student's current class, section and roll number.
     private void applyClassPlacement(StudentProfileResponse profile, Student student) {
         StudentClass studentClass = studentClassRepository
                 .findByStudentIdAndTenantId(student.getStudentId(), student.getTenantId())

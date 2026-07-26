@@ -37,7 +37,6 @@ public class MobileSchoolServiceImpl implements MobileSchoolService {
         return response;
     }
 
-    /// One Indian-format line: "Line 1, Line 2, City, State - Pincode".
     private String buildFullAddress(Tenant tenant) {
         List<String> parts = new ArrayList<>();
 

@@ -19,7 +19,6 @@ public class StudentProfileResponse {
     private String photoUrl;
     private Boolean isHostel;
 
-    // Current class placement
     private Integer classId;
     private String className;
     private Integer sectionId;

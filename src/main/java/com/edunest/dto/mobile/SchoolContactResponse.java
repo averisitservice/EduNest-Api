@@ -5,12 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * School contact details for the mobile "School Contacts" screen.
- *
- * Deliberately kept out of {@code SchoolLookupResponse}: that endpoint is public
- * (pre-login) and must not expose staff contact details.
- */
 @Getter
 @Setter
 @NoArgsConstructor

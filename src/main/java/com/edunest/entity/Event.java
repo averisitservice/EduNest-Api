@@ -14,7 +14,6 @@ import java.time.LocalTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Event {
 
     @Id
@@ -53,7 +52,6 @@ public class Event {
     private LocalTime endTime;
 
     @Column(name = "is_all_day")
-    @Builder.Default
     private Boolean isAllDay = true;
 
     @Column(name = "audience", nullable = false, length = 20)
@@ -66,7 +64,6 @@ public class Event {
     private String color;
 
     @Column(name = "is_active")
-    @Builder.Default
     private Boolean isActive = true;
 
     @CreationTimestamp

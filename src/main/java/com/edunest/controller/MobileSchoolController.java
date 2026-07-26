@@ -22,10 +22,6 @@ public class MobileSchoolController {
     @Autowired
     JwtHelper jwtHelper;
 
-    /**
-     * Authenticated: the tenant is taken from the caller's token, so a student
-     * can only ever read their own school's contact details.
-     */
     @GetMapping("/contact")
     public ResponseEntity<ResponseObject<SchoolContactResponse>> getSchoolContact(HttpServletRequest request) {
 

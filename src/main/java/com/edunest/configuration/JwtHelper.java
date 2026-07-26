@@ -69,8 +69,6 @@ public class JwtHelper {
                 .compact();
     }
 
-    // ---- Student tokens (mobile app) ----
-
     public String generateStudentAccessToken(Student student) {
 
         Date now = new Date();

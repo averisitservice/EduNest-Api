@@ -7,10 +7,6 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-/**
- * Full student profile shown on the mobile Profile screen. Richer than
- * {@link StudentProfileResponse}, which only carries what login needs.
- */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,7 +19,6 @@ public class StudentDetailResponse {
     private String studentName;
     private String photoUrl;
 
-    // Personal
     private LocalDate dateOfBirth;
     private String gender;
     private String aadharNo;
@@ -31,7 +26,6 @@ public class StudentDetailResponse {
     private String mobileNo;
     private Boolean isHostel;
 
-    // Class placement
     private Integer classId;
     private String className;
     private Integer sectionId;
@@ -40,14 +34,11 @@ public class StudentDetailResponse {
     private String rollNo;
     private String classTeacherName;
 
-    // Parents
     private String fatherName;
     private String motherName;
     private String parentMobile;
     private String parentEmail;
     private String parentAadhar;
 
-    // Full address on a single line, Indian format:
-    // "<line1>, <city>, <state> - <pincode>"
     private String address;
 }
