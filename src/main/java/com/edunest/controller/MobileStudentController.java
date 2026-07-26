@@ -3,7 +3,7 @@ package com.edunest.controller;
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.mobile.StudentDetailResponse;
-import com.edunest.error.CustomException;
+import com.edunest.dto.mobile.StudentHomeResponse;
 import com.edunest.service.MobileStudentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +23,20 @@ public class MobileStudentController {
 
     @Autowired
     JwtHelper jwtHelper;
+
+    @GetMapping("/home")
+    public ResponseEntity<ResponseObject<StudentHomeResponse>> getStudentHome(HttpServletRequest request) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<StudentHomeResponse> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.getStudentHome(studentId, tenantId));
+
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/{studentId}")
     public ResponseEntity<ResponseObject<StudentDetailResponse>> getStudentDetailsById(
