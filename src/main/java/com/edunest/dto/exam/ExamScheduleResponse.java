@@ -15,4 +15,6 @@ public class ExamScheduleResponse {
     private LocalDate examDate;
     private LocalTime startTime;
     private LocalTime endTime;
+    private Integer maxMarks;
+    private Integer passMarks;
 }

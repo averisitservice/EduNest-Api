@@ -36,4 +36,10 @@ public class ExamSchedule {
 
     @Column(name = "end_time")
     private LocalTime endTime;
+
+    @Column(name = "max_marks")
+    private Integer maxMarks;
+
+    @Column(name = "pass_marks")
+    private Integer passMarks;
 }

@@ -14,4 +14,6 @@ public class ExamScheduleRequest {
     private LocalDate examDate;
     private LocalTime startTime;
     private LocalTime endTime;
+    private Integer maxMarks;
+    private Integer passMarks;
 }

@@ -1,9 +1,12 @@
 package com.edunest.service;
 
 import com.edunest.dto.mobile.StudentDetailResponse;
+import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.entity.AcademicYear;
+import com.edunest.entity.Exam;
+import com.edunest.entity.ExamSchedule;
 import com.edunest.entity.ClassMaster;
 import com.edunest.entity.ClassSection;
 import com.edunest.entity.Student;
@@ -19,6 +22,8 @@ import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.AttendanceRepository;
 import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.ClassSectionRepository;
+import com.edunest.repository.ExamRepository;
+import com.edunest.repository.ExamScheduleRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
 import com.edunest.repository.SubjectRepository;
@@ -32,6 +37,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +80,67 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Autowired
     SubjectRepository subjectRepository;
+
+    @Autowired
+    ExamRepository examRepository;
+
+    @Autowired
+    ExamScheduleRepository examScheduleRepository;
+
+    @Override
+    public StudentExamsResponse getExams(Integer studentId, Integer tenantId) {
+        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
+        if (currentYear == null) {
+            throw new CustomException("academicYear", "No active academic year found");
+        }
+
+        StudentClass studentClass = studentClassRepository
+                .findByStudentIdAndTenantId(studentId, tenantId)
+                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
+
+        List<Exam> exams = examRepository
+                .findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
+                        tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
+
+        Map<Integer, String> subjectNames = new HashMap<>();
+        LocalDate today = LocalDate.now();
+
+        List<StudentExamsResponse.ExamItem> upcoming = new ArrayList<>();
+        List<StudentExamsResponse.ExamItem> past = new ArrayList<>();
+
+        for (Exam exam : exams) {
+            List<ExamSchedule> rows = examScheduleRepository
+                    .findByExamIdAndTenantIdOrderByExamDateAscExamScheduleIdAsc(exam.getExamId(), tenantId);
+
+            for (ExamSchedule row : rows) {
+                StudentExamsResponse.ExamItem item = new StudentExamsResponse.ExamItem();
+                item.setExamId(exam.getExamId());
+                item.setExamName(exam.getExamName());
+                item.setSubjectId(row.getSubjectId());
+                item.setSubjectName(resolveSubjectName(row.getSubjectId(), subjectNames));
+                item.setExamDate(row.getExamDate());
+                item.setStartTime(row.getStartTime());
+                item.setEndTime(row.getEndTime());
+                item.setMaxMarks(row.getMaxMarks() != null ? row.getMaxMarks() : exam.getMaxMarks());
+                item.setPassMarks(row.getPassMarks() != null ? row.getPassMarks() : exam.getPassMarks());
+
+                if (row.getExamDate() != null && row.getExamDate().isBefore(today)) {
+                    item.setStatus("Completed");
+                    past.add(item);
+                } else {
+                    item.setStatus("Upcoming");
+                    upcoming.add(item);
+                }
+            }
+        }
+
+        upcoming.sort(Comparator.comparing(StudentExamsResponse.ExamItem::getExamDate,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+        past.sort(Comparator.comparing(StudentExamsResponse.ExamItem::getExamDate,
+                Comparator.nullsLast(Comparator.reverseOrder())));
+
+        return new StudentExamsResponse(upcoming, past);
+    }
 
     @Override
     public StudentTimetableResponse getTimetable(Integer studentId, Integer tenantId, String day) {

@@ -3,6 +3,7 @@ package com.edunest.controller;
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.mobile.StudentDetailResponse;
+import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.service.MobileStudentService;
@@ -52,6 +53,20 @@ public class MobileStudentController {
         ResponseObject<StudentTimetableResponse> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(mobileStudentService.getTimetable(studentId, tenantId, day));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/exams")
+    public ResponseEntity<ResponseObject<StudentExamsResponse>> getExams(HttpServletRequest request) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<StudentExamsResponse> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.getExams(studentId, tenantId));
 
         return ResponseEntity.ok(response);
     }

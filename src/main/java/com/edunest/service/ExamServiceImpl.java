@@ -205,6 +205,8 @@ public class ExamServiceImpl implements ExamService {
             schedule.setExamDate(item.getExamDate());
             schedule.setStartTime(item.getStartTime());
             schedule.setEndTime(item.getEndTime());
+            schedule.setMaxMarks(item.getMaxMarks());
+            schedule.setPassMarks(item.getPassMarks());
             examScheduleRepository.save(schedule);
         }
     }
@@ -223,6 +225,8 @@ public class ExamServiceImpl implements ExamService {
             response.setExamDate(row.getExamDate());
             response.setStartTime(row.getStartTime());
             response.setEndTime(row.getEndTime());
+            response.setMaxMarks(row.getMaxMarks());
+            response.setPassMarks(row.getPassMarks());
             result.add(response);
         }
         return result;
