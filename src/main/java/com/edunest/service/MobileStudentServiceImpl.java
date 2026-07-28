@@ -2,13 +2,18 @@ package com.edunest.service;
 
 import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
+import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.ClassMaster;
 import com.edunest.entity.ClassSection;
 import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
+import com.edunest.entity.Subject;
 import com.edunest.entity.Teacher;
 import com.edunest.entity.TeacherClass;
+import com.edunest.entity.TimeSlot;
+import com.edunest.entity.Timetable;
+import com.edunest.entity.WorkingDay;
 import com.edunest.error.CustomException;
 import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.AttendanceRepository;
@@ -16,14 +21,20 @@ import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.ClassSectionRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
+import com.edunest.repository.SubjectRepository;
 import com.edunest.repository.TeacherClassRepository;
 import com.edunest.repository.TeacherRepository;
+import com.edunest.repository.TimeSlotRepository;
+import com.edunest.repository.TimetableRepository;
+import com.edunest.repository.WorkingDayRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class MobileStudentServiceImpl implements MobileStudentService {
@@ -51,6 +62,134 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Autowired
     AcademicYearRepository academicYearRepository;
+
+    @Autowired
+    WorkingDayRepository workingDayRepository;
+
+    @Autowired
+    TimeSlotRepository timeSlotRepository;
+
+    @Autowired
+    TimetableRepository timetableRepository;
+
+    @Autowired
+    SubjectRepository subjectRepository;
+
+    @Override
+    public StudentTimetableResponse getTimetable(Integer studentId, Integer tenantId, String day) {
+
+        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
+        if (currentYear == null) {
+            throw new CustomException("academicYear", "No active academic year found");
+        }
+
+        StudentClass studentClass = studentClassRepository
+                .findByStudentIdAndTenantId(studentId, tenantId)
+                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
+
+        Integer classId = studentClass.getClassId();
+        Integer sectionId = studentClass.getSectionId();
+
+        StudentTimetableResponse response = new StudentTimetableResponse();
+        response.setDisplayClass(buildDisplayClass(studentClass));
+
+        List<WorkingDay> workingDays = workingDayRepository.findByTenantIdAndIsActiveTrueOrderByDayOrder(tenantId);
+        List<TimeSlot> slots = timeSlotRepository
+                .findByClassIdAndTenantIdAndIsActiveTrueOrderByOrderNo(classId, tenantId);
+        List<Timetable> cells = timetableRepository
+                .findCells(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
+
+        Map<String, Timetable> cellByKey = new HashMap<>();
+        for (Timetable cell : cells) {
+            cellByKey.put(cell.getWorkingDayId() + "-" + cell.getTimeSlotId(), cell);
+        }
+
+        Map<Integer, String> subjectNames = new HashMap<>();
+        Map<Integer, String> teacherNames = new HashMap<>();
+
+        String targetDay = resolveTargetDay(day, workingDays);
+
+        List<StudentTimetableResponse.DaySchedule> days = new ArrayList<>();
+        for (WorkingDay workingDay : workingDays) {
+            List<StudentTimetableResponse.Period> periods = new ArrayList<>();
+
+            if (workingDay.getDayName().equalsIgnoreCase(targetDay)) {
+                for (TimeSlot slot : slots) {
+                    StudentTimetableResponse.Period period = new StudentTimetableResponse.Period();
+                    period.setSlotName(slot.getSlotName());
+                    period.setStartTime(slot.getStartTime());
+                    period.setEndTime(slot.getEndTime());
+                    period.setIsBreak(slot.getIsBreak());
+
+                    if (!Boolean.TRUE.equals(slot.getIsBreak())) {
+                        Timetable cell = cellByKey.get(workingDay.getWorkingDayId() + "-" + slot.getTimeSlotId());
+                        if (cell != null) {
+                            period.setSubjectId(cell.getSubjectId());
+                            period.setSubjectName(resolveSubjectName(cell.getSubjectId(), subjectNames));
+                            period.setTeacherName(resolveTeacherName(cell.getTeacherId(), teacherNames));
+                        }
+                    }
+
+                    periods.add(period);
+                }
+            }
+
+            days.add(new StudentTimetableResponse.DaySchedule(workingDay.getDayName(), periods));
+        }
+
+        response.setDays(days);
+        return response;
+    }
+
+    private String resolveTargetDay(String requestedDay, List<WorkingDay> workingDays) {
+        if (requestedDay != null && !requestedDay.isBlank()) {
+            for (WorkingDay wd : workingDays) {
+                if (wd.getDayName().equalsIgnoreCase(requestedDay.trim())) {
+                    return wd.getDayName();
+                }
+            }
+        }
+
+        String todayName = LocalDate.now().getDayOfWeek().name();
+        for (WorkingDay wd : workingDays) {
+            if (wd.getDayName().equalsIgnoreCase(todayName)) {
+                return wd.getDayName();
+            }
+        }
+
+        return workingDays.isEmpty() ? null : workingDays.get(0).getDayName();
+    }
+
+    private String buildDisplayClass(StudentClass studentClass) {
+        ClassMaster classMaster = classMasterRepository.findById(studentClass.getClassId()).orElse(null);
+        String className = classMaster != null ? classMaster.getClassName() : null;
+        String sectionName = null;
+        if (studentClass.getSectionId() != null) {
+            ClassSection classSection = classSectionRepository.findById(studentClass.getSectionId()).orElse(null);
+            sectionName = classSection != null ? classSection.getSectionName() : null;
+        }
+        return (className != null && sectionName != null) ? className + " - " + sectionName : className;
+    }
+
+    private String resolveSubjectName(Integer subjectId, Map<Integer, String> cache) {
+        if (subjectId == null) {
+            return null;
+        }
+        return cache.computeIfAbsent(subjectId, id -> {
+            Subject subject = subjectRepository.findById(id).orElse(null);
+            return subject != null ? subject.getSubjectName() : null;
+        });
+    }
+
+    private String resolveTeacherName(Integer teacherId, Map<Integer, String> cache) {
+        if (teacherId == null) {
+            return null;
+        }
+        return cache.computeIfAbsent(teacherId, id -> {
+            Teacher teacher = teacherRepository.findById(id).orElse(null);
+            return teacher != null ? teacher.getTeacherName() : null;
+        });
+    }
 
     @Override
     public StudentHomeResponse getStudentHome(Integer studentId, Integer tenantId) {

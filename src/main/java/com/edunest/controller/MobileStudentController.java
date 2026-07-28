@@ -4,6 +4,7 @@ import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
+import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.service.MobileStudentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -34,6 +36,22 @@ public class MobileStudentController {
         ResponseObject<StudentHomeResponse> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(mobileStudentService.getStudentHome(studentId, tenantId));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/timetable")
+    public ResponseEntity<ResponseObject<StudentTimetableResponse>> getTimetable(
+            HttpServletRequest request,
+            @RequestParam(required = false) String day) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<StudentTimetableResponse> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.getTimetable(studentId, tenantId, day));
 
         return ResponseEntity.ok(response);
     }
