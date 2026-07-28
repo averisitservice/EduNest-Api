@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,6 +18,7 @@ public class ExamListResponse {
     private Integer maxMarks;
     private Integer passMarks;
     private LocalDate examDate;
+    private List<ExamScheduleResponse> subjects;
     private String createdBy;
     private String updatedBy;
     private LocalDateTime updatedDate;

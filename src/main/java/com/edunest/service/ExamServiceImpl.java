@@ -4,12 +4,15 @@ import com.edunest.dto.exam.ExamListResponse;
 import com.edunest.dto.exam.ExamMarksEntryResponse;
 import com.edunest.dto.exam.ExamMarksSaveRequest;
 import com.edunest.dto.exam.ExamRequest;
+import com.edunest.dto.exam.ExamScheduleRequest;
+import com.edunest.dto.exam.ExamScheduleResponse;
 import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.ClassMaster;
 import com.edunest.entity.ClassSubject;
 import com.edunest.entity.Exam;
 import com.edunest.entity.ExamMark;
+import com.edunest.entity.ExamSchedule;
 import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
 import com.edunest.entity.Subject;
@@ -20,6 +23,7 @@ import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.ClassSubjectRepository;
 import com.edunest.repository.ExamMarkRepository;
 import com.edunest.repository.ExamRepository;
+import com.edunest.repository.ExamScheduleRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
 import com.edunest.repository.SubjectRepository;
@@ -30,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,6 +62,9 @@ public class ExamServiceImpl implements ExamService {
 
     @Autowired
     SubjectRepository subjectRepository;
+
+    @Autowired
+    ExamScheduleRepository examScheduleRepository;
 
     @Autowired
     ClassMasterRepository classMasterRepository;
@@ -129,6 +137,7 @@ public class ExamServiceImpl implements ExamService {
             response.setMaxMarks(exam.getMaxMarks());
             response.setPassMarks(exam.getPassMarks());
             response.setExamDate(exam.getExamDate());
+            response.setSubjects(buildScheduleResponse(exam.getExamId(), tenantId));
             response.setCreatedBy(teacherName(exam.getCreatedBy()));
             response.setUpdatedBy(teacherName(exam.getUpdatedBy()));
             response.setUpdatedDate(exam.getUpdatedDate());
@@ -157,11 +166,66 @@ public class ExamServiceImpl implements ExamService {
         exam.setExamName(request.getExamName());
         exam.setMaxMarks(request.getMaxMarks());
         exam.setPassMarks(request.getPassMarks() != null ? request.getPassMarks() : 0);
-        exam.setExamDate(request.getExamDate());
+        exam.setExamDate(resolveExamStartDate(request));
         exam.setUpdatedBy(loginTeacherId);
         exam.setUpdatedDate(LocalDateTime.now());
         examRepository.save(exam);
+
+        saveSchedule(tenantId, exam.getExamId(), request.getSubjects());
         return true;
+    }
+
+    private LocalDate resolveExamStartDate(ExamRequest request) {
+        LocalDate earliest = null;
+        if (request.getSubjects() != null) {
+            for (ExamScheduleRequest item : request.getSubjects()) {
+                if (item.getExamDate() != null && (earliest == null || item.getExamDate().isBefore(earliest))) {
+                    earliest = item.getExamDate();
+                }
+            }
+        }
+        return earliest != null ? earliest : request.getExamDate();
+    }
+
+    private void saveSchedule(Integer tenantId, Integer examId, List<ExamScheduleRequest> subjects) {
+        examScheduleRepository.deleteByExamIdAndTenantId(examId, tenantId);
+
+        if (subjects == null || subjects.isEmpty()) {
+            return;
+        }
+
+        for (ExamScheduleRequest item : subjects) {
+            if (item.getSubjectId() == null || item.getExamDate() == null) {
+                continue;
+            }
+            ExamSchedule schedule = new ExamSchedule();
+            schedule.setTenantId(tenantId);
+            schedule.setExamId(examId);
+            schedule.setSubjectId(item.getSubjectId());
+            schedule.setExamDate(item.getExamDate());
+            schedule.setStartTime(item.getStartTime());
+            schedule.setEndTime(item.getEndTime());
+            examScheduleRepository.save(schedule);
+        }
+    }
+
+    private List<ExamScheduleResponse> buildScheduleResponse(Integer examId, Integer tenantId) {
+        List<ExamSchedule> rows = examScheduleRepository
+                .findByExamIdAndTenantIdOrderByExamDateAscExamScheduleIdAsc(examId, tenantId);
+
+        List<ExamScheduleResponse> result = new ArrayList<>();
+        for (ExamSchedule row : rows) {
+            Subject subject = subjectRepository.findById(row.getSubjectId()).orElse(null);
+
+            ExamScheduleResponse response = new ExamScheduleResponse();
+            response.setSubjectId(row.getSubjectId());
+            response.setSubjectName(subject != null ? subject.getSubjectName() : null);
+            response.setExamDate(row.getExamDate());
+            response.setStartTime(row.getStartTime());
+            response.setEndTime(row.getEndTime());
+            result.add(response);
+        }
+        return result;
     }
 
     @Override
