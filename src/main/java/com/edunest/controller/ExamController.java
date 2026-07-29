@@ -39,6 +39,19 @@ public class ExamController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{examId}")
+    public ResponseEntity<ResponseObject<ExamListResponse>> getExamById(
+            HttpServletRequest request, @PathVariable Integer examId) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<ExamListResponse> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(examService.getExamById(tenantId, examId));
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping
     public ResponseEntity<ResponseObject<Boolean>> saveExam(
             HttpServletRequest request, @RequestBody ExamRequest examRequest) {

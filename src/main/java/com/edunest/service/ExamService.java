@@ -12,6 +12,8 @@ public interface ExamService {
 
     List<ExamListResponse> getExams(Integer tenantId, Integer classId);
 
+    ExamListResponse getExamById(Integer tenantId, Integer examId);
+
     boolean saveExam(Integer tenantId, Integer loginTeacherId, ExamRequest request);
 
     boolean deleteExam(Integer tenantId, Integer examId);

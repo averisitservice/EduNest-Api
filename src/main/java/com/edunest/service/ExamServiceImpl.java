@@ -147,6 +147,32 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
+    public ExamListResponse getExamById(Integer tenantId, Integer examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new CustomException("examId", "Exam not found"));
+
+        if (!exam.getTenantId().equals(tenantId)) {
+            throw new CustomException("examId", "Exam not found");
+        }
+
+        ClassMaster classMaster = classMasterRepository.findById(exam.getClassId()).orElse(null);
+
+        ExamListResponse response = new ExamListResponse();
+        response.setExamId(exam.getExamId());
+        response.setClassId(exam.getClassId());
+        response.setClassName(classMaster != null ? classMaster.getClassName() : null);
+        response.setExamName(exam.getExamName());
+        response.setMaxMarks(exam.getMaxMarks());
+        response.setPassMarks(exam.getPassMarks());
+        response.setExamDate(exam.getExamDate());
+        response.setSubjects(buildScheduleResponse(exam.getExamId(), tenantId));
+        response.setCreatedBy(teacherName(exam.getCreatedBy()));
+        response.setUpdatedBy(teacherName(exam.getUpdatedBy()));
+        response.setUpdatedDate(exam.getUpdatedDate());
+        return response;
+    }
+
+    @Override
     @Transactional
     public boolean saveExam(Integer tenantId, Integer loginTeacherId, ExamRequest request) {
         AcademicYear currentYear = getCurrentYear(tenantId);
