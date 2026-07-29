@@ -23,7 +23,7 @@ public class ReportCardResponse {
     private Integer totalMax;
     private double percentage;
     private String overallGrade;
-    private String result; // PASS / FAIL
+    private String result;
 
     @Getter
     @Setter

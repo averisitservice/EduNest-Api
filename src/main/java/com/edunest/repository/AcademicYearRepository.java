@@ -9,5 +9,4 @@ import java.util.List;
 @Repository
 public interface AcademicYearRepository extends JpaRepository<AcademicYear, Integer> {
     AcademicYear findByTenantIdAndIsCurrentTrue(Integer tenantId);
-    List<AcademicYear> findByTenantIdAndIsActiveTrue(Integer tenantId);
 }

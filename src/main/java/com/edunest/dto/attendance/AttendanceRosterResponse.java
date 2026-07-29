@@ -21,7 +21,7 @@ public class AttendanceRosterResponse {
         private Integer studentId;
         private String studentName;
         private String rollNo;
-        private String status;   // null/empty if not yet marked
+        private String status;
         private String remarks;
     }
 }

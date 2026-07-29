@@ -11,7 +11,6 @@ import java.util.List;
 @Repository
 public interface HomeworkRepository extends JpaRepository<Homework, Integer> {
 
-    // Null-safe on sectionId; pass type = "" to ignore the type filter.
     @Query("SELECT h FROM Homework h WHERE h.tenantId = :tenantId AND h.academicYearId = :academicYearId "
             + "AND h.isActive = true AND h.classId = :classId "
             + "AND ((:sectionId IS NULL AND h.sectionId IS NULL) OR h.sectionId = :sectionId) "

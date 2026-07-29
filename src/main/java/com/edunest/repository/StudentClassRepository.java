@@ -20,7 +20,6 @@ public interface StudentClassRepository extends JpaRepository<StudentClass, Inte
             Integer classId, Integer sectionId,
             Integer academicYearId, Integer tenantId);
 
-    // Roster for a class/section - null-safe on sectionId (a null section matches section_id IS NULL).
     @Query("SELECT sc FROM StudentClass sc WHERE sc.tenantId = :tenantId AND sc.classId = :classId "
             + "AND sc.academicYearId = :academicYearId AND sc.isActive = true "
             + "AND ((:sectionId IS NULL AND sc.sectionId IS NULL) OR sc.sectionId = :sectionId)")

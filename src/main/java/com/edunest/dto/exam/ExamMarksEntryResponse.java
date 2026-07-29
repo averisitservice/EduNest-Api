@@ -34,7 +34,6 @@ public class ExamMarksEntryResponse {
         private Integer studentId;
         private String studentName;
         private String rollNo;
-        // subjectId -> marksObtained
         private Map<Integer, BigDecimal> marks;
     }
 }
