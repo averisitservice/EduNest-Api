@@ -26,18 +26,16 @@ public class ExamController {
     @Autowired
     JwtHelper jwtHelper;
 
-    private Integer tenant(HttpServletRequest request) {
-        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
-        return jwtHelper.extractTenantId(token);
-    }
-
     @GetMapping("/list")
     public ResponseEntity<ResponseObject<List<ExamListResponse>>> getExams(
             HttpServletRequest request, @RequestParam(required = false) Integer classId) {
 
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
         ResponseObject<List<ExamListResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(examService.getExams(tenant(request), classId));
+        response.setData(examService.getExams(tenantId, classId));
         return ResponseEntity.ok(response);
     }
 
@@ -59,9 +57,12 @@ public class ExamController {
     public ResponseEntity<ResponseObject<Boolean>> deleteExam(
             HttpServletRequest request, @PathVariable Integer examId) {
 
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(examService.deleteExam(tenant(request), examId));
+        response.setData(examService.deleteExam(tenantId, examId));
         return ResponseEntity.ok(response);
     }
 
@@ -72,9 +73,12 @@ public class ExamController {
             @PathVariable Integer classId,
             @RequestParam(required = false) Integer sectionId) {
 
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
         ResponseObject<ExamMarksEntryResponse> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(examService.getMarksEntry(tenant(request), examId, classId, sectionId));
+        response.setData(examService.getMarksEntry(tenantId, examId, classId, sectionId));
         return ResponseEntity.ok(response);
     }
 
@@ -82,9 +86,12 @@ public class ExamController {
     public ResponseEntity<ResponseObject<Boolean>> saveMarks(
             HttpServletRequest request, @RequestBody ExamMarksSaveRequest marksRequest) {
 
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(examService.saveMarks(tenant(request), marksRequest));
+        response.setData(examService.saveMarks(tenantId, marksRequest));
         return ResponseEntity.ok(response);
     }
 
@@ -94,9 +101,12 @@ public class ExamController {
             @PathVariable Integer examId,
             @PathVariable Integer studentId) {
 
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
         ResponseObject<ReportCardResponse> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(examService.getReportCard(tenant(request), examId, studentId));
+        response.setData(examService.getReportCard(tenantId, examId, studentId));
         return ResponseEntity.ok(response);
     }
 }

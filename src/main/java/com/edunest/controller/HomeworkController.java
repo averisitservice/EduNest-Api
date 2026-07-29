@@ -23,11 +23,6 @@ public class HomeworkController {
     @Autowired
     JwtHelper jwtHelper;
 
-    private Integer tenant(HttpServletRequest request) {
-        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
-        return jwtHelper.extractTenantId(token);
-    }
-
     @GetMapping("/list/{classId}")
     public ResponseEntity<ResponseObject<List<HomeworkResponse>>> getHomeWorkList(
             HttpServletRequest request,
@@ -35,9 +30,12 @@ public class HomeworkController {
             @RequestParam(required = false) Integer sectionId,
             @RequestParam(required = false) String type) {
 
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
         ResponseObject<List<HomeworkResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(homeworkService.getHomeWorkList(tenant(request), classId, sectionId, type));
+        response.setData(homeworkService.getHomeWorkList(tenantId, classId, sectionId, type));
         return ResponseEntity.ok(response);
     }
 
@@ -59,9 +57,12 @@ public class HomeworkController {
     public ResponseEntity<ResponseObject<Boolean>> deleteHomeWork(
             HttpServletRequest request, @PathVariable Integer homeworkId) {
 
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(homeworkService.deleteHomeWork(tenant(request), homeworkId));
+        response.setData(homeworkService.deleteHomeWork(tenantId, homeworkId));
         return ResponseEntity.ok(response);
     }
 }
