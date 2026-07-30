@@ -11,6 +11,4 @@ public interface WorkingDayRepository extends JpaRepository<WorkingDay, Integer>
     List<WorkingDay> findByTenantIdAndIsActiveTrueOrderByDayOrder(Integer tenantId);
 
     WorkingDay findByTenantIdAndDayName(Integer tenantId, String dayName);
-
-    boolean existsByTenantIdAndDayName(Integer tenantId, String dayName);
 }

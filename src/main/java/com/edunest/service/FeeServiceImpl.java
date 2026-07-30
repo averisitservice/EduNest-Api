@@ -57,11 +57,6 @@ public class FeeServiceImpl implements FeeService {
         return currentYear;
     }
 
-    private String studentName(Integer studentId) {
-        Student student = studentRepository.findById(studentId).orElse(null);
-        return student != null ? student.getFirstName() + " " + student.getLastName() : null;
-    }
-
     @Override
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {
         AcademicYear currentYear = getCurrentYear(tenantId);
