@@ -46,7 +46,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendPasswordResetEmail(String toEmail, String teacherName, String newPassword) {
         try {
             String displayName = (teacherName != null && !teacherName.isBlank()) ? teacherName : "Teacher";
-            String html = loadTemplate("sendPasswordResetEmail.html")
+            String html = loadTemplate("sendPassword.html")
                     .replace("{{displayName}}", displayName)
                     .replace("{{newPassword}}", newPassword);
 
@@ -75,7 +75,7 @@ public class EmailServiceImpl implements EmailService {
                         .append("</tr>");
             }
 
-            String html = loadTemplate("sendStudentPasswordResetEmail.html")
+            String html = loadTemplate("sendStudentPassword.html")
                     .replace("{{multiAccountNotice}}", multiAccountNotice)
                     .replace("{{accountRows}}", accountRows.toString());
 
