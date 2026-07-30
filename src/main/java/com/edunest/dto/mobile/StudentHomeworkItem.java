@@ -17,8 +17,5 @@ public class StudentHomeworkItem {
     private Integer subjectId;
     private String subjectName;
     private String title;
-    private String description;
-    private LocalDate dueDate;
-    private String attachmentUrl;
     private LocalDateTime updatedDate;
 }

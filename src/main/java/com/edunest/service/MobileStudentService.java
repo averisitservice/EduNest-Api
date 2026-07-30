@@ -3,7 +3,9 @@ package com.edunest.service;
 import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
+import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
+import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 
@@ -22,4 +24,8 @@ public interface MobileStudentService {
     List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId);
 
     List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId);
+
+    StudentHomeworkDetailResponse getHomeworkDetail(Integer studentId, Integer tenantId, Integer homeworkId);
+
+    StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId);
 }

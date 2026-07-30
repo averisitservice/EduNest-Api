@@ -3,7 +3,9 @@ package com.edunest.service;
 import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
+import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
+import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.entity.AcademicYear;
@@ -116,9 +118,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             item.setSubjectId(h.getSubjectId());
             item.setSubjectName(resolveSubjectName(h.getSubjectId(), subjectNames));
             item.setTitle(h.getTitle());
-            item.setDescription(h.getDescription());
-            item.setDueDate(h.getDueDate());
-            item.setAttachmentUrl(h.getAttachmentUrl());
             item.setUpdatedDate(h.getUpdatedDate());
             items.add(item);
         }
@@ -142,12 +141,65 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             item.setSubjectId(n.getSubjectId());
             item.setSubjectName(resolveSubjectName(n.getSubjectId(), subjectNames));
             item.setTitle(n.getTitle());
-            item.setDescription(n.getDescription());
-            item.setAttachmentUrl(n.getAttachmentUrl());
             item.setUpdatedDate(n.getUpdatedDate());
             items.add(item);
         }
         return items;
+    }
+
+    @Override
+    public StudentHomeworkDetailResponse getHomeworkDetail(Integer studentId, Integer tenantId, Integer homeworkId) {
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        Homework h = homeworkRepository.findById(homeworkId)
+                .orElseThrow(() -> new CustomException("homeworkId", "Homework not found"));
+
+        if (!h.getTenantId().equals(tenantId) || !h.getClassId().equals(studentClass.getClassId())
+                || (h.getSectionId() != null && !h.getSectionId().equals(studentClass.getSectionId()))) {
+            throw new CustomException("homeworkId", "Homework not found");
+        }
+
+        Map<Integer, String> subjectNames = new HashMap<>();
+        Map<Integer, String> teacherNames = new HashMap<>();
+
+        StudentHomeworkDetailResponse response = new StudentHomeworkDetailResponse();
+        response.setHomeworkId(h.getHomeworkId());
+        response.setSubjectId(h.getSubjectId());
+        response.setSubjectName(resolveSubjectName(h.getSubjectId(), subjectNames));
+        response.setTitle(h.getTitle());
+        response.setDescription(h.getDescription());
+        response.setDueDate(h.getDueDate());
+        response.setAttachmentUrl(h.getAttachmentUrl());
+        response.setTeacherName(resolveTeacherName(h.getUpdatedBy(), teacherNames));
+        response.setUpdatedDate(h.getUpdatedDate());
+        return response;
+    }
+
+    @Override
+    public StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId) {
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        Note n = noteRepository.findById(noteId)
+                .orElseThrow(() -> new CustomException("noteId", "Note not found"));
+
+        if (!n.getTenantId().equals(tenantId) || !n.getClassId().equals(studentClass.getClassId())
+                || (n.getSectionId() != null && !n.getSectionId().equals(studentClass.getSectionId()))) {
+            throw new CustomException("noteId", "Note not found");
+        }
+
+        Map<Integer, String> subjectNames = new HashMap<>();
+        Map<Integer, String> teacherNames = new HashMap<>();
+
+        StudentNoteDetailResponse response = new StudentNoteDetailResponse();
+        response.setNoteId(n.getNoteId());
+        response.setSubjectId(n.getSubjectId());
+        response.setSubjectName(resolveSubjectName(n.getSubjectId(), subjectNames));
+        response.setTitle(n.getTitle());
+        response.setDescription(n.getDescription());
+        response.setAttachmentUrl(n.getAttachmentUrl());
+        response.setTeacherName(resolveTeacherName(n.getUpdatedBy(), teacherNames));
+        response.setUpdatedDate(n.getUpdatedDate());
+        return response;
     }
 
     private AcademicYear requireCurrentYear(Integer tenantId) {

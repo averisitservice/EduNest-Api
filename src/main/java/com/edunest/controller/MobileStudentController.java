@@ -5,7 +5,9 @@ import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
+import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
+import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.service.MobileStudentService;
@@ -99,6 +101,36 @@ public class MobileStudentController {
         ResponseObject<List<StudentNoteItem>> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(mobileStudentService.getNotes(studentId, tenantId));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/homework/{homeworkId}")
+    public ResponseEntity<ResponseObject<StudentHomeworkDetailResponse>> getHomeworkDetail(
+            HttpServletRequest request, @PathVariable Integer homeworkId) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<StudentHomeworkDetailResponse> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.getHomeworkDetail(studentId, tenantId, homeworkId));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/notes/{noteId}")
+    public ResponseEntity<ResponseObject<StudentNoteDetailResponse>> getNoteDetail(
+            HttpServletRequest request, @PathVariable Integer noteId) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<StudentNoteDetailResponse> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.getNoteDetail(studentId, tenantId, noteId));
 
         return ResponseEntity.ok(response);
     }

@@ -11,10 +11,13 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentNoteItem {
+public class StudentNoteDetailResponse {
     private Integer noteId;
     private Integer subjectId;
     private String subjectName;
     private String title;
+    private String description;
+    private String attachmentUrl;
+    private String teacherName;
     private LocalDateTime updatedDate;
 }
