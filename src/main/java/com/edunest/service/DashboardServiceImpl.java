@@ -3,10 +3,8 @@ package com.edunest.service;
 import com.edunest.dto.dashboard.DashboardSummaryResponse;
 import com.edunest.dto.dashboard.DashboardSummaryResponse.AttendanceToday;
 import com.edunest.dto.dashboard.DashboardSummaryResponse.LatestAnnouncement;
-import com.edunest.dto.dashboard.DashboardSummaryResponse.UpcomingEvent;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Announcement;
-import com.edunest.entity.Event;
 import com.edunest.error.CustomException;
 import com.edunest.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +34,6 @@ public class DashboardServiceImpl implements DashboardService {
     FeePaymentRepository feePaymentRepository;
 
     @Autowired
-    EventRepository eventRepository;
-
-    @Autowired
     AnnouncementRepository announcementRepository;
 
     @Autowired
@@ -59,7 +54,6 @@ public class DashboardServiceImpl implements DashboardService {
 
         response.setAttendanceToday(buildAttendanceToday(tenantId, yearId));
         response.setFeeCollectedThisMonth(feeCollectedThisMonth(tenantId, yearId));
-        response.setUpcomingEvents(buildUpcomingEvents(tenantId, yearId));
         response.setLatestAnnouncements(buildLatestAnnouncements(tenantId, yearId));
 
         return response;
@@ -87,18 +81,6 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate last = today.withDayOfMonth(today.lengthOfMonth());
         BigDecimal sum = feePaymentRepository.sumAmountBetween(tenantId, yearId, first, last);
         return sum != null ? sum : BigDecimal.ZERO;
-    }
-
-    private List<UpcomingEvent> buildUpcomingEvents(Integer tenantId, Integer yearId) {
-        List<Event> events = eventRepository
-                .findTop5ByTenantIdAndAcademicYearIdAndIsActiveTrueAndStartDateGreaterThanEqualOrderByStartDateAscEventIdAsc(
-                        tenantId, yearId, LocalDate.now());
-
-        List<UpcomingEvent> result = new ArrayList<>();
-        for (Event e : events) {
-            result.add(new UpcomingEvent(e.getEventId(), e.getTitle(), e.getEventType(), e.getStartDate()));
-        }
-        return result;
     }
 
     private List<LatestAnnouncement> buildLatestAnnouncements(Integer tenantId, Integer yearId) {

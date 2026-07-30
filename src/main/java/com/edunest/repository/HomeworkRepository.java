@@ -19,4 +19,13 @@ public interface HomeworkRepository extends JpaRepository<Homework, Integer> {
     List<Homework> findList(
             @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
             @Param("classId") Integer classId, @Param("sectionId") Integer sectionId, @Param("type") String type);
+
+    @Query("SELECT h FROM Homework h WHERE h.tenantId = :tenantId AND h.academicYearId = :academicYearId "
+            + "AND h.isActive = true AND h.classId = :classId "
+            + "AND (h.sectionId IS NULL OR h.sectionId = :sectionId) "
+            + "AND h.type = :type "
+            + "ORDER BY h.homeworkId DESC")
+    List<Homework> findForStudent(
+            @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
+            @Param("classId") Integer classId, @Param("sectionId") Integer sectionId, @Param("type") String type);
 }

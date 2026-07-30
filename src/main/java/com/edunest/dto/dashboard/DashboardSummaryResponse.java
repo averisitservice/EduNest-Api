@@ -22,7 +22,6 @@ public class DashboardSummaryResponse {
     private AttendanceToday attendanceToday;
     private BigDecimal feeCollectedThisMonth;
 
-    private List<UpcomingEvent> upcomingEvents;
     private List<LatestAnnouncement> latestAnnouncements;
 
     @Getter
@@ -36,17 +35,6 @@ public class DashboardSummaryResponse {
         private long late;
         private long marked;
         private double presentPercent;
-    }
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UpcomingEvent {
-        private Integer eventId;
-        private String title;
-        private String eventType;
-        private LocalDate startDate;
     }
 
     @Getter
