@@ -5,8 +5,8 @@ import com.edunest.dto.announcement.AnnouncementResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Announcement;
 import com.edunest.entity.ClassMaster;
-import com.edunest.entity.Teacher;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.AnnouncementRepository;
 import com.edunest.repository.ClassMasterRepository;
@@ -35,23 +35,12 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Autowired
     AcademicYearRepository academicYearRepository;
 
-    private AcademicYear getCurrentYear(Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
-        return currentYear;
-    }
-
-    private String teacherName(Integer teacherId) {
-        if (teacherId == null) return null;
-        Teacher teacher = teacherRepository.findById(teacherId).orElse(null);
-        return teacher != null ? teacher.getTeacherName() : null;
-    }
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public List<AnnouncementResponse> getAnnouncements(Integer tenantId) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<Announcement> announcements = announcementRepository
                 .findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
@@ -73,8 +62,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             response.setClassId(a.getClassId());
             response.setClassName(className);
             response.setPublishDate(a.getPublishDate());
-            response.setCreatedBy(teacherName(a.getCreatedBy()));
-            response.setUpdatedBy(teacherName(a.getUpdatedBy()));
+            response.setCreatedBy(commonHelper.teacherName(a.getCreatedBy()));
+            response.setUpdatedBy(commonHelper.teacherName(a.getUpdatedBy()));
             response.setUpdatedDate(a.getUpdatedDate());
             result.add(response);
         }
@@ -84,7 +73,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Override
     @Transactional
     public boolean saveAnnouncement(Integer tenantId, Integer loginTeacherId, AnnouncementRequest request) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (request.getTitle() == null || request.getTitle().isBlank()) {
             throw new CustomException("title", "Title is required");

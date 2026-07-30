@@ -6,6 +6,7 @@ import com.edunest.dto.student.StudentListResponse;
 import com.edunest.dto.student.StudentRequest;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.helper.CryptoHelper;
 import com.edunest.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +41,9 @@ public class StudentServiceImpl implements StudentService {
 
     @Autowired
     TeacherRepository teacherRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public PagedResponse<StudentListResponse> getStudentList(
@@ -181,14 +184,14 @@ public class StudentServiceImpl implements StudentService {
         } else {
             student = new Student();
             student.setTenantId(tenantId);
-            student.setAdmissionNo(generateAdmissionNo(tenantId));
+            student.setAdmissionNo(commonHelper.generateAdmissionNo(tenantId));
             String hashKey = CryptoHelper.getHashKey();
             String initialPassword = (request.getPassword() != null && !request.getPassword().isBlank())
                     ? request.getPassword()
                     : request.getMobileNo();
 
             student.setHashkey(hashKey);
-            student.setUsername(generateUsername(request.getFirstName(), request.getDateOfBirth()));
+            student.setUsername(CommonHelper.generateUsername(request.getFirstName(), request.getDateOfBirth()));
             student.setPassword(CryptoHelper.encryptPassword(initialPassword, hashKey));
             student.setIsActive(true);
             student.setCreatedBy(loginTeacherId);
@@ -245,21 +248,5 @@ public class StudentServiceImpl implements StudentService {
         student.setUpdatedDate(LocalDateTime.now());
         studentRepository.save(student);
         return true;
-    }
-
-    private String generateAdmissionNo(Integer tenantId) {
-        String year = String.valueOf(LocalDate.now().getYear());
-        String lastNo = studentRepository.findLastAdmissionNo(tenantId, year);
-        int sequence = 1;
-        if (lastNo != null) {
-            sequence = Integer.parseInt(lastNo.split("-")[1]) + 1;
-        }
-        return year + "-" + String.format("%03d", sequence);
-    }
-
-    private String generateUsername(String firstName, LocalDate dob) {
-        String day = String.format("%02d", dob.getDayOfMonth());
-        String month = String.format("%02d", dob.getMonthValue());
-        return firstName + day + month;
     }
 }

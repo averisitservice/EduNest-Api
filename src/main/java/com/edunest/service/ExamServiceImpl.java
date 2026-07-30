@@ -13,11 +13,10 @@ import com.edunest.entity.ClassSubject;
 import com.edunest.entity.Exam;
 import com.edunest.entity.ExamMark;
 import com.edunest.entity.ExamSchedule;
-import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
 import com.edunest.entity.Subject;
-import com.edunest.entity.Teacher;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.ClassSubjectRepository;
@@ -75,24 +74,8 @@ public class ExamServiceImpl implements ExamService {
     @Autowired
     AcademicYearRepository academicYearRepository;
 
-    private AcademicYear getCurrentYear(Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
-        return currentYear;
-    }
-
-    private String studentName(Integer studentId) {
-        Student student = studentRepository.findById(studentId).orElse(null);
-        return student != null ? student.getFirstName() + " " + student.getLastName() : null;
-    }
-
-    private String teacherName(Integer teacherId) {
-        if (teacherId == null) return null;
-        Teacher teacher = teacherRepository.findById(teacherId).orElse(null);
-        return teacher != null ? teacher.getTeacherName() : null;
-    }
+    @Autowired
+    CommonHelper commonHelper;
 
     private List<Subject> classSubjects(Integer classId, Integer tenantId) {
         List<ClassSubject> mappings = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
@@ -119,7 +102,7 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     public List<ExamListResponse> getExams(Integer tenantId, Integer classId) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<Exam> exams = classId != null
                 ? examRepository.findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(tenantId, currentYear.getAcademicYearId(), classId)
@@ -138,8 +121,8 @@ public class ExamServiceImpl implements ExamService {
             response.setPassMarks(exam.getPassMarks());
             response.setExamDate(exam.getExamDate());
             response.setSubjects(buildScheduleResponse(exam.getExamId(), tenantId));
-            response.setCreatedBy(teacherName(exam.getCreatedBy()));
-            response.setUpdatedBy(teacherName(exam.getUpdatedBy()));
+            response.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
+            response.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
             response.setUpdatedDate(exam.getUpdatedDate());
             result.add(response);
         }
@@ -166,8 +149,8 @@ public class ExamServiceImpl implements ExamService {
         response.setPassMarks(exam.getPassMarks());
         response.setExamDate(exam.getExamDate());
         response.setSubjects(buildScheduleResponse(exam.getExamId(), tenantId));
-        response.setCreatedBy(teacherName(exam.getCreatedBy()));
-        response.setUpdatedBy(teacherName(exam.getUpdatedBy()));
+        response.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
+        response.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
         response.setUpdatedDate(exam.getUpdatedDate());
         return response;
     }
@@ -175,7 +158,7 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public boolean saveExam(Integer tenantId, Integer loginTeacherId, ExamRequest request) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         Exam exam;
         if (request.getExamId() != null) {
             exam = examRepository.findById(request.getExamId())
@@ -298,12 +281,12 @@ public class ExamServiceImpl implements ExamService {
         for (StudentClass sc : roster) {
             ExamMarksEntryResponse.StudentRow row = new ExamMarksEntryResponse.StudentRow();
             row.setStudentId(sc.getStudentId());
-            row.setStudentName(studentName(sc.getStudentId()));
+            row.setStudentName(commonHelper.studentName(sc.getStudentId()));
             row.setRollNo(sc.getRollNo());
             row.setMarks(marksMap.getOrDefault(sc.getStudentId(), new HashMap<>()));
             rows.add(row);
         }
-        rows.sort(Comparator.comparing(r -> rollNoKey(r.getRollNo())));
+        rows.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
 
         ExamMarksEntryResponse response = new ExamMarksEntryResponse();
         response.setExamId(exam.getExamId());
@@ -399,7 +382,7 @@ public class ExamServiceImpl implements ExamService {
 
         ReportCardResponse response = new ReportCardResponse();
         response.setStudentId(studentId);
-        response.setStudentName(studentName(studentId));
+        response.setStudentName(commonHelper.studentName(studentId));
         StudentClass sc = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId).orElse(null);
         response.setRollNo(sc != null ? sc.getRollNo() : null);
         response.setExamName(exam.getExamName());
@@ -412,16 +395,5 @@ public class ExamServiceImpl implements ExamService {
         response.setOverallGrade(gradeFor(percentage));
         response.setResult(overallPass ? "PASS" : "FAIL");
         return response;
-    }
-
-    private String rollNoKey(String rollNo) {
-        if (rollNo == null || rollNo.isBlank()) {
-            return "zzzzzzzzzz";
-        }
-        String trimmed = rollNo.trim();
-        if (trimmed.matches("\\d+")) {
-            return String.format("%010d", Long.parseLong(trimmed));
-        }
-        return trimmed;
     }
 }

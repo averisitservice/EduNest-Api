@@ -4,12 +4,10 @@ import com.edunest.dto.homework.HomeworkRequest;
 import com.edunest.dto.homework.HomeworkResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Homework;
-import com.edunest.entity.Subject;
-import com.edunest.entity.Teacher;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.HomeworkRepository;
-import com.edunest.repository.SubjectRepository;
 import com.edunest.repository.TeacherRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,41 +24,17 @@ public class HomeworkServiceImpl implements HomeworkService {
     HomeworkRepository homeworkRepository;
 
     @Autowired
-    SubjectRepository subjectRepository;
-
-    @Autowired
     TeacherRepository teacherRepository;
 
     @Autowired
     AcademicYearRepository academicYearRepository;
 
-    private AcademicYear getCurrentYear(Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
-        return currentYear;
-    }
-
-    private String teacherName(Integer teacherId) {
-        if (teacherId == null) {
-            return null;
-        }
-        Teacher teacher = teacherRepository.findById(teacherId).orElse(null);
-        return teacher != null ? teacher.getTeacherName() : null;
-    }
-
-    private String subjectName(Integer subjectId) {
-        if (subjectId == null) {
-            return null;
-        }
-        Subject subject = subjectRepository.findById(subjectId).orElse(null);
-        return subject != null ? subject.getSubjectName() : null;
-    }
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId, String type) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         String typeFilter = (type != null) ? type : "";
 
         List<Homework> items = homeworkRepository.findList(tenantId, currentYear.getAcademicYearId(), classId, sectionId, typeFilter);
@@ -73,14 +47,14 @@ public class HomeworkServiceImpl implements HomeworkService {
             response.setClassId(h.getClassId());
             response.setSectionId(h.getSectionId());
             response.setSubjectId(h.getSubjectId());
-            response.setSubjectName(subjectName(h.getSubjectId()));
+            response.setSubjectName(commonHelper.subjectName(h.getSubjectId()));
             response.setType(h.getType());
             response.setTitle(h.getTitle());
             response.setDescription(h.getDescription());
             response.setDueDate(h.getDueDate());
             response.setAttachmentUrl(h.getAttachmentUrl());
-            response.setCreatedBy(teacherName(h.getCreatedBy()));
-            response.setUpdatedBy(teacherName(h.getUpdatedBy()));
+            response.setCreatedBy(commonHelper.teacherName(h.getCreatedBy()));
+            response.setUpdatedBy(commonHelper.teacherName(h.getUpdatedBy()));
             response.setUpdatedDate(h.getUpdatedDate());
             result.add(response);
         }
@@ -90,7 +64,7 @@ public class HomeworkServiceImpl implements HomeworkService {
     @Override
     @Transactional
     public boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (request.getClassId() == null) {
             throw new CustomException("classId", "Class is required");

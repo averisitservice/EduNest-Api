@@ -5,9 +5,9 @@ import com.edunest.dto.attendance.AttendanceSaveRequest;
 import com.edunest.dto.attendance.AttendanceSummaryResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Attendance;
-import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.AttendanceRepository;
 import com.edunest.repository.StudentClassRepository;
@@ -38,22 +38,12 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Autowired
     AcademicYearRepository academicYearRepository;
 
-    private AcademicYear getCurrentYear(Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
-        return currentYear;
-    }
-
-    private String studentName(Integer studentId) {
-        Student student = studentRepository.findById(studentId).orElse(null);
-        return student != null ? student.getFirstName() + " " + student.getLastName() : null;
-    }
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<StudentClass> roster = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
 
@@ -76,14 +66,14 @@ public class AttendanceServiceImpl implements AttendanceService {
             Attendance a = existing.get(sc.getStudentId());
             AttendanceRosterResponse.StudentRow row = new AttendanceRosterResponse.StudentRow();
             row.setStudentId(sc.getStudentId());
-            row.setStudentName(studentName(sc.getStudentId()));
+            row.setStudentName(commonHelper.studentName(sc.getStudentId()));
             row.setRollNo(sc.getRollNo());
             row.setStatus(a != null ? a.getStatus() : null);
             row.setRemarks(a != null ? a.getRemarks() : null);
             rows.add(row);
         }
 
-        rows.sort(Comparator.comparing(r -> rollNoKey(r.getRollNo())));
+        rows.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
 
         AttendanceRosterResponse response = new AttendanceRosterResponse();
         response.setAttendanceDate(date);
@@ -94,7 +84,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional
     public boolean saveAttendance(Integer tenantId, Integer markedBy, AttendanceSaveRequest request) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (request.getRecords() == null) {
             return true;
@@ -126,7 +116,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public List<AttendanceSummaryResponse> getSummary(Integer tenantId, Integer classId, Integer sectionId, LocalDate fromDate, LocalDate toDate) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<StudentClass> roster = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
 
@@ -160,7 +150,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
             AttendanceSummaryResponse summary = new AttendanceSummaryResponse();
             summary.setStudentId(sc.getStudentId());
-            summary.setStudentName(studentName(sc.getStudentId()));
+            summary.setStudentName(commonHelper.studentName(sc.getStudentId()));
             summary.setRollNo(sc.getRollNo());
             summary.setPresentCount(present);
             summary.setAbsentCount(absent);
@@ -171,19 +161,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             result.add(summary);
         }
 
-        result.sort(Comparator.comparing(r -> rollNoKey(r.getRollNo())));
+        result.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
         return result;
-    }
-
-    // Sort roll numbers numerically when possible, else lexicographically; nulls last.
-    private String rollNoKey(String rollNo) {
-        if (rollNo == null || rollNo.isBlank()) {
-            return "zzzzzzzzzz";
-        }
-        String trimmed = rollNo.trim();
-        if (trimmed.matches("\\d+")) {
-            return String.format("%010d", Long.parseLong(trimmed));
-        }
-        return trimmed;
     }
 }

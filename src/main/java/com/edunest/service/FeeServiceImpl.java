@@ -10,6 +10,7 @@ import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
 import com.edunest.entity.Teacher;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.ClassFeeRepository;
 import com.edunest.repository.FeePaymentRepository;
@@ -49,17 +50,12 @@ public class FeeServiceImpl implements FeeService {
     @Autowired
     AcademicYearRepository academicYearRepository;
 
-    private AcademicYear getCurrentYear(Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
-        return currentYear;
-    }
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(classId, currentYear.getAcademicYearId(), tenantId);
         BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee() : BigDecimal.ZERO;
@@ -100,14 +96,14 @@ public class FeeServiceImpl implements FeeService {
             result.add(response);
         }
 
-        result.sort(Comparator.comparing(r -> rollNoKey(r.getRollNo())));
+        result.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
         return result;
     }
 
     @Override
     @Transactional
     public String collectPayment(Integer tenantId, Integer collectedBy, FeePaymentRequest request) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (request.getStudentId() == null) {
             throw new CustomException("studentId", "Student is required");
@@ -141,7 +137,7 @@ public class FeeServiceImpl implements FeeService {
 
     @Override
     public List<FeePaymentResponse> getPaymentHistory(Integer tenantId, Integer studentId) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<FeePayment> payments = feePaymentRepository
                 .findByTenantIdAndStudentIdAndAcademicYearIdOrderByPaymentDateDescFeePaymentIdDesc(
@@ -168,16 +164,5 @@ public class FeeServiceImpl implements FeeService {
             result.add(response);
         }
         return result;
-    }
-
-    private String rollNoKey(String rollNo) {
-        if (rollNo == null || rollNo.isBlank()) {
-            return "zzzzzzzzzz";
-        }
-        String trimmed = rollNo.trim();
-        if (trimmed.matches("\\d+")) {
-            return String.format("%010d", Long.parseLong(trimmed));
-        }
-        return trimmed;
     }
 }

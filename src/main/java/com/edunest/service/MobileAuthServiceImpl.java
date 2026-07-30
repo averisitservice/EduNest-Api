@@ -14,6 +14,7 @@ import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
 import com.edunest.entity.Tenant;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.helper.CryptoHelper;
 import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.ClassSectionRepository;
@@ -21,7 +22,6 @@ import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
 import com.edunest.repository.TenantRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -121,15 +121,10 @@ public class MobileAuthServiceImpl implements MobileAuthService {
             throw new CustomException("email", "No account found with this email");
         }
 
-        RandomStringGenerator generator = new RandomStringGenerator.Builder()
-                .withinRange('0', 'z')
-                .filteredBy(Character::isLetterOrDigit)
-                .build();
-
         List<StudentResetCredential> accounts = new ArrayList<>();
 
         for (Student student : students) {
-            String newPassword = generator.generate(8);
+            String newPassword = CommonHelper.generateRandomPassword();
             String hashKey = CryptoHelper.getHashKey();
 
             student.setHashkey(hashKey);

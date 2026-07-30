@@ -6,11 +6,11 @@ import com.edunest.dto.teacher.TeacherResponse;
 import com.edunest.entity.Teacher;
 import com.edunest.entity.Tenant;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.helper.CryptoHelper;
 import com.edunest.repository.TeacherRepository;
 import com.edunest.repository.TenantRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -122,12 +122,7 @@ public class AuthServiceImpl implements AuthService {
             throw new CustomException("Teacher", "Account is inactive. Please contact admin");
         }
 
-        RandomStringGenerator generator = new RandomStringGenerator.Builder()
-                .withinRange('0', 'z')
-                .filteredBy(Character::isLetterOrDigit)
-                .build();
-
-        String newPassword = generator.generate(8);
+        String newPassword = CommonHelper.generateRandomPassword();
 
         String hashKey = CryptoHelper.getHashKey();
 

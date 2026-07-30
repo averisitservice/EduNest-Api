@@ -5,8 +5,8 @@ import com.edunest.dto.event.EventResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.ClassMaster;
 import com.edunest.entity.Event;
-import com.edunest.entity.Teacher;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.EventRepository;
@@ -35,23 +35,12 @@ public class EventServiceImpl implements EventService {
     @Autowired
     AcademicYearRepository academicYearRepository;
 
-    private AcademicYear getCurrentYear(Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
-        return currentYear;
-    }
-
-    private String teacherName(Integer teacherId) {
-        if (teacherId == null) return null;
-        Teacher teacher = teacherRepository.findById(teacherId).orElse(null);
-        return teacher != null ? teacher.getTeacherName() : null;
-    }
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public List<EventResponse> getEvents(Integer tenantId, LocalDate fromDate, LocalDate toDate) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<Event> events;
         if (fromDate != null && toDate != null) {
@@ -87,8 +76,8 @@ public class EventServiceImpl implements EventService {
             response.setClassId(e.getClassId());
             response.setClassName(className);
             response.setColor(e.getColor());
-            response.setCreatedBy(teacherName(e.getCreatedBy()));
-            response.setUpdatedBy(teacherName(e.getUpdatedBy()));
+            response.setCreatedBy(commonHelper.teacherName(e.getCreatedBy()));
+            response.setUpdatedBy(commonHelper.teacherName(e.getUpdatedBy()));
             response.setUpdatedDate(e.getUpdatedDate());
             result.add(response);
         }
@@ -98,7 +87,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public boolean saveEvent(Integer tenantId, Integer loginTeacherId, EventRequest request) {
-        AcademicYear currentYear = getCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (request.getTitle() == null || request.getTitle().isBlank()) {
             throw new CustomException("title", "Title is required");
