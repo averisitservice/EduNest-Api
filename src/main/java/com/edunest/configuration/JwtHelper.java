@@ -27,6 +27,9 @@ public class JwtHelper {
     @Value("${security.jwt.refresh-expiration-time}")
     private long refreshTokenExpiration;
 
+    @Value("${security.jwt.student-expiration-time}")
+    private long studentTokenExpiration;
+
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
@@ -72,7 +75,7 @@ public class JwtHelper {
     public String generateStudentAccessToken(Student student) {
 
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + accessTokenExpiration * 1000);
+        Date expiry = new Date(now.getTime() + studentTokenExpiration * 1000);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("studentId", student.getStudentId());
@@ -91,7 +94,7 @@ public class JwtHelper {
     public String generateStudentRefreshToken(Student student) {
 
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + refreshTokenExpiration * 1000);
+        Date expiry = new Date(now.getTime() + studentTokenExpiration * 1000);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("studentId", student.getStudentId());
