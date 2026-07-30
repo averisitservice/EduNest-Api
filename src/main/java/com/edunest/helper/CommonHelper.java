@@ -8,11 +8,13 @@ import com.edunest.repository.SubjectRepository;
 import com.edunest.repository.TeacherRepository;
 import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class CommonHelper {
 
     @Autowired
@@ -36,11 +38,17 @@ public class CommonHelper {
     }
 
     public String teacherName(Integer teacherId) {
+        if (teacherId == null) {
+            return null;
+        }
         Teacher teacher = teacherRepository.findById(teacherId).orElse(null);
         return teacher != null ? teacher.getTeacherName() : null;
     }
 
     public String studentName(Integer studentId) {
+        if (studentId == null) {
+            return null;
+        }
         Student student = studentRepository.findById(studentId).orElse(null);
         return student != null ? student.getFirstName() + " " + student.getLastName() : null;
     }

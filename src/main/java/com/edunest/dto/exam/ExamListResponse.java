@@ -18,6 +18,8 @@ public class ExamListResponse {
     private Integer maxMarks;
     private Integer passMarks;
     private LocalDate examDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private List<ExamScheduleResponse> subjects;
     private String createdBy;
     private String updatedBy;
