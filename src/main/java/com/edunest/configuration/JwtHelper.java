@@ -181,22 +181,4 @@ public class JwtHelper {
         return claims.get("tenantId", Integer.class);
     }
 
-    public boolean isTokenExpired(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(signingKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
-        return claims.getExpiration().before(new Date());
-    }
-
-    public boolean validateAccessToken(String token) {
-        Jwts.parser()
-                .verifyWith(signingKey())
-                .build()
-                .parseSignedClaims(token);
-
-        return true;
-    }
 }
