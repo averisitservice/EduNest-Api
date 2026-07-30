@@ -17,14 +17,13 @@ import com.edunest.entity.Homework;
 import com.edunest.entity.Note;
 import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
-import com.edunest.entity.Subject;
 import com.edunest.entity.Teacher;
 import com.edunest.entity.TeacherClass;
 import com.edunest.entity.TimeSlot;
 import com.edunest.entity.Timetable;
 import com.edunest.entity.WorkingDay;
 import com.edunest.error.CustomException;
-import com.edunest.repository.AcademicYearRepository;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AttendanceRepository;
 import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.ClassSectionRepository;
@@ -34,7 +33,6 @@ import com.edunest.repository.HomeworkRepository;
 import com.edunest.repository.NoteRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
-import com.edunest.repository.SubjectRepository;
 import com.edunest.repository.TeacherClassRepository;
 import com.edunest.repository.TeacherRepository;
 import com.edunest.repository.TimeSlotRepository;
@@ -75,9 +73,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     AttendanceRepository attendanceRepository;
 
     @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     WorkingDayRepository workingDayRepository;
 
     @Autowired
@@ -85,9 +80,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Autowired
     TimetableRepository timetableRepository;
-
-    @Autowired
-    SubjectRepository subjectRepository;
 
     @Autowired
     ExamRepository examRepository;
@@ -101,9 +93,12 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     @Autowired
     NoteRepository noteRepository;
 
+    @Autowired
+    CommonHelper commonHelper;
+
     @Override
     public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId) {
-        AcademicYear currentYear = requireCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
         List<Homework> rows = homeworkRepository.findForStudent(
@@ -126,7 +121,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Override
     public List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId) {
-        AcademicYear currentYear = requireCurrentYear(tenantId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
         List<Note> rows = noteRepository.findForStudent(
@@ -202,14 +197,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return response;
     }
 
-    private AcademicYear requireCurrentYear(Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
-        return currentYear;
-    }
-
     private StudentClass resolveStudentClass(Integer studentId, Integer tenantId) {
         return studentClassRepository
                 .findByStudentIdAndTenantId(studentId, tenantId)
@@ -218,10 +205,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Override
     public StudentExamsResponse getExams(Integer studentId, Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         StudentClass studentClass = studentClassRepository
                 .findByStudentIdAndTenantId(studentId, tenantId)
@@ -274,10 +258,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     @Override
     public StudentTimetableResponse getTimetable(Integer studentId, Integer tenantId, String day) {
 
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         StudentClass studentClass = studentClassRepository
                 .findByStudentIdAndTenantId(studentId, tenantId)
@@ -371,20 +352,14 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         if (subjectId == null) {
             return null;
         }
-        return cache.computeIfAbsent(subjectId, id -> {
-            Subject subject = subjectRepository.findById(id).orElse(null);
-            return subject != null ? subject.getSubjectName() : null;
-        });
+        return cache.computeIfAbsent(subjectId, commonHelper::subjectName);
     }
 
     private String resolveTeacherName(Integer teacherId, Map<Integer, String> cache) {
         if (teacherId == null) {
             return null;
         }
-        return cache.computeIfAbsent(teacherId, id -> {
-            Teacher teacher = teacherRepository.findById(id).orElse(null);
-            return teacher != null ? teacher.getTeacherName() : null;
-        });
+        return cache.computeIfAbsent(teacherId, commonHelper::teacherName);
     }
 
     @Override
@@ -397,10 +372,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             throw new CustomException("student", "Student not found");
         }
 
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         Integer yearId = currentYear.getAcademicYearId();
 
         StudentHomeResponse response = new StudentHomeResponse();
