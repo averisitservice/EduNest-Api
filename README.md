@@ -1,6 +1,6 @@
 # EduNest Backend
 
-Spring Boot REST API powering EduNest — a multi-tenant school/institute management system covering students, teachers, classes, and timetables.
+Spring Boot REST API powering EduNest — a multi-tenant school/institute management system covering students, teachers, classes, attendance, exams, fees, homework, announcements, events, and timetables. Serves the React admin panel (`EduNest-Web`, teachers) and the Flutter mobile app (`EduNest-App`, students).
 
 ## Tech Stack
 
@@ -10,6 +10,7 @@ Spring Boot REST API powering EduNest — a multi-tenant school/institute manage
 - **PostgreSQL** — primary database (MySQL connector also on the classpath)
 - **Spring Security** — stateless auth via a custom JWT filter
 - **JJWT 0.12.6** — JWT issuing/parsing
+- **Razorpay Java SDK** — payment order creation/verification (`RazorpayService`, not yet wired to a controller)
 - **Lombok** — boilerplate reduction
 - **Gradle** — build tool
 
@@ -21,13 +22,19 @@ src/main/java/com/edunest/
 ├── common/                     # Shared response wrapper (ResponseObject)
 ├── configuration/              # JWT filter/helper, Spring Security config
 ├── constant/                   # App-wide constants
-├── controller/                 # REST controllers (auth, student, teacher, class, timetable, lookup)
+├── controller/                 # REST controllers (auth, student, teacher, class, timetable, lookup,
+│                                #   announcement, attendance, dashboard, event, exam, fee, homework,
+│                                #   mobile auth/student/school)
 ├── dto/                        # Request/response DTOs, grouped by feature
 ├── entity/                     # JPA entities
 ├── error/                      # Custom exception + global exception handler
-├── helper/                     # Utility helpers (e.g. CryptoHelper)
+├── helper/                     # Utility helpers (CryptoHelper, CommonHelper)
 ├── repository/                 # Spring Data JPA repositories
 └── service/                    # Service interfaces + implementations
+
+src/main/resources/
+├── application.properties      # Runtime configuration
+└── templates/email/            # HTML email templates (password reset, student password reset)
 ```
 
 The app is multi-tenant: most authenticated endpoints derive a `tenantId` (and often the acting `teacherId`) from claims embedded in the JWT via `JwtHelper`, rather than from request parameters.
@@ -37,6 +44,7 @@ The app is multi-tenant: most authenticated endpoints derive a `tenantId` (and o
 - JDK 21
 - PostgreSQL instance with a database named `EduNest`
 - (Optional) Gmail account with an app password if you need email sending to work
+- (Optional) Razorpay `key_id` / `key_secret` if you plan to wire up `RazorpayService`
 
 ## Configuration
 
@@ -52,6 +60,7 @@ Runtime config lives in `src/main/resources/application.properties`. Key propert
 | `security.jwt.expiration-time` | Access token TTL (ms) |
 | `security.jwt.refresh-expiration-time` | Refresh/session TTL (s) |
 | `APP_KEY` / `APP_IV` | Symmetric encryption key/IV used by `CryptoHelper` |
+| `razorpay.key-id` / `razorpay.key-secret` | Razorpay API credentials used by `RazorpayService` |
 
 > **Security note:** `application.properties` currently contains real credentials and is tracked by git (not in `.gitignore`). Move these to environment variables or a local, git-ignored properties file before pushing/sharing the repo.
 
@@ -79,12 +88,19 @@ Build a jar:
 ./gradlew build
 ```
 
+Fast compile check (no test run):
+
+```bash
+./gradlew compileJava
+```
+
 ## Authentication
 
 - `POST /auth/login` and `/lookup/role` (via `lookup/role`) are the only public endpoints; everything else requires a valid JWT.
 - Send the token as `Authorization: Bearer <token>` on every subsequent request.
 - `JwtAuthenticationFilter` validates the token per-request; controllers pull `tenantId` / `teacherId` out of it via `JwtHelper`.
 - `POST /auth/renew-session` exchanges a refresh token for a new session.
+- Mobile (student) auth is separate, under `/api/...` (`MobileAuthController`).
 
 ## API Overview
 
@@ -139,10 +155,33 @@ All responses are wrapped in a common `ResponseObject<T>` (`{ success, data, ...
 | GET | `/lookup/classSection` | Class masters with their sections |
 | POST | `/lookup/subject/save` | Create/update a subject |
 
+### Other modules
+
+`AnnouncementController`, `AttendanceController`, `DashboardController`, `EventController`, `ExamController`, `FeeController`, and `HomeworkController` follow the same list/get/save/delete pattern scoped by `tenantId`. `MobileAuthController`, `MobileStudentController`, and `MobileSchoolController` expose the equivalent read-only/self-service views for the student mobile app under `/api/...`.
+
 ## Domain Model (key entities)
 
-`Tenant`, `Role`, `Teacher`, `Student`, `ClassMaster`, `ClassSection`, `ClassSubject`, `ClassFee`, `Subject`, `TeacherClass`, `TeacherSubject`, `StudentClass`, `AcademicYear`, `EmploymentType`, `WorkingDay`, `TimeSlot`, `Timetable`.
+`Tenant`, `Role`, `Teacher`, `Student`, `ClassMaster`, `ClassSection`, `ClassSubject`, `ClassFee`, `Subject`, `TeacherClass`, `TeacherSubject`, `StudentClass`, `AcademicYear`, `EmploymentType`, `WorkingDay`, `TimeSlot`, `Timetable`, `Announcement`, `Attendance`, `Event`, `Exam`, `ExamMark`, `ExamSchedule`, `Homework`, `FeePayment`, `RazorpayOrder`, `RazorpayTransaction`, `PaymentWebhookLog`.
 
 ## Error Handling
 
 `CustomException` + `CustomExceptionHandler` provide centralized error responses; validation/business errors are surfaced as structured `ErrorItem`s within the standard `ResponseObject` envelope.
+
+## Development Guidelines
+
+These conventions apply to all new and edited code in this repository.
+
+### Code style rules
+
+- **Do NOT write comments in Java code.** No line comments (`//`), block comments (`/* */`), or Javadoc (`/** */`). Keep method and variable names descriptive enough that the code explains itself.
+- **Do NOT use `@Builder` (or `@Builder.Default`) on entities or DTOs.** Use `@Getter/@Setter/@NoArgsConstructor/@AllArgsConstructor` and plain field initializers; construct objects with `new` + setters.
+
+### Layout & conventions
+
+- Layers: `controller/` → `service/` (interface + `Impl`) → `repository/` → `entity/`; DTOs in `dto/<module>/`.
+- Every response is wrapped in `ResponseObject<T>` (`{success, errors, data}`).
+- Errors: throw `new CustomException("<param>", "<message>")` → HTTP 400 with `errors[0].msg`.
+- Multi-tenant: extract `tenantId` from the JWT and scope every query by it.
+- **Mobile (student) API lives under `/api/...`** (`MobileAuthController`, `MobileStudentController`, `MobileSchoolController`); web endpoints are unprefixed and authenticate Teachers.
+- `ddl-auto=update`, no migrations — new entity columns must be nullable.
+- Shared, genuinely-duplicated helper logic (e.g. `getCurrentYear`, `teacherName`, `studentName`, `rollNo`, `fullAddress`, `generateRandomPassword`, `generateAdmissionNo`, `generateUsername`, `subjectName`) lives in `helper/CommonHelper`; don't reintroduce per-service copies of logic that already exists there.
