@@ -120,7 +120,9 @@ public class ExamServiceImpl implements ExamService {
             response.setMaxMarks(exam.getMaxMarks());
             response.setPassMarks(exam.getPassMarks());
             response.setExamDate(exam.getExamDate());
-            response.setSubjects(buildScheduleResponse(exam.getExamId(), tenantId));
+            List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
+            response.setSubjects(schedule);
+            applyDateRange(response, schedule);
             response.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
             response.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
             response.setUpdatedDate(exam.getUpdatedDate());
