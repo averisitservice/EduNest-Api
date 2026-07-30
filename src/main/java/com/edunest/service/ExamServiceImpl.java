@@ -6,6 +6,7 @@ import com.edunest.dto.exam.ExamMarksSaveRequest;
 import com.edunest.dto.exam.ExamRequest;
 import com.edunest.dto.exam.ExamScheduleRequest;
 import com.edunest.dto.exam.ExamScheduleResponse;
+import com.edunest.dto.exam.ExamSummaryResponse;
 import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.ClassMaster;
@@ -101,27 +102,24 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
-    public List<ExamListResponse> getExams(Integer tenantId, Integer classId) {
+    public List<ExamSummaryResponse> getExams(Integer tenantId, Integer classId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<Exam> exams = classId != null
                 ? examRepository.findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(tenantId, currentYear.getAcademicYearId(), classId)
                 : examRepository.findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByExamIdDesc(tenantId, currentYear.getAcademicYearId());
 
-        List<ExamListResponse> result = new ArrayList<>();
+        List<ExamSummaryResponse> result = new ArrayList<>();
         for (Exam exam : exams) {
             ClassMaster classMaster = classMasterRepository.findById(exam.getClassId()).orElse(null);
 
-            ExamListResponse response = new ExamListResponse();
+            ExamSummaryResponse response = new ExamSummaryResponse();
             response.setExamId(exam.getExamId());
             response.setClassId(exam.getClassId());
             response.setClassName(classMaster != null ? classMaster.getClassName() : null);
             response.setExamName(exam.getExamName());
-            response.setMaxMarks(exam.getMaxMarks());
-            response.setPassMarks(exam.getPassMarks());
             response.setExamDate(exam.getExamDate());
             List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
-            response.setSubjects(schedule);
             applyDateRange(response, schedule);
             response.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
             response.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
@@ -225,6 +223,14 @@ public class ExamServiceImpl implements ExamService {
     }
 
     private void applyDateRange(ExamListResponse response, List<ExamScheduleResponse> schedule) {
+        if (schedule == null || schedule.isEmpty()) {
+            return;
+        }
+        response.setStartDate(schedule.get(0).getExamDate());
+        response.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
+    }
+
+    private void applyDateRange(ExamSummaryResponse response, List<ExamScheduleResponse> schedule) {
         if (schedule == null || schedule.isEmpty()) {
             return;
         }

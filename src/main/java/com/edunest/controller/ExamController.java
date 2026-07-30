@@ -6,6 +6,7 @@ import com.edunest.dto.exam.ExamListResponse;
 import com.edunest.dto.exam.ExamMarksEntryResponse;
 import com.edunest.dto.exam.ExamMarksSaveRequest;
 import com.edunest.dto.exam.ExamRequest;
+import com.edunest.dto.exam.ExamSummaryResponse;
 import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.service.ExamService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,13 +28,13 @@ public class ExamController {
     JwtHelper jwtHelper;
 
     @GetMapping("/list")
-    public ResponseEntity<ResponseObject<List<ExamListResponse>>> getExams(
+    public ResponseEntity<ResponseObject<List<ExamSummaryResponse>>> getExams(
             HttpServletRequest request, @RequestParam(required = false) Integer classId) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer tenantId = jwtHelper.extractTenantId(token);
 
-        ResponseObject<List<ExamListResponse>> response = new ResponseObject<>();
+        ResponseObject<List<ExamSummaryResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(examService.getExams(tenantId, classId));
         return ResponseEntity.ok(response);

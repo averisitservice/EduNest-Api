@@ -4,13 +4,14 @@ import com.edunest.dto.exam.ExamListResponse;
 import com.edunest.dto.exam.ExamMarksEntryResponse;
 import com.edunest.dto.exam.ExamMarksSaveRequest;
 import com.edunest.dto.exam.ExamRequest;
+import com.edunest.dto.exam.ExamSummaryResponse;
 import com.edunest.dto.exam.ReportCardResponse;
 
 import java.util.List;
 
 public interface ExamService {
 
-    List<ExamListResponse> getExams(Integer tenantId, Integer classId);
+    List<ExamSummaryResponse> getExams(Integer tenantId, Integer classId);
 
     ExamListResponse getExamById(Integer tenantId, Integer examId);
 
