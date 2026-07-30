@@ -45,6 +45,9 @@ dependencies {
 	implementation 'org.springframework.security:spring-security-web'
 	implementation 'org.springframework.security:spring-security-config'
 
+	// Razorpay
+	implementation 'com.razorpay:razorpay-java:1.4.4'
+
 }
 
 tasks.named('test') {
