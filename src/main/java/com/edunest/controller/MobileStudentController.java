@@ -6,6 +6,7 @@ import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
+import com.edunest.dto.mobile.StudentNoteItem;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.service.MobileStudentService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -89,13 +90,13 @@ public class MobileStudentController {
     }
 
     @GetMapping("/notes")
-    public ResponseEntity<ResponseObject<List<StudentHomeworkItem>>> getNotes(HttpServletRequest request) {
+    public ResponseEntity<ResponseObject<List<StudentNoteItem>>> getNotes(HttpServletRequest request) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer studentId = jwtHelper.extractStudentId(token);
         Integer tenantId = jwtHelper.extractTenantId(token);
 
-        ResponseObject<List<StudentHomeworkItem>> response = new ResponseObject<>();
+        ResponseObject<List<StudentNoteItem>> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(mobileStudentService.getNotes(studentId, tenantId));
 

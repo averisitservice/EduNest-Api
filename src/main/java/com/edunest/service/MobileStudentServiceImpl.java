@@ -4,6 +4,7 @@ import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
+import com.edunest.dto.mobile.StudentNoteItem;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Exam;
@@ -11,6 +12,7 @@ import com.edunest.entity.ExamSchedule;
 import com.edunest.entity.ClassMaster;
 import com.edunest.entity.ClassSection;
 import com.edunest.entity.Homework;
+import com.edunest.entity.Note;
 import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
 import com.edunest.entity.Subject;
@@ -27,6 +29,7 @@ import com.edunest.repository.ClassSectionRepository;
 import com.edunest.repository.ExamRepository;
 import com.edunest.repository.ExamScheduleRepository;
 import com.edunest.repository.HomeworkRepository;
+import com.edunest.repository.NoteRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
 import com.edunest.repository.SubjectRepository;
@@ -93,36 +96,19 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     @Autowired
     HomeworkRepository homeworkRepository;
 
+    @Autowired
+    NoteRepository noteRepository;
+
     @Override
     public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId) {
-        return getHomeworkByType(studentId, tenantId, "HOMEWORK");
-    }
-
-    @Override
-    public List<StudentHomeworkItem> getNotes(Integer studentId, Integer tenantId) {
-        return getHomeworkByType(studentId, tenantId, "NOTE");
-    }
-
-    private List<StudentHomeworkItem> getHomeworkByType(Integer studentId, Integer tenantId, String type) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
-
-        StudentClass studentClass = studentClassRepository
-                .findByStudentIdAndTenantId(studentId, tenantId)
-                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
+        AcademicYear currentYear = requireCurrentYear(tenantId);
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
         List<Homework> rows = homeworkRepository.findForStudent(
                 tenantId, currentYear.getAcademicYearId(),
-                studentClass.getClassId(), studentClass.getSectionId(), type);
+                studentClass.getClassId(), studentClass.getSectionId());
 
         Map<Integer, String> subjectNames = new HashMap<>();
-        return toHomeworkItems(rows, subjectNames);
-    }
-
-    private List<StudentHomeworkItem> toHomeworkItems(
-            List<Homework> rows, Map<Integer, String> subjectNames) {
         List<StudentHomeworkItem> items = new ArrayList<>();
         for (Homework h : rows) {
             StudentHomeworkItem item = new StudentHomeworkItem();
@@ -137,6 +123,45 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             items.add(item);
         }
         return items;
+    }
+
+    @Override
+    public List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId) {
+        AcademicYear currentYear = requireCurrentYear(tenantId);
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        List<Note> rows = noteRepository.findForStudent(
+                tenantId, currentYear.getAcademicYearId(),
+                studentClass.getClassId(), studentClass.getSectionId());
+
+        Map<Integer, String> subjectNames = new HashMap<>();
+        List<StudentNoteItem> items = new ArrayList<>();
+        for (Note n : rows) {
+            StudentNoteItem item = new StudentNoteItem();
+            item.setNoteId(n.getNoteId());
+            item.setSubjectId(n.getSubjectId());
+            item.setSubjectName(resolveSubjectName(n.getSubjectId(), subjectNames));
+            item.setTitle(n.getTitle());
+            item.setDescription(n.getDescription());
+            item.setAttachmentUrl(n.getAttachmentUrl());
+            item.setUpdatedDate(n.getUpdatedDate());
+            items.add(item);
+        }
+        return items;
+    }
+
+    private AcademicYear requireCurrentYear(Integer tenantId) {
+        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
+        if (currentYear == null) {
+            throw new CustomException("academicYear", "No active academic year found");
+        }
+        return currentYear;
+    }
+
+    private StudentClass resolveStudentClass(Integer studentId, Integer tenantId) {
+        return studentClassRepository
+                .findByStudentIdAndTenantId(studentId, tenantId)
+                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
     }
 
     @Override

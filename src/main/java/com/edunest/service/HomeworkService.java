@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface HomeworkService {
 
-    List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId, String type);
+    List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId);
 
     boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request);
 

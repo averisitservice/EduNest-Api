@@ -15,7 +15,6 @@ public class HomeworkResponse {
     private Integer sectionId;
     private Integer subjectId;
     private String subjectName;
-    private String type;
     private String title;
     private String description;
     private LocalDate dueDate;

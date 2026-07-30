@@ -4,6 +4,7 @@ import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
+import com.edunest.dto.mobile.StudentNoteItem;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 
 import java.util.List;
@@ -20,5 +21,5 @@ public interface MobileStudentService {
 
     List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId);
 
-    List<StudentHomeworkItem> getNotes(Integer studentId, Integer tenantId);
+    List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId);
 }

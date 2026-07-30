@@ -1,20 +1,17 @@
-package com.edunest.dto.homework;
+package com.edunest.dto.note;
 
 import lombok.*;
-
-import java.time.LocalDate;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class HomeworkRequest {
-    private Integer homeworkId;
+public class NoteRequest {
+    private Integer noteId;
     private Integer classId;
     private Integer sectionId;
     private Integer subjectId;
     private String title;
     private String description;
-    private LocalDate dueDate;
     private String attachmentUrl;
 }

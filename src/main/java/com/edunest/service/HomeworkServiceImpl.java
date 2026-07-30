@@ -33,22 +33,19 @@ public class HomeworkServiceImpl implements HomeworkService {
     CommonHelper commonHelper;
 
     @Override
-    public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId, String type) {
+    public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        String typeFilter = (type != null) ? type : "";
 
-        List<Homework> items = homeworkRepository.findList(tenantId, currentYear.getAcademicYearId(), classId, sectionId, typeFilter);
+        List<Homework> items = homeworkRepository.findList(tenantId, currentYear.getAcademicYearId(), classId, sectionId);
 
         List<HomeworkResponse> result = new ArrayList<>();
-        for (int i = 0; i < items.size(); i++) {
-            Homework h = items.get(i);
+        for (Homework h : items) {
             HomeworkResponse response = new HomeworkResponse();
             response.setHomeworkId(h.getHomeworkId());
             response.setClassId(h.getClassId());
             response.setSectionId(h.getSectionId());
             response.setSubjectId(h.getSubjectId());
             response.setSubjectName(commonHelper.subjectName(h.getSubjectId()));
-            response.setType(h.getType());
             response.setTitle(h.getTitle());
             response.setDescription(h.getDescription());
             response.setDueDate(h.getDueDate());
@@ -88,7 +85,6 @@ public class HomeworkServiceImpl implements HomeworkService {
         homework.setClassId(request.getClassId());
         homework.setSectionId(request.getSectionId());
         homework.setSubjectId(request.getSubjectId());
-        homework.setType(request.getType() != null ? request.getType() : "HOMEWORK");
         homework.setTitle(request.getTitle());
         homework.setDescription(request.getDescription());
         homework.setDueDate(request.getDueDate());

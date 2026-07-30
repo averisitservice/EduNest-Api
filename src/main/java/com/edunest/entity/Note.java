@@ -4,21 +4,20 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "homework", schema = "school")
+@Table(name = "note", schema = "school")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Homework {
+public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "homework_id")
-    private Integer homeworkId;
+    @Column(name = "note_id")
+    private Integer noteId;
 
     @Column(name = "tenant_id", nullable = false)
     private Integer tenantId;
@@ -40,9 +39,6 @@ public class Homework {
 
     @Column(name = "description", length = 2000)
     private String description;
-
-    @Column(name = "due_date")
-    private LocalDate dueDate;
 
     @Column(name = "attachment_url", length = 500)
     private String attachmentUrl;
