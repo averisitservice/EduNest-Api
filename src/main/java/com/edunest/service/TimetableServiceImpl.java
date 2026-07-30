@@ -6,6 +6,7 @@ import com.edunest.dto.timeTable.TimetableResponse;
 import com.edunest.dto.timeTable.WorkingDayRequest;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class TimetableServiceImpl implements TimetableService {
     TeacherRepository teacherRepository;
 
     @Autowired
-    AcademicYearRepository academicYearRepository;
+    CommonHelper commonHelper;
 
     @Override
     @Transactional
@@ -83,10 +84,7 @@ public class TimetableServiceImpl implements TimetableService {
 
     @Override
     public TimetableResponse getTimetable(Integer tenantId, Integer classId, Integer sectionId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<WorkingDay> workingDays = workingDayRepository.findByTenantIdAndIsActiveTrueOrderByDayOrder(tenantId);
         List<String> dayNames = new ArrayList<>();
@@ -144,10 +142,7 @@ public class TimetableServiceImpl implements TimetableService {
     @Transactional
     public boolean saveTimetableCell(Integer tenantId, TimetableRequest request) {
 
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (request.getTeacherId() != null) {
             TimeSlot requestedSlot = timeSlotRepository.findById(request.getTimeSlotId())
@@ -191,10 +186,7 @@ public class TimetableServiceImpl implements TimetableService {
     @Override
     public TimetableResponse getTeacherTimetable(Integer tenantId, Integer teacherId) {
 
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<WorkingDay> workingDays = workingDayRepository.findByTenantIdAndIsActiveTrueOrderByDayOrder(tenantId);
         List<String> dayNames = new ArrayList<>();

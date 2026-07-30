@@ -4,6 +4,7 @@ import com.edunest.dto.classes.ClassListResponse;
 import com.edunest.dto.classes.ClassRequest;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,9 @@ public class ClassServiceImpl implements ClassService {
 
     @Autowired
     AcademicYearRepository academicYearRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public List<ClassListResponse> getClassList(Integer tenantId) {
@@ -116,10 +120,7 @@ public class ClassServiceImpl implements ClassService {
         boolean isEdit = (classId != null);
         ClassMaster classMaster;
 
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found. Please create one first.");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         Integer academicYearId = currentYear.getAcademicYearId();
 
         if (isEdit) {

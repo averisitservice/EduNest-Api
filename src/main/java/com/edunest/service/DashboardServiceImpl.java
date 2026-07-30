@@ -5,7 +5,7 @@ import com.edunest.dto.dashboard.DashboardSummaryResponse.AttendanceToday;
 import com.edunest.dto.dashboard.DashboardSummaryResponse.LatestAnnouncement;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Announcement;
-import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,14 +37,11 @@ public class DashboardServiceImpl implements DashboardService {
     AnnouncementRepository announcementRepository;
 
     @Autowired
-    AcademicYearRepository academicYearRepository;
+    CommonHelper commonHelper;
 
     @Override
     public DashboardSummaryResponse getSummary(Integer tenantId) {
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         Integer yearId = currentYear.getAcademicYearId();
 
         DashboardSummaryResponse response = new DashboardSummaryResponse();

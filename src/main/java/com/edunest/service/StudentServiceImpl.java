@@ -37,9 +37,6 @@ public class StudentServiceImpl implements StudentService {
     ClassMasterRepository classMasterRepository;
 
     @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     TeacherRepository teacherRepository;
 
     @Autowired
@@ -101,13 +98,7 @@ public class StudentServiceImpl implements StudentService {
             rollNo = studentClass.getRollNo();
         }
 
-        String updatedByName = null;
-        if (student.getUpdatedBy() != null) {
-            Teacher updatedByTeacher = teacherRepository.findById(student.getUpdatedBy()).orElse(null);
-            if (updatedByTeacher != null) {
-                updatedByName = updatedByTeacher.getTeacherName();
-            }
-        }
+        String updatedByName = commonHelper.teacherName(student.getUpdatedBy());
 
         StudentListResponse response = new StudentListResponse();
         response.setStudentId(student.getStudentId());
@@ -174,10 +165,7 @@ public class StudentServiceImpl implements StudentService {
         boolean isEdit = (request.getStudentId() != null);
         Student student;
 
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        if (currentYear == null) {
-            throw new CustomException("academicYear", "No active academic year found");
-        }
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (isEdit) {
             student = studentRepository.findById(request.getStudentId()).orElseThrow(() -> new CustomException("studentId", "Student not found"));

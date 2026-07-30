@@ -8,6 +8,7 @@ import com.edunest.entity.Teacher;
 import com.edunest.entity.TeacherClass;
 import com.edunest.entity.TeacherSubject;
 import com.edunest.error.CustomException;
+import com.edunest.helper.CommonHelper;
 import com.edunest.helper.CryptoHelper;
 import com.edunest.repository.TeacherClassRepository;
 import com.edunest.repository.TeacherRepository;
@@ -32,17 +33,16 @@ public class TeacherServiceImpl implements TeacherService {
     @Autowired
     TeacherSubjectRepository teacherSubjectRepository;
 
+    @Autowired
+    CommonHelper commonHelper;
+
     @Override
     public List<TeacherListResponse> getTeacherList(Integer tenantId, Integer teacherId) {
         List<Teacher> teachers = teacherRepository.findByTenantIdAndIsActiveTrueAndTeacherIdNot(tenantId, teacherId);
         List<TeacherListResponse> responseList = new ArrayList<>();
 
         for (Teacher teacher : teachers) {
-            String updatedByName = null;
-            Teacher updatedByTeacher = teacherRepository.findById(teacher.getUpdatedBy()).orElse(null);
-            if (updatedByTeacher != null) {
-                updatedByName = updatedByTeacher.getTeacherName();
-            }
+            String updatedByName = commonHelper.teacherName(teacher.getUpdatedBy());
             TeacherListResponse response = new TeacherListResponse();
             response.setTeacherId(teacher.getTeacherId());
             response.setRoleId(teacher.getRoleId());
