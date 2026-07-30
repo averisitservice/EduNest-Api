@@ -22,16 +22,21 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    private void sendResetEmail(String toEmail, String html) throws Exception {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+
+        helper.setFrom(fromEmail);
+        helper.setTo(toEmail);
+        helper.setSubject("EduNest - Your Password Has Been Reset");
+        helper.setText(html, true);
+
+        mailSender.send(message);
+    }
+
     @Override
     public void sendPasswordResetEmail(String toEmail, String teacherName, String newPassword) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("EduNest - Your Password Has Been Reset");
-
             String displayName = (teacherName != null && !teacherName.isBlank()) ? teacherName : "Teacher";
             String html =
                     "<p>Dear <b>" + displayName + "</b>,</p>" +
@@ -41,9 +46,7 @@ public class EmailServiceImpl implements EmailService {
                     "<p>If you did not request this change, please contact your administrator immediately.</p>" +
                     "<p>Regards,<br>EduNest Team</p>";
 
-            helper.setText(html, true);
-
-            mailSender.send(message);
+            sendResetEmail(toEmail, html);
             log.info("Password reset email sent to {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}", toEmail, e);
@@ -54,13 +57,6 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendStudentPasswordResetEmail(String toEmail, List<StudentResetCredential> accounts) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("EduNest - Your Password Has Been Reset");
-
             StringBuilder html = new StringBuilder();
             html.append("<p>Dear Parent/Student,</p>");
             html.append("<p>The password for the student account(s) registered with this email address ")
@@ -93,9 +89,7 @@ public class EmailServiceImpl implements EmailService {
             html.append("<p>If you did not request this change, please contact your school immediately.</p>");
             html.append("<p>Regards,<br>EduNest Team</p>");
 
-            helper.setText(html.toString(), true);
-
-            mailSender.send(message);
+            sendResetEmail(toEmail, html.toString());
             log.info("Student password reset email sent to {} for {} account(s)", toEmail, accounts.size());
         } catch (Exception e) {
             log.error("Failed to send student password reset email to {}", toEmail, e);
