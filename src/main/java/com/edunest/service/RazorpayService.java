@@ -15,4 +15,8 @@ public interface RazorpayService {
                                            String razorpaySignature, String status, String failureReason);
 
     void saveWebhookPayload(String payRequestId, String paymentJson);
+
+    boolean verifyAndRecordPayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature);
+
+    String getKeyId();
 }

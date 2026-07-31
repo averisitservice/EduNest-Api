@@ -130,4 +130,24 @@ public class RazorpayServiceImpl implements RazorpayService {
         log.setPaymentJson(paymentJson);
         paymentWebhookLogRepository.save(log);
     }
+
+    @Override
+    @Transactional
+    public boolean verifyAndRecordPayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature) {
+        RazorpayOrder razorpayOrder = razorpayOrderRepository.findById(razorpayOrderId)
+                .orElseThrow(() -> new CustomException("razorpayOrderId", "Razorpay order not found"));
+
+        boolean isValid = verifySignature(razorpayOrder.getRazorpayOrderRef(), razorpayPaymentId, razorpaySignature);
+
+        recordTransaction(razorpayOrderId, razorpayPaymentId, razorpaySignature,
+                isValid ? "PAID" : "FAILED",
+                isValid ? null : "Signature verification failed");
+
+        return isValid;
+    }
+
+    @Override
+    public String getKeyId() {
+        return keyId;
+    }
 }
