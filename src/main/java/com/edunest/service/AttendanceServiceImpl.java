@@ -1,27 +1,21 @@
 package com.edunest.service;
 
+import com.edunest.constant.Constant;
 import com.edunest.dto.attendance.AttendanceRosterResponse;
 import com.edunest.dto.attendance.AttendanceSaveRequest;
 import com.edunest.dto.attendance.AttendanceSummaryResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Attendance;
 import com.edunest.entity.StudentClass;
-import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.AttendanceRepository;
 import com.edunest.repository.StudentClassRepository;
-import com.edunest.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class AttendanceServiceImpl implements AttendanceService {
@@ -33,52 +27,46 @@ public class AttendanceServiceImpl implements AttendanceService {
     StudentClassRepository studentClassRepository;
 
     @Autowired
-    StudentRepository studentRepository;
-
-    @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     CommonHelper commonHelper;
 
     @Override
     public AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<StudentClass> roster = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
 
         List<Integer> studentIds = new ArrayList<>();
-        for (StudentClass sc : roster) {
-            studentIds.add(sc.getStudentId());
+        for (StudentClass studentClass : studentClasses) {
+            studentIds.add(studentClass.getStudentId());
         }
 
         Map<Integer, Attendance> existing = new HashMap<>();
         if (!studentIds.isEmpty()) {
             List<Attendance> marked = attendanceRepository.findByTenantIdAndAcademicYearIdAndAttendanceDateAndStudentIdIn(
                     tenantId, currentYear.getAcademicYearId(), date, studentIds);
-            for (Attendance a : marked) {
-                existing.put(a.getStudentId(), a);
+            for (Attendance attendance : marked) {
+                existing.put(attendance.getStudentId(), attendance);
             }
         }
 
         List<AttendanceRosterResponse.StudentRow> rows = new ArrayList<>();
-        for (StudentClass sc : roster) {
-            Attendance a = existing.get(sc.getStudentId());
+        for (StudentClass studentClass : studentClasses) {
+            Attendance attendance = existing.get(studentClass.getStudentId());
             AttendanceRosterResponse.StudentRow row = new AttendanceRosterResponse.StudentRow();
-            row.setStudentId(sc.getStudentId());
-            row.setStudentName(commonHelper.studentName(sc.getStudentId()));
-            row.setRollNo(sc.getRollNo());
-            row.setStatus(a != null ? a.getStatus() : null);
-            row.setRemarks(a != null ? a.getRemarks() : null);
+            row.setStudentId(studentClass.getStudentId());
+            row.setStudentName(commonHelper.studentName(studentClass.getStudentId()));
+            row.setRollNo(studentClass.getRollNo());
+            row.setStatus(attendance != null ? attendance.getStatus() : null);
+            row.setRemarks(attendance != null ? attendance.getRemarks() : null);
             rows.add(row);
         }
 
-        rows.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
+        rows.sort(Comparator.comparing(studentRow -> CommonHelper.rollNo(studentRow.getRollNo())));
 
-        AttendanceRosterResponse response = new AttendanceRosterResponse();
-        response.setAttendanceDate(date);
-        response.setRecords(rows);
-        return response;
+        AttendanceRosterResponse attendanceRosterResponse = new AttendanceRosterResponse();
+        attendanceRosterResponse.setAttendanceDate(date);
+        attendanceRosterResponse.setRecords(rows);
+        return attendanceRosterResponse;
     }
 
     @Override
@@ -118,30 +106,30 @@ public class AttendanceServiceImpl implements AttendanceService {
     public List<AttendanceSummaryResponse> getSummary(Integer tenantId, Integer classId, Integer sectionId, LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<StudentClass> roster = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
 
         List<Integer> studentIds = new ArrayList<>();
-        for (StudentClass sc : roster) {
-            studentIds.add(sc.getStudentId());
+        for (StudentClass studentClass : studentClasses) {
+            studentIds.add(studentClass.getStudentId());
         }
 
         Map<Integer, List<Attendance>> byStudent = new HashMap<>();
         if (!studentIds.isEmpty()) {
-            List<Attendance> records = attendanceRepository.findByTenantIdAndAcademicYearIdAndAttendanceDateBetweenAndStudentIdIn(
+            List<Attendance> attendances = attendanceRepository.findByTenantIdAndAcademicYearIdAndAttendanceDateBetweenAndStudentIdIn(
                     tenantId, currentYear.getAcademicYearId(), fromDate, toDate, studentIds);
-            for (Attendance a : records) {
+            for (Attendance a : attendances) {
                 byStudent.computeIfAbsent(a.getStudentId(), k -> new ArrayList<>()).add(a);
             }
         }
 
-        List<AttendanceSummaryResponse> result = new ArrayList<>();
-        for (StudentClass sc : roster) {
-            List<Attendance> records = byStudent.getOrDefault(sc.getStudentId(), new ArrayList<>());
+        List<AttendanceSummaryResponse> attendanceSummaryResponses = new ArrayList<>();
+        for (StudentClass studentClass : studentClasses) {
+            List<Attendance> records = byStudent.getOrDefault(studentClass.getStudentId(), new ArrayList<>());
 
-            long present = records.stream().filter(a -> "P".equals(a.getStatus())).count();
-            long absent = records.stream().filter(a -> "A".equals(a.getStatus())).count();
-            long late = records.stream().filter(a -> "L".equals(a.getStatus())).count();
-            long halfDay = records.stream().filter(a -> "H".equals(a.getStatus())).count();
+            long present = records.stream().filter(a -> Constant.PRESENT.equals(a.getStatus())).count();
+            long absent = records.stream().filter(a -> Constant.ABSENT.equals(a.getStatus())).count();
+            long late = records.stream().filter(a -> Constant.LATE.equals(a.getStatus())).count();
+            long halfDay = records.stream().filter(a -> Constant.HALFDAY.equals(a.getStatus())).count();
             long total = records.size();
 
             // Present + Late + Half-day (counted as half) contribute to attendance.
@@ -149,19 +137,19 @@ public class AttendanceServiceImpl implements AttendanceService {
             double percentage = total > 0 ? Math.round((attended / total) * 1000.0) / 10.0 : 0.0;
 
             AttendanceSummaryResponse summary = new AttendanceSummaryResponse();
-            summary.setStudentId(sc.getStudentId());
-            summary.setStudentName(commonHelper.studentName(sc.getStudentId()));
-            summary.setRollNo(sc.getRollNo());
+            summary.setStudentId(studentClass.getStudentId());
+            summary.setStudentName(commonHelper.studentName(studentClass.getStudentId()));
+            summary.setRollNo(studentClass.getRollNo());
             summary.setPresentCount(present);
             summary.setAbsentCount(absent);
             summary.setLateCount(late);
             summary.setHalfDayCount(halfDay);
             summary.setTotalMarked(total);
             summary.setPresentPercentage(percentage);
-            result.add(summary);
+            attendanceSummaryResponses.add(summary);
         }
 
-        result.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
-        return result;
+        attendanceSummaryResponses.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
+        return attendanceSummaryResponses;
     }
 }

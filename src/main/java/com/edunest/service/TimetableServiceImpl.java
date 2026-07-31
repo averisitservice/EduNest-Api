@@ -38,12 +38,12 @@ public class TimetableServiceImpl implements TimetableService {
     @Override
     @Transactional
     public boolean saveWorkingDays(Integer tenantId, WorkingDayRequest request) {
-        for (WorkingDayRequest.WorkingDayItem item : request.getWorkingDays()) {
-            WorkingDay workingDay = workingDayRepository.findByTenantIdAndDayName(tenantId, item.getDayName());
+        for (WorkingDayRequest.WorkingDayItem workingDayItem : request.getWorkingDays()) {
+            WorkingDay workingDay = workingDayRepository.findByTenantIdAndDayName(tenantId, workingDayItem.getDayName());
             workingDay.setTenantId(tenantId);
-            workingDay.setDayName(item.getDayName());
-            workingDay.setDayOrder(item.getDayOrder());
-            workingDay.setIsActive(item.getIsActive());
+            workingDay.setDayName(workingDayItem.getDayName());
+            workingDay.setDayOrder(workingDayItem.getDayOrder());
+            workingDay.setIsActive(workingDayItem.getIsActive());
             workingDayRepository.save(workingDay);
         }
         return true;
@@ -57,20 +57,20 @@ public class TimetableServiceImpl implements TimetableService {
     @Override
     @Transactional
     public boolean saveTimeSlots(Integer tenantId, TimeSlotRequest request) {
-        for (TimeSlotRequest.TimeSlotItem item : request.getTimeSlots()) {
+        for (TimeSlotRequest.TimeSlotItem timeSlotItem : request.getTimeSlots()) {
             TimeSlot timeSlot;
-            if (item.getTimeSlotId() != null) {
-                timeSlot = timeSlotRepository.findById(item.getTimeSlotId()).orElse(new TimeSlot());
+            if (timeSlotItem.getTimeSlotId() != null) {
+                timeSlot = timeSlotRepository.findById(timeSlotItem.getTimeSlotId()).orElse(new TimeSlot());
             } else {
                 timeSlot = new TimeSlot();
             }
             timeSlot.setTenantId(tenantId);
             timeSlot.setClassId(request.getClassId());
-            timeSlot.setSlotName(item.getSlotName());
-            timeSlot.setStartTime(item.getStartTime());
-            timeSlot.setEndTime(item.getEndTime());
-            timeSlot.setIsBreak(item.getIsBreak() != null && item.getIsBreak());
-            timeSlot.setOrderNo(item.getOrderNo());
+            timeSlot.setSlotName(timeSlotItem.getSlotName());
+            timeSlot.setStartTime(timeSlotItem.getStartTime());
+            timeSlot.setEndTime(timeSlotItem.getEndTime());
+            timeSlot.setIsBreak(timeSlotItem.getIsBreak() != null && timeSlotItem.getIsBreak());
+            timeSlot.setOrderNo(timeSlotItem.getOrderNo());
             timeSlot.setIsActive(true);
             timeSlotRepository.save(timeSlot);
         }
@@ -88,8 +88,8 @@ public class TimetableServiceImpl implements TimetableService {
 
         List<WorkingDay> workingDays = workingDayRepository.findByTenantIdAndIsActiveTrueOrderByDayOrder(tenantId);
         List<String> dayNames = new ArrayList<>();
-        for (WorkingDay wd : workingDays) {
-            dayNames.add(wd.getDayName());
+        for (WorkingDay workingDay : workingDays) {
+            dayNames.add(workingDay.getDayName());
         }
 
         List<TimeSlot> timeSlots = timeSlotRepository.findByClassIdAndTenantIdAndIsActiveTrueOrderByOrderNo(classId, tenantId);
@@ -97,51 +97,50 @@ public class TimetableServiceImpl implements TimetableService {
         List<Timetable> timetables = timetableRepository.findCells(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
 
         Map<String, TimetableResponse.CellData> timetableMap = new HashMap<>();
-        for (Timetable tt : timetables) {
+        for (Timetable timetable : timetables) {
 
-            WorkingDay wd = workingDayRepository.findById(tt.getWorkingDayId()).orElse(null);
+            WorkingDay wd = workingDayRepository.findById(timetable.getWorkingDayId()).orElse(null);
             if (wd == null) continue;
 
-            Subject subject = tt.getSubjectId() != null ? subjectRepository.findById(tt.getSubjectId()).orElse(null) : null;
-            Teacher teacher = tt.getTeacherId() != null ? teacherRepository.findById(tt.getTeacherId()).orElse(null) : null;
+            Subject subject = timetable.getSubjectId() != null ? subjectRepository.findById(timetable.getSubjectId()).orElse(null) : null;
+            Teacher teacher = timetable.getTeacherId() != null ? teacherRepository.findById(timetable.getTeacherId()).orElse(null) : null;
 
             TimetableResponse.CellData cell = new TimetableResponse.CellData();
-            cell.setTimetableId(tt.getTimetableId());
-            cell.setSubjectId(tt.getSubjectId());
+            cell.setTimetableId(timetable.getTimetableId());
+            cell.setSubjectId(timetable.getSubjectId());
             cell.setSubjectName(subject != null ? subject.getSubjectName() : null);
-            cell.setTeacherId(tt.getTeacherId());
+            cell.setTeacherId(timetable.getTeacherId());
             cell.setTeacherName(teacher != null ? teacher.getFirstName() + " " + teacher.getLastName() : null);
 
-            timetableMap.put(tt.getTimeSlotId() + "_" + wd.getDayName(), cell);
+            timetableMap.put(timetable.getTimeSlotId() + "_" + wd.getDayName(), cell);
         }
 
         List<TimetableResponse.TimeSlotRow> rows = new ArrayList<>();
-        for (TimeSlot ts : timeSlots) {
+        for (TimeSlot timeSlot : timeSlots) {
             Map<String, TimetableResponse.CellData> cells = new LinkedHashMap<>();
             for (String dayName : dayNames) {
-                String key = ts.getTimeSlotId() + "_" + dayName;
+                String key = timeSlot.getTimeSlotId() + "_" + dayName;
                 cells.put(dayName, timetableMap.getOrDefault(key, new TimetableResponse.CellData()));
             }
             TimetableResponse.TimeSlotRow row = new TimetableResponse.TimeSlotRow();
-            row.setTimeSlotId(ts.getTimeSlotId());
-            row.setSlotName(ts.getSlotName());
-            row.setStartTime(ts.getStartTime());
-            row.setEndTime(ts.getEndTime());
-            row.setIsBreak(ts.getIsBreak());
+            row.setTimeSlotId(timeSlot.getTimeSlotId());
+            row.setSlotName(timeSlot.getSlotName());
+            row.setStartTime(timeSlot.getStartTime());
+            row.setEndTime(timeSlot.getEndTime());
+            row.setIsBreak(timeSlot.getIsBreak());
             row.setCells(cells);
             rows.add(row);
         }
 
-        TimetableResponse response = new TimetableResponse();
-        response.setWorkingDays(dayNames);
-        response.setRows(rows);
-        return response;
+        TimetableResponse timetableResponse = new TimetableResponse();
+        timetableResponse.setWorkingDays(dayNames);
+        timetableResponse.setRows(rows);
+        return timetableResponse;
     }
 
     @Override
     @Transactional
     public boolean saveTimetableCell(Integer tenantId, TimetableRequest request) {
-
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (request.getTeacherId() != null) {
@@ -151,13 +150,13 @@ public class TimetableServiceImpl implements TimetableService {
             List<Timetable> teacherEntries = timetableRepository.findByTeacherIdAndWorkingDayIdAndAcademicYearIdAndTenantId(
                     request.getTeacherId(), request.getWorkingDayId(), currentYear.getAcademicYearId(), tenantId);
 
-            for (Timetable entry : teacherEntries) {
-                boolean sameCell = entry.getClassId().equals(request.getClassId())
-                        && Objects.equals(entry.getSectionId(), request.getSectionId())
-                        && entry.getTimeSlotId().equals(request.getTimeSlotId());
+            for (Timetable timetable : teacherEntries) {
+                boolean sameCell = timetable.getClassId().equals(request.getClassId())
+                        && Objects.equals(timetable.getSectionId(), request.getSectionId())
+                        && timetable.getTimeSlotId().equals(request.getTimeSlotId());
                 if (sameCell) continue;
 
-                TimeSlot existingSlot = timeSlotRepository.findById(entry.getTimeSlotId()).orElse(null);
+                TimeSlot existingSlot = timeSlotRepository.findById(timetable.getTimeSlotId()).orElse(null);
                 if (existingSlot == null) continue;
 
                 boolean overlaps = requestedSlot.getStartTime().isBefore(existingSlot.getEndTime())
@@ -185,13 +184,12 @@ public class TimetableServiceImpl implements TimetableService {
 
     @Override
     public TimetableResponse getTeacherTimetable(Integer tenantId, Integer teacherId) {
-
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<WorkingDay> workingDays = workingDayRepository.findByTenantIdAndIsActiveTrueOrderByDayOrder(tenantId);
         List<String> dayNames = new ArrayList<>();
-        for (WorkingDay wd : workingDays) {
-            dayNames.add(wd.getDayName());
+        for (WorkingDay workingDay : workingDays) {
+            dayNames.add(workingDay.getDayName());
         }
 
         List<Timetable> timetables = timetableRepository.findByTeacherIdAndAcademicYearIdAndTenantId(teacherId, currentYear.getAcademicYearId(), tenantId);
@@ -199,29 +197,29 @@ public class TimetableServiceImpl implements TimetableService {
         Map<String, TimetableResponse.CellData> timetableMap = new HashMap<>();
         Set<Integer> timeSlotIds = new LinkedHashSet<>();
 
-        for (Timetable tt : timetables) {
-            timeSlotIds.add(tt.getTimeSlotId());
-            WorkingDay wd = workingDayRepository.findById(tt.getWorkingDayId()).orElse(null);
-            Subject subject = tt.getSubjectId() != null ? subjectRepository.findById(tt.getSubjectId()).orElse(null) : null;
+        for (Timetable timetable : timetables) {
+            timeSlotIds.add(timetable.getTimeSlotId());
+            WorkingDay wd = workingDayRepository.findById(timetable.getWorkingDayId()).orElse(null);
+            Subject subject = timetable.getSubjectId() != null ? subjectRepository.findById(timetable.getSubjectId()).orElse(null) : null;
 
             TimetableResponse.CellData cell = new TimetableResponse.CellData();
-            cell.setTimetableId(tt.getTimetableId());
-            cell.setSubjectId(tt.getSubjectId());
+            cell.setTimetableId(timetable.getTimetableId());
+            cell.setSubjectId(timetable.getSubjectId());
             cell.setSubjectName(subject != null ? subject.getSubjectName() : null);
 
             if (wd != null) {
-                timetableMap.put(tt.getTimeSlotId() + "_" + wd.getDayName(), cell);
+                timetableMap.put(timetable.getTimeSlotId() + "_" + wd.getDayName(), cell);
             }
         }
 
         List<TimetableResponse.TimeSlotRow> rows = new ArrayList<>();
-        for (Integer tsId : timeSlotIds) {
-            TimeSlot ts = timeSlotRepository.findById(tsId).orElse(null);
+        for (Integer timeSlot : timeSlotIds) {
+            TimeSlot ts = timeSlotRepository.findById(timeSlot).orElse(null);
             if (ts == null) continue;
 
             Map<String, TimetableResponse.CellData> cells = new LinkedHashMap<>();
             for (String dayName : dayNames) {
-                String key = tsId + "_" + dayName;
+                String key = timeSlot + "_" + dayName;
                 cells.put(dayName, timetableMap.getOrDefault(key, new TimetableResponse.CellData()));
             }
 

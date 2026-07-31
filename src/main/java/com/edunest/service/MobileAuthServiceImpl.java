@@ -55,6 +55,9 @@ public class MobileAuthServiceImpl implements MobileAuthService {
     @Autowired
     EmailService emailService;
 
+    @Autowired
+    CommonHelper commonHelper;
+
     @Override
     public StudentLoginResponse studentLogin(StudentLoginRequest request) {
         Student student = studentRepository.findByUsernameIgnoreCase(request.getUsername().trim())
@@ -86,7 +89,7 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         profile.setStudentId(student.getStudentId());
         profile.setAdmissionNo(student.getAdmissionNo());
         profile.setUsername(student.getUsername());
-        profile.setStudentName(buildStudentName(student));
+        profile.setStudentName(commonHelper.studentName(student.getStudentId()));
         profile.setEmail(student.getEmail());
         profile.setMobileNo(student.getMobileNo());
         profile.setPhotoUrl(student.getPhotoUrl());
@@ -94,17 +97,17 @@ public class MobileAuthServiceImpl implements MobileAuthService {
 
         applyClassPlacement(profile, student);
 
-        TenantResponse tenantResponse = new TenantResponse();
-        tenantResponse.setTenantId(tenant.getTenantId());
-        tenantResponse.setSchoolCode(tenant.getSchoolCode());
-        tenantResponse.setTenantName(tenant.getTenantName());
-        tenantResponse.setSchoolBannerUrl(tenant.getSchoolBannerUrl());
-        tenantResponse.setMobileLogoUrl(tenant.getMobileLogoUrl());
-        tenantResponse.setLogoUrl(tenant.getLogoUrl());
-        tenantResponse.setSingleLogoUrl(tenant.getSingleLogoUrl());
-        tenantResponse.setPrimaryColor(tenant.getPrimaryColor());
-        tenantResponse.setFaviconUrl(tenant.getFaviconUrl());
-        tenantResponse.setIsHostel(tenant.getIsHostel());
+            TenantResponse tenantResponse = new TenantResponse();
+            tenantResponse.setTenantId(tenant.getTenantId());
+            tenantResponse.setSchoolCode(tenant.getSchoolCode());
+            tenantResponse.setTenantName(tenant.getTenantName());
+            tenantResponse.setSchoolBannerUrl(tenant.getSchoolBannerUrl());
+            tenantResponse.setMobileLogoUrl(tenant.getMobileLogoUrl());
+            tenantResponse.setLogoUrl(tenant.getLogoUrl());
+            tenantResponse.setSingleLogoUrl(tenant.getSingleLogoUrl());
+            tenantResponse.setPrimaryColor(tenant.getPrimaryColor());
+            tenantResponse.setFaviconUrl(tenant.getFaviconUrl());
+            tenantResponse.setIsHostel(tenant.getIsHostel());
 
 
         return new StudentLoginResponse(session, refresh, profile, tenantResponse);
@@ -132,7 +135,7 @@ public class MobileAuthServiceImpl implements MobileAuthService {
             studentRepository.save(student);
 
             accounts.add(new StudentResetCredential(
-                    buildStudentName(student), student.getUsername(), newPassword));
+                    commonHelper.studentName(student.getStudentId()), student.getUsername(), newPassword));
         }
 
         emailService.sendStudentPasswordResetEmail(email, accounts);
@@ -180,12 +183,5 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         student.setHashkey(hashKey);
         student.setPassword(CryptoHelper.encryptPassword(request.getNewPassword().trim(), hashKey));
         studentRepository.save(student);
-    }
-
-    private String buildStudentName(Student student) {
-        StringBuilder name = new StringBuilder();
-        if (student.getFirstName() != null) name.append(student.getFirstName());
-        if (student.getLastName() != null) name.append(" ").append(student.getLastName());
-        return name.toString().trim();
     }
 }

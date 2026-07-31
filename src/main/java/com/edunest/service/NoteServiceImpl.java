@@ -6,9 +6,7 @@ import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Note;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.NoteRepository;
-import com.edunest.repository.TeacherRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,50 +22,37 @@ public class NoteServiceImpl implements NoteService {
     NoteRepository noteRepository;
 
     @Autowired
-    TeacherRepository teacherRepository;
-
-    @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     CommonHelper commonHelper;
 
     @Override
     public List<NoteResponse> getNoteList(Integer tenantId, Integer classId, Integer sectionId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<Note> items = noteRepository.findList(tenantId, currentYear.getAcademicYearId(), classId, sectionId);
+        List<Note> notes = noteRepository.findList(tenantId, currentYear.getAcademicYearId(), classId, sectionId);
 
-        List<NoteResponse> result = new ArrayList<>();
-        for (Note n : items) {
-            NoteResponse response = new NoteResponse();
-            response.setNoteId(n.getNoteId());
-            response.setClassId(n.getClassId());
-            response.setSectionId(n.getSectionId());
-            response.setSubjectId(n.getSubjectId());
-            response.setSubjectName(commonHelper.subjectName(n.getSubjectId()));
-            response.setTitle(n.getTitle());
-            response.setDescription(n.getDescription());
-            response.setAttachmentUrl(n.getAttachmentUrl());
-            response.setCreatedBy(commonHelper.teacherName(n.getCreatedBy()));
-            response.setUpdatedBy(commonHelper.teacherName(n.getUpdatedBy()));
-            response.setUpdatedDate(n.getUpdatedDate());
-            result.add(response);
+        List<NoteResponse> noteResponses = new ArrayList<>();
+        for (Note note : notes) {
+            NoteResponse noteResponse = new NoteResponse();
+            noteResponse.setNoteId(note.getNoteId());
+            noteResponse.setClassId(note.getClassId());
+            noteResponse.setSectionId(note.getSectionId());
+            noteResponse.setSubjectId(note.getSubjectId());
+            noteResponse.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
+            noteResponse.setTitle(note.getTitle());
+            noteResponse.setDescription(note.getDescription());
+            noteResponse.setAttachmentUrl(note.getAttachmentUrl());
+            noteResponse.setCreatedBy(commonHelper.teacherName(note.getCreatedBy()));
+            noteResponse.setUpdatedBy(commonHelper.teacherName(note.getUpdatedBy()));
+            noteResponse.setUpdatedDate(note.getUpdatedDate());
+            noteResponses.add(noteResponse);
         }
-        return result;
+        return noteResponses;
     }
 
     @Override
     @Transactional
     public boolean saveNote(Integer tenantId, Integer loginTeacherId, NoteRequest request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-
-        if (request.getClassId() == null) {
-            throw new CustomException("classId", "Class is required");
-        }
-        if (request.getTitle() == null || request.getTitle().isBlank()) {
-            throw new CustomException("title", "Title is required");
-        }
 
         Note note;
         if (request.getNoteId() != null) {

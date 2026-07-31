@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.constant.Constant;
 import com.edunest.dto.announcement.AnnouncementRequest;
 import com.edunest.dto.announcement.AnnouncementResponse;
 import com.edunest.entity.AcademicYear;
@@ -7,10 +8,8 @@ import com.edunest.entity.Announcement;
 import com.edunest.entity.ClassMaster;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.AnnouncementRepository;
 import com.edunest.repository.ClassMasterRepository;
-import com.edunest.repository.TeacherRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,12 +29,6 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     ClassMasterRepository classMasterRepository;
 
     @Autowired
-    TeacherRepository teacherRepository;
-
-    @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     CommonHelper commonHelper;
 
     @Override
@@ -46,41 +39,34 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
                         tenantId, currentYear.getAcademicYearId());
 
-        List<AnnouncementResponse> result = new ArrayList<>();
-        for (Announcement a : announcements) {
+        List<AnnouncementResponse> announcementResponses = new ArrayList<>();
+        for (Announcement announcement : announcements) {
             String className = null;
-            if (a.getClassId() != null) {
-                ClassMaster classMaster = classMasterRepository.findById(a.getClassId()).orElse(null);
+            if (announcement.getClassId() != null) {
+                ClassMaster classMaster = classMasterRepository.findById(announcement.getClassId()).orElse(null);
                 className = classMaster != null ? classMaster.getClassName() : null;
             }
 
             AnnouncementResponse response = new AnnouncementResponse();
-            response.setAnnouncementId(a.getAnnouncementId());
-            response.setTitle(a.getTitle());
-            response.setMessage(a.getMessage());
-            response.setAudience(a.getAudience());
-            response.setClassId(a.getClassId());
+            response.setAnnouncementId(announcement.getAnnouncementId());
+            response.setTitle(announcement.getTitle());
+            response.setMessage(announcement.getMessage());
+            response.setAudience(announcement.getAudience());
+            response.setClassId(announcement.getClassId());
             response.setClassName(className);
-            response.setPublishDate(a.getPublishDate());
-            response.setCreatedBy(commonHelper.teacherName(a.getCreatedBy()));
-            response.setUpdatedBy(commonHelper.teacherName(a.getUpdatedBy()));
-            response.setUpdatedDate(a.getUpdatedDate());
-            result.add(response);
+            response.setPublishDate(announcement.getPublishDate());
+            response.setCreatedBy(commonHelper.teacherName(announcement.getCreatedBy()));
+            response.setUpdatedBy(commonHelper.teacherName(announcement.getUpdatedBy()));
+            response.setUpdatedDate(announcement.getUpdatedDate());
+            announcementResponses.add(response);
         }
-        return result;
+        return announcementResponses;
     }
 
     @Override
     @Transactional
     public boolean saveAnnouncement(Integer tenantId, Integer loginTeacherId, AnnouncementRequest request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-
-        if (request.getTitle() == null || request.getTitle().isBlank()) {
-            throw new CustomException("title", "Title is required");
-        }
-        if (request.getMessage() == null || request.getMessage().isBlank()) {
-            throw new CustomException("message", "Message is required");
-        }
 
         Announcement announcement;
         if (request.getAnnouncementId() != null) {
@@ -96,7 +82,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
         announcement.setTitle(request.getTitle());
         announcement.setMessage(request.getMessage());
-        announcement.setAudience(request.getAudience() != null ? request.getAudience() : "ALL");
+        announcement.setAudience(request.getAudience() != null ? request.getAudience() : Constant.All);
         announcement.setClassId(request.getClassId());
         announcement.setPublishDate(request.getPublishDate() != null ? request.getPublishDate() : LocalDate.now());
         announcement.setUpdatedBy(loginTeacherId);

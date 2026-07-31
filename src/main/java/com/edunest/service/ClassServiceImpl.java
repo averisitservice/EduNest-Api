@@ -37,27 +37,24 @@ public class ClassServiceImpl implements ClassService {
     SubjectRepository subjectRepository;
 
     @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     CommonHelper commonHelper;
 
     @Override
     public List<ClassListResponse> getClassList(Integer tenantId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         List<ClassMaster> classes = classMasterRepository.findByTenantIdAndIsActiveTrue(tenantId);
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
-        List<ClassListResponse> responseList = new ArrayList<>();
+        List<ClassListResponse> classListResponses = new ArrayList<>();
 
         for (ClassMaster classMaster : classes) {
             List<ClassSection> classSections = classSectionRepository.findByClassIdAndTenantId(classMaster.getClassId(), tenantId);
             List<String> sectionNames = new ArrayList<>();
-            for (ClassSection cs : classSections) {
-                sectionNames.add(cs.getSectionName());
+            for (ClassSection classSection : classSections) {
+                sectionNames.add(classSection.getSectionName());
             }
             List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classMaster.getClassId(), tenantId);
             List<String> subjectNames = new ArrayList<>();
-            for (ClassSubject cs : classSubjects) {
-                Subject subject = subjectRepository.findById(cs.getSubjectId()).orElse(null);
+            for (ClassSubject classSubject : classSubjects) {
+                Subject subject = subjectRepository.findById(classSubject.getSubjectId()).orElse(null);
                 if (subject != null) {
                     subjectNames.add(subject.getSubjectName());
                 }
@@ -68,35 +65,34 @@ public class ClassServiceImpl implements ClassService {
                 classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(classMaster.getClassId(), currentYear.getAcademicYearId(), tenantId);
             }
 
-            ClassListResponse response = new ClassListResponse();
-            response.setClassId(classMaster.getClassId());
-            response.setClassName(classMaster.getClassName());
-            response.setIsActive(classMaster.getIsActive());
-            response.setAnnualFee(classFee != null ? classFee.getAnnualFee() : null);
-            response.setHostelFee(classFee != null ? classFee.getHostelFee() : null);
-            response.setSections(sectionNames);
-            response.setSubjects(subjectNames);
-            responseList.add(response);
+            ClassListResponse classListResponse = new ClassListResponse();
+            classListResponse.setClassId(classMaster.getClassId());
+            classListResponse.setClassName(classMaster.getClassName());
+            classListResponse.setIsActive(classMaster.getIsActive());
+            classListResponse.setAnnualFee(classFee != null ? classFee.getAnnualFee() : null);
+            classListResponse.setHostelFee(classFee != null ? classFee.getHostelFee() : null);
+            classListResponse.setSections(sectionNames);
+            classListResponse.setSubjects(subjectNames);
+            classListResponses.add(classListResponse);
         }
-        return responseList;
+        return classListResponses;
     }
 
     @Override
     public ClassRequest getClassById(Integer classId, Integer tenantId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         ClassMaster classMaster = classMasterRepository.findById(classId).orElseThrow(() -> new CustomException("Class", "Class not found"));
-
-        AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
 
         List<ClassSection> classSections = classSectionRepository.findByClassIdAndTenantId(classId, tenantId);
         List<String> sectionNames = new ArrayList<>();
-        for (ClassSection cs : classSections) {
-            sectionNames.add(cs.getSectionName());
+        for (ClassSection classSection : classSections) {
+            sectionNames.add(classSection.getSectionName());
         }
 
         List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
         List<Integer> subjectIds = new ArrayList<>();
-        for (ClassSubject cs : classSubjects) {
-            subjectIds.add(cs.getSubjectId());
+        for (ClassSubject classSubject : classSubjects) {
+            subjectIds.add(classSubject.getSubjectId());
         }
 
         ClassFee classFee = null;
@@ -104,13 +100,13 @@ public class ClassServiceImpl implements ClassService {
             classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(classId, currentYear.getAcademicYearId(), tenantId);
         }
 
-        ClassRequest request = new ClassRequest();
-        request.setClassName(classMaster.getClassName());
-        request.setAnnualFee(classFee != null ? classFee.getAnnualFee() : null);
-        request.setHostelFee(classFee != null ? classFee.getHostelFee() : null);
-        request.setSections(sectionNames);
-        request.setSubjectIds(subjectIds);
-        return request;
+        ClassRequest classRequest = new ClassRequest();
+        classRequest.setClassName(classMaster.getClassName());
+        classRequest.setAnnualFee(classFee != null ? classFee.getAnnualFee() : null);
+        classRequest.setHostelFee(classFee != null ? classFee.getHostelFee() : null);
+        classRequest.setSections(sectionNames);
+        classRequest.setSubjectIds(subjectIds);
+        return classRequest;
     }
 
     @Override
@@ -121,7 +117,6 @@ public class ClassServiceImpl implements ClassService {
         ClassMaster classMaster;
 
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        Integer academicYearId = currentYear.getAcademicYearId();
 
         if (isEdit) {
             classMaster = classMasterRepository.findById(classId).orElseThrow(() -> new CustomException("classId", "Class not found"));
@@ -152,12 +147,12 @@ public class ClassServiceImpl implements ClassService {
 
         Set<String> requestedSet = new HashSet<>(requestedNames);
         Set<String> existingNames = new HashSet<>();
-        for (ClassSection cs : existingSections) {
-            existingNames.add(cs.getSectionName().trim());
-            if (!requestedSet.contains(cs.getSectionName().trim())) {
-                boolean hasStudents = studentClassRepository.existsBySectionIdAndTenantId(cs.getSectionId(), tenantId);
+        for (ClassSection classSection : existingSections) {
+            existingNames.add(classSection.getSectionName().trim());
+            if (!requestedSet.contains(classSection.getSectionName().trim())) {
+                boolean hasStudents = studentClassRepository.existsBySectionIdAndTenantId(classSection.getSectionId(), tenantId);
                 if (!hasStudents) {
-                    classSectionRepository.delete(cs);
+                    classSectionRepository.delete(classSection);
                 }
             }
         }
@@ -183,19 +178,19 @@ public class ClassServiceImpl implements ClassService {
                 classSubject.setTenantId(tenantId);
                 classSubject.setClassId(savedClassId);
                 classSubject.setSubjectId(subjectId);
-                classSubject.setAcademicYearId(academicYearId);
+                classSubject.setAcademicYearId(currentYear.getAcademicYearId());
                 classSubject.setIsActive(true);
                 classSubjectRepository.save(classSubject);
             }
         }
 
         if (request.getAnnualFee() != null) {
-            ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(savedClassId, academicYearId, tenantId);
+            ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(savedClassId, currentYear.getAcademicYearId(), tenantId);
             if (classFee == null) {
                 classFee = new ClassFee();
                 classFee.setTenantId(tenantId);
                 classFee.setClassId(savedClassId);
-                classFee.setAcademicYearId(academicYearId);
+                classFee.setAcademicYearId(currentYear.getAcademicYearId());
                 classFee.setIsActive(true);
             }
             classFee.setAnnualFee(request.getAnnualFee());
@@ -218,9 +213,9 @@ public class ClassServiceImpl implements ClassService {
     public List<Subject> getClassSubjects(Integer classId, Integer tenantId) {
         List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
         List<Subject> subjects = new ArrayList<>();
-        for (ClassSubject cs : classSubjects) {
-            if (Boolean.FALSE.equals(cs.getIsActive())) continue;
-            Subject subject = subjectRepository.findById(cs.getSubjectId()).orElse(null);
+        for (ClassSubject classSubject : classSubjects) {
+            if (Boolean.FALSE.equals(classSubject.getIsActive())) continue;
+            Subject subject = subjectRepository.findById(classSubject.getSubjectId()).orElse(null);
             subjects.add(subject);
         }
         return subjects;

@@ -1,33 +1,11 @@
 package com.edunest.service;
 
-import com.edunest.dto.exam.ExamListResponse;
-import com.edunest.dto.exam.ExamMarksEntryResponse;
-import com.edunest.dto.exam.ExamMarksSaveRequest;
-import com.edunest.dto.exam.ExamRequest;
-import com.edunest.dto.exam.ExamScheduleRequest;
-import com.edunest.dto.exam.ExamScheduleResponse;
-import com.edunest.dto.exam.ExamSummaryResponse;
-import com.edunest.dto.exam.ReportCardResponse;
-import com.edunest.entity.AcademicYear;
-import com.edunest.entity.ClassMaster;
-import com.edunest.entity.ClassSubject;
-import com.edunest.entity.Exam;
-import com.edunest.entity.ExamMark;
-import com.edunest.entity.ExamSchedule;
-import com.edunest.entity.StudentClass;
-import com.edunest.entity.Subject;
+import com.edunest.dto.exam.*;
+import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.AcademicYearRepository;
-import com.edunest.repository.ClassMasterRepository;
-import com.edunest.repository.ClassSubjectRepository;
-import com.edunest.repository.ExamMarkRepository;
-import com.edunest.repository.ExamRepository;
-import com.edunest.repository.ExamScheduleRepository;
-import com.edunest.repository.StudentClassRepository;
-import com.edunest.repository.StudentRepository;
-import com.edunest.repository.SubjectRepository;
-import com.edunest.repository.TeacherRepository;
+import com.edunest.repository.*;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,11 +14,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Consumer;
 
 @Service
 public class ExamServiceImpl implements ExamService {
@@ -55,9 +30,6 @@ public class ExamServiceImpl implements ExamService {
     StudentClassRepository studentClassRepository;
 
     @Autowired
-    StudentRepository studentRepository;
-
-    @Autowired
     ClassSubjectRepository classSubjectRepository;
 
     @Autowired
@@ -70,20 +42,14 @@ public class ExamServiceImpl implements ExamService {
     ClassMasterRepository classMasterRepository;
 
     @Autowired
-    TeacherRepository teacherRepository;
-
-    @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     CommonHelper commonHelper;
 
     private List<Subject> classSubjects(Integer classId, Integer tenantId) {
-        List<ClassSubject> mappings = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
+        List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
         List<Subject> subjects = new ArrayList<>();
-        for (ClassSubject cs : mappings) {
-            if (Boolean.FALSE.equals(cs.getIsActive())) continue;
-            Subject subject = subjectRepository.findById(cs.getSubjectId()).orElse(null);
+        for (ClassSubject classSubject : classSubjects) {
+            if (Boolean.FALSE.equals(classSubject.getIsActive())) continue;
+            Subject subject = subjectRepository.findById(classSubject.getSubjectId()).orElse(null);
             if (subject != null && Boolean.TRUE.equals(subject.getIsActive())) {
                 subjects.add(subject);
             }
@@ -109,24 +75,24 @@ public class ExamServiceImpl implements ExamService {
                 ? examRepository.findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(tenantId, currentYear.getAcademicYearId(), classId)
                 : examRepository.findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByExamIdDesc(tenantId, currentYear.getAcademicYearId());
 
-        List<ExamSummaryResponse> result = new ArrayList<>();
+        List<ExamSummaryResponse> examSummaryResponses = new ArrayList<>();
         for (Exam exam : exams) {
             ClassMaster classMaster = classMasterRepository.findById(exam.getClassId()).orElse(null);
 
-            ExamSummaryResponse response = new ExamSummaryResponse();
-            response.setExamId(exam.getExamId());
-            response.setClassId(exam.getClassId());
-            response.setClassName(classMaster != null ? classMaster.getClassName() : null);
-            response.setExamName(exam.getExamName());
-            response.setExamDate(exam.getExamDate());
+            ExamSummaryResponse examSummaryResponse = new ExamSummaryResponse();
+            examSummaryResponse.setExamId(exam.getExamId());
+            examSummaryResponse.setClassId(exam.getClassId());
+            examSummaryResponse.setClassName(classMaster != null ? classMaster.getClassName() : null);
+            examSummaryResponse.setExamName(exam.getExamName());
+            examSummaryResponse.setExamDate(exam.getExamDate());
             List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
-            applyDateRange(response, schedule);
-            response.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
-            response.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
-            response.setUpdatedDate(exam.getUpdatedDate());
-            result.add(response);
+            applyDateRange(schedule, examSummaryResponse::setStartDate, examSummaryResponse::setEndDate);
+            examSummaryResponse.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
+            examSummaryResponse.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
+            examSummaryResponse.setUpdatedDate(exam.getUpdatedDate());
+            examSummaryResponses.add(examSummaryResponse);
         }
-        return result;
+        return examSummaryResponses;
     }
 
     @Override
@@ -140,21 +106,21 @@ public class ExamServiceImpl implements ExamService {
 
         ClassMaster classMaster = classMasterRepository.findById(exam.getClassId()).orElse(null);
 
-        ExamListResponse response = new ExamListResponse();
-        response.setExamId(exam.getExamId());
-        response.setClassId(exam.getClassId());
-        response.setClassName(classMaster != null ? classMaster.getClassName() : null);
-        response.setExamName(exam.getExamName());
-        response.setMaxMarks(exam.getMaxMarks());
-        response.setPassMarks(exam.getPassMarks());
-        response.setExamDate(exam.getExamDate());
+        ExamListResponse examListResponse = new ExamListResponse();
+        examListResponse.setExamId(exam.getExamId());
+        examListResponse.setClassId(exam.getClassId());
+        examListResponse.setClassName(classMaster != null ? classMaster.getClassName() : null);
+        examListResponse.setExamName(exam.getExamName());
+        examListResponse.setMaxMarks(exam.getMaxMarks());
+        examListResponse.setPassMarks(exam.getPassMarks());
+        examListResponse.setExamDate(exam.getExamDate());
         List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
-        response.setSubjects(schedule);
-        applyDateRange(response, schedule);
-        response.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
-        response.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
-        response.setUpdatedDate(exam.getUpdatedDate());
-        return response;
+        examListResponse.setSubjects(schedule);
+        applyDateRange(schedule, examListResponse::setStartDate, examListResponse::setEndDate);
+        examListResponse.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
+        examListResponse.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
+        examListResponse.setUpdatedDate(exam.getUpdatedDate());
+        return examListResponse;
     }
 
     @Override
@@ -205,64 +171,47 @@ public class ExamServiceImpl implements ExamService {
             return;
         }
 
-        for (ExamScheduleRequest item : subjects) {
-            if (item.getSubjectId() == null || item.getExamDate() == null) {
+        for (ExamScheduleRequest examScheduleRequest : subjects) {
+            if (examScheduleRequest.getSubjectId() == null || examScheduleRequest.getExamDate() == null) {
                 continue;
             }
             ExamSchedule schedule = new ExamSchedule();
             schedule.setTenantId(tenantId);
             schedule.setExamId(examId);
-            schedule.setSubjectId(item.getSubjectId());
-            schedule.setExamDate(item.getExamDate());
-            schedule.setStartTime(item.getStartTime());
-            schedule.setEndTime(item.getEndTime());
-            schedule.setMaxMarks(item.getMaxMarks());
-            schedule.setPassMarks(item.getPassMarks());
+            BeanUtils.copyProperties(examScheduleRequest, schedule);
             examScheduleRepository.save(schedule);
         }
     }
 
-    private void applyDateRange(ExamListResponse response, List<ExamScheduleResponse> schedule) {
+    private void applyDateRange(List<ExamScheduleResponse> schedule, Consumer<LocalDate> setStartDate, Consumer<LocalDate> setEndDate) {
         if (schedule == null || schedule.isEmpty()) {
             return;
         }
-        response.setStartDate(schedule.get(0).getExamDate());
-        response.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
-    }
-
-    private void applyDateRange(ExamSummaryResponse response, List<ExamScheduleResponse> schedule) {
-        if (schedule == null || schedule.isEmpty()) {
-            return;
-        }
-        response.setStartDate(schedule.get(0).getExamDate());
-        response.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
+        setStartDate.accept(schedule.getFirst().getExamDate());
+        setEndDate.accept(schedule.getLast().getExamDate());
     }
 
     private List<ExamScheduleResponse> buildScheduleResponse(Integer examId, Integer tenantId) {
         List<ExamSchedule> rows = examScheduleRepository
                 .findByExamIdAndTenantIdOrderByExamDateAscExamScheduleIdAsc(examId, tenantId);
 
-        List<ExamScheduleResponse> result = new ArrayList<>();
-        for (ExamSchedule row : rows) {
-            Subject subject = subjectRepository.findById(row.getSubjectId()).orElse(null);
+        List<ExamScheduleResponse> examScheduleResponses = new ArrayList<>();
+
+        for (ExamSchedule examSchedule : rows) {
+            Subject subject = subjectRepository.findById(examSchedule.getSubjectId()).orElse(null);
 
             ExamScheduleResponse response = new ExamScheduleResponse();
-            response.setSubjectId(row.getSubjectId());
+            BeanUtils.copyProperties(examSchedule, response);
             response.setSubjectName(subject != null ? subject.getSubjectName() : null);
-            response.setExamDate(row.getExamDate());
-            response.setStartTime(row.getStartTime());
-            response.setEndTime(row.getEndTime());
-            response.setMaxMarks(row.getMaxMarks());
-            response.setPassMarks(row.getPassMarks());
-            result.add(response);
+
+            examScheduleResponses.add(response);
         }
-        return result;
+        return examScheduleResponses;
     }
 
     @Override
     public boolean deleteExam(Integer tenantId, Integer examId) {
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() -> new CustomException("examId", "Exam not found"));
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new CustomException("examId", "Exam not found"));
         exam.setIsActive(false);
         examRepository.save(exam);
         return true;
@@ -276,43 +225,43 @@ public class ExamServiceImpl implements ExamService {
         List<Subject> subjects = classSubjects(exam.getClassId(), tenantId);
 
         List<ExamMarksEntryResponse.SubjectItem> subjectItems = new ArrayList<>();
-        for (Subject s : subjects) {
-            subjectItems.add(new ExamMarksEntryResponse.SubjectItem(s.getSubjectId(), s.getSubjectName()));
+        for (Subject subject : subjects) {
+            subjectItems.add(new ExamMarksEntryResponse.SubjectItem(subject.getSubjectId(), subject.getSubjectName()));
         }
 
         List<StudentClass> roster = studentClassRepository.findRoster(classId, sectionId, exam.getAcademicYearId(), tenantId);
         List<Integer> studentIds = new ArrayList<>();
-        for (StudentClass sc : roster) {
-            studentIds.add(sc.getStudentId());
+        for (StudentClass studentClass : roster) {
+            studentIds.add(studentClass.getStudentId());
         }
 
         // (studentId, subjectId) -> marks
         Map<Integer, Map<Integer, BigDecimal>> marksMap = new HashMap<>();
         if (!studentIds.isEmpty()) {
             List<ExamMark> marks = examMarkRepository.findByTenantIdAndExamIdAndStudentIdIn(tenantId, examId, studentIds);
-            for (ExamMark m : marks) {
-                marksMap.computeIfAbsent(m.getStudentId(), k -> new HashMap<>()).put(m.getSubjectId(), m.getMarksObtained());
+            for (ExamMark examMark : marks) {
+                marksMap.computeIfAbsent(examMark.getStudentId(), k -> new HashMap<>()).put(examMark.getSubjectId(), examMark.getMarksObtained());
             }
         }
 
         List<ExamMarksEntryResponse.StudentRow> rows = new ArrayList<>();
-        for (StudentClass sc : roster) {
+        for (StudentClass studentClass : roster) {
             ExamMarksEntryResponse.StudentRow row = new ExamMarksEntryResponse.StudentRow();
-            row.setStudentId(sc.getStudentId());
-            row.setStudentName(commonHelper.studentName(sc.getStudentId()));
-            row.setRollNo(sc.getRollNo());
-            row.setMarks(marksMap.getOrDefault(sc.getStudentId(), new HashMap<>()));
+            row.setStudentId(studentClass.getStudentId());
+            row.setStudentName(commonHelper.studentName(studentClass.getStudentId()));
+            row.setRollNo(studentClass.getRollNo());
+            row.setMarks(marksMap.getOrDefault(studentClass.getStudentId(), new HashMap<>()));
             rows.add(row);
         }
         rows.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
 
-        ExamMarksEntryResponse response = new ExamMarksEntryResponse();
-        response.setExamId(exam.getExamId());
-        response.setExamName(exam.getExamName());
-        response.setMaxMarks(exam.getMaxMarks());
-        response.setSubjects(subjectItems);
-        response.setStudents(rows);
-        return response;
+        ExamMarksEntryResponse examMarksEntryResponse = new ExamMarksEntryResponse();
+        examMarksEntryResponse.setExamId(exam.getExamId());
+        examMarksEntryResponse.setExamName(exam.getExamName());
+        examMarksEntryResponse.setMaxMarks(exam.getMaxMarks());
+        examMarksEntryResponse.setSubjects(subjectItems);
+        examMarksEntryResponse.setStudents(rows);
+        return examMarksEntryResponse;
     }
 
     @Override
@@ -359,11 +308,10 @@ public class ExamServiceImpl implements ExamService {
 
         List<ExamMark> marks = examMarkRepository.findByTenantIdAndExamIdAndStudentId(tenantId, examId, studentId);
         Map<Integer, BigDecimal> markBySubject = new HashMap<>();
-        for (ExamMark m : marks) {
-            markBySubject.put(m.getSubjectId(), m.getMarksObtained());
+        for (ExamMark examMark : marks) {
+            markBySubject.put(examMark.getSubjectId(), examMark.getMarksObtained());
         }
 
-        BigDecimal maxMarks = BigDecimal.valueOf(exam.getMaxMarks());
         BigDecimal passMarks = BigDecimal.valueOf(exam.getPassMarks());
 
         List<ReportCardResponse.SubjectMark> subjectMarks = new ArrayList<>();
@@ -371,8 +319,8 @@ public class ExamServiceImpl implements ExamService {
         int totalMax = 0;
         boolean overallPass = true;
 
-        for (Subject s : subjects) {
-            BigDecimal obtained = markBySubject.get(s.getSubjectId());
+        for (Subject subject : subjects) {
+            BigDecimal obtained = markBySubject.get(subject.getSubjectId());
             boolean passed = obtained != null && obtained.compareTo(passMarks) >= 0;
             if (!passed) {
                 overallPass = false;
@@ -382,13 +330,13 @@ public class ExamServiceImpl implements ExamService {
                     ? obtained.doubleValue() / exam.getMaxMarks() * 100.0
                     : 0.0;
 
-            ReportCardResponse.SubjectMark sm = new ReportCardResponse.SubjectMark();
-            sm.setSubjectId(s.getSubjectId());
-            sm.setSubjectName(s.getSubjectName());
-            sm.setMarksObtained(obtained);
-            sm.setGrade(obtained != null ? gradeFor(subjectPct) : "-");
-            sm.setPassed(passed);
-            subjectMarks.add(sm);
+            ReportCardResponse.SubjectMark subjectMark = new ReportCardResponse.SubjectMark();
+            subjectMark.setSubjectId(subject.getSubjectId());
+            subjectMark.setSubjectName(subject.getSubjectName());
+            subjectMark.setMarksObtained(obtained);
+            subjectMark.setGrade(obtained != null ? gradeFor(subjectPct) : "-");
+            subjectMark.setPassed(passed);
+            subjectMarks.add(subjectMark);
 
             totalObtained = totalObtained.add(obtained != null ? obtained : BigDecimal.ZERO);
             totalMax += exam.getMaxMarks();
@@ -398,20 +346,20 @@ public class ExamServiceImpl implements ExamService {
                 ? totalObtained.multiply(BigDecimal.valueOf(100)).divide(BigDecimal.valueOf(totalMax), 2, RoundingMode.HALF_UP).doubleValue()
                 : 0.0;
 
-        ReportCardResponse response = new ReportCardResponse();
-        response.setStudentId(studentId);
-        response.setStudentName(commonHelper.studentName(studentId));
+        ReportCardResponse reportCardResponse = new ReportCardResponse();
+        reportCardResponse.setStudentId(studentId);
+        reportCardResponse.setStudentName(commonHelper.studentName(studentId));
         StudentClass sc = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId).orElse(null);
-        response.setRollNo(sc != null ? sc.getRollNo() : null);
-        response.setExamName(exam.getExamName());
-        response.setMaxMarksPerSubject(exam.getMaxMarks());
-        response.setPassMarks(exam.getPassMarks());
-        response.setSubjects(subjectMarks);
-        response.setTotalObtained(totalObtained);
-        response.setTotalMax(totalMax);
-        response.setPercentage(percentage);
-        response.setOverallGrade(gradeFor(percentage));
-        response.setResult(overallPass ? "PASS" : "FAIL");
-        return response;
+        reportCardResponse.setRollNo(sc != null ? sc.getRollNo() : null);
+        reportCardResponse.setExamName(exam.getExamName());
+        reportCardResponse.setMaxMarksPerSubject(exam.getMaxMarks());
+        reportCardResponse.setPassMarks(exam.getPassMarks());
+        reportCardResponse.setSubjects(subjectMarks);
+        reportCardResponse.setTotalObtained(totalObtained);
+        reportCardResponse.setTotalMax(totalMax);
+        reportCardResponse.setPercentage(percentage);
+        reportCardResponse.setOverallGrade(gradeFor(percentage));
+        reportCardResponse.setResult(overallPass ? "PASS" : "FAIL");
+        return reportCardResponse;
     }
 }

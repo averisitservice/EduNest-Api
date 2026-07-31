@@ -1,52 +1,15 @@
 package com.edunest.service;
 
-import com.edunest.dto.mobile.StudentDetailResponse;
-import com.edunest.dto.mobile.StudentExamsResponse;
-import com.edunest.dto.mobile.StudentHomeResponse;
-import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
-import com.edunest.dto.mobile.StudentHomeworkItem;
-import com.edunest.dto.mobile.StudentNoteDetailResponse;
-import com.edunest.dto.mobile.StudentNoteItem;
-import com.edunest.dto.mobile.StudentTimetableResponse;
-import com.edunest.entity.AcademicYear;
-import com.edunest.entity.Exam;
-import com.edunest.entity.ExamSchedule;
-import com.edunest.entity.ClassMaster;
-import com.edunest.entity.ClassSection;
-import com.edunest.entity.Homework;
-import com.edunest.entity.Note;
-import com.edunest.entity.Student;
-import com.edunest.entity.StudentClass;
-import com.edunest.entity.Teacher;
-import com.edunest.entity.TeacherClass;
-import com.edunest.entity.TimeSlot;
-import com.edunest.entity.Timetable;
-import com.edunest.entity.WorkingDay;
+import com.edunest.dto.mobile.*;
+import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.AttendanceRepository;
-import com.edunest.repository.ClassMasterRepository;
-import com.edunest.repository.ClassSectionRepository;
-import com.edunest.repository.ExamRepository;
-import com.edunest.repository.ExamScheduleRepository;
-import com.edunest.repository.HomeworkRepository;
-import com.edunest.repository.NoteRepository;
-import com.edunest.repository.StudentClassRepository;
-import com.edunest.repository.StudentRepository;
-import com.edunest.repository.TeacherClassRepository;
-import com.edunest.repository.TeacherRepository;
-import com.edunest.repository.TimeSlotRepository;
-import com.edunest.repository.TimetableRepository;
-import com.edunest.repository.WorkingDayRepository;
+import com.edunest.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class MobileStudentServiceImpl implements MobileStudentService {
@@ -101,22 +64,21 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        List<Homework> rows = homeworkRepository.findForStudent(
+        List<Homework> homeworkList = homeworkRepository.findForStudent(
                 tenantId, currentYear.getAcademicYearId(),
                 studentClass.getClassId(), studentClass.getSectionId());
 
-        Map<Integer, String> subjectNames = new HashMap<>();
-        List<StudentHomeworkItem> items = new ArrayList<>();
-        for (Homework h : rows) {
+        List<StudentHomeworkItem> studentHomeworkItems = new ArrayList<>();
+        for (Homework homework : homeworkList) {
             StudentHomeworkItem item = new StudentHomeworkItem();
-            item.setHomeworkId(h.getHomeworkId());
-            item.setSubjectId(h.getSubjectId());
-            item.setSubjectName(resolveSubjectName(h.getSubjectId(), subjectNames));
-            item.setTitle(h.getTitle());
-            item.setUpdatedDate(h.getUpdatedDate());
-            items.add(item);
+            item.setHomeworkId(homework.getHomeworkId());
+            item.setSubjectId(homework.getSubjectId());
+            item.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
+            item.setTitle(homework.getTitle());
+            item.setUpdatedDate(homework.getUpdatedDate());
+            studentHomeworkItems.add(item);
         }
-        return items;
+        return studentHomeworkItems;
     }
 
     @Override
@@ -124,76 +86,69 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        List<Note> rows = noteRepository.findForStudent(
+        List<Note> notes = noteRepository.findForStudent(
                 tenantId, currentYear.getAcademicYearId(),
                 studentClass.getClassId(), studentClass.getSectionId());
 
-        Map<Integer, String> subjectNames = new HashMap<>();
-        List<StudentNoteItem> items = new ArrayList<>();
-        for (Note n : rows) {
+        List<StudentNoteItem> studentNoteItems = new ArrayList<>();
+        for (Note note : notes) {
             StudentNoteItem item = new StudentNoteItem();
-            item.setNoteId(n.getNoteId());
-            item.setSubjectId(n.getSubjectId());
-            item.setSubjectName(resolveSubjectName(n.getSubjectId(), subjectNames));
-            item.setTitle(n.getTitle());
-            item.setUpdatedDate(n.getUpdatedDate());
-            items.add(item);
+            item.setNoteId(note.getNoteId());
+            item.setSubjectId(note.getSubjectId());
+            item.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
+            item.setTitle(note.getTitle());
+            item.setUpdatedDate(note.getUpdatedDate());
+            studentNoteItems.add(item);
         }
-        return items;
+        return studentNoteItems;
     }
 
     @Override
     public StudentHomeworkDetailResponse getHomeworkDetail(Integer studentId, Integer tenantId, Integer homeworkId) {
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        Homework h = homeworkRepository.findById(homeworkId)
+        Homework homework = homeworkRepository.findById(homeworkId)
                 .orElseThrow(() -> new CustomException("homeworkId", "Homework not found"));
 
-        if (!h.getTenantId().equals(tenantId) || !h.getClassId().equals(studentClass.getClassId())
-                || (h.getSectionId() != null && !h.getSectionId().equals(studentClass.getSectionId()))) {
+        if (!homework.getTenantId().equals(tenantId) || !homework.getClassId().equals(studentClass.getClassId())
+                || (homework.getSectionId() != null && !homework.getSectionId().equals(studentClass.getSectionId()))) {
             throw new CustomException("homeworkId", "Homework not found");
         }
 
-        Map<Integer, String> subjectNames = new HashMap<>();
-        Map<Integer, String> teacherNames = new HashMap<>();
-
-        StudentHomeworkDetailResponse response = new StudentHomeworkDetailResponse();
-        response.setHomeworkId(h.getHomeworkId());
-        response.setSubjectId(h.getSubjectId());
-        response.setSubjectName(resolveSubjectName(h.getSubjectId(), subjectNames));
-        response.setTitle(h.getTitle());
-        response.setDescription(h.getDescription());
-        response.setDueDate(h.getDueDate());
-        response.setAttachmentUrl(h.getAttachmentUrl());
-        response.setTeacherName(resolveTeacherName(h.getUpdatedBy(), teacherNames));
-        response.setUpdatedDate(h.getUpdatedDate());
-        return response;
+        StudentHomeworkDetailResponse studentHomeworkDetailResponse = new StudentHomeworkDetailResponse();
+        studentHomeworkDetailResponse.setHomeworkId(homework.getHomeworkId());
+        studentHomeworkDetailResponse.setSubjectId(homework.getSubjectId());
+        studentHomeworkDetailResponse.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
+        studentHomeworkDetailResponse.setTitle(homework.getTitle());
+        studentHomeworkDetailResponse.setDescription(homework.getDescription());
+        studentHomeworkDetailResponse.setDueDate(homework.getDueDate());
+        studentHomeworkDetailResponse.setAttachmentUrl(homework.getAttachmentUrl());
+        studentHomeworkDetailResponse.setTeacherName(commonHelper.teacherName(homework.getUpdatedBy()));
+        studentHomeworkDetailResponse.setUpdatedDate(homework.getUpdatedDate());
+        return studentHomeworkDetailResponse;
     }
 
     @Override
     public StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId) {
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        Note n = noteRepository.findById(noteId)
+        Note note = noteRepository.findById(noteId)
                 .orElseThrow(() -> new CustomException("noteId", "Note not found"));
 
-        if (!n.getTenantId().equals(tenantId) || !n.getClassId().equals(studentClass.getClassId())
-                || (n.getSectionId() != null && !n.getSectionId().equals(studentClass.getSectionId()))) {
+        if (!note.getTenantId().equals(tenantId) || !note.getClassId().equals(studentClass.getClassId())
+                || (note.getSectionId() != null && !note.getSectionId().equals(studentClass.getSectionId()))) {
             throw new CustomException("noteId", "Note not found");
         }
 
-        Map<Integer, String> subjectNames = new HashMap<>();
-        Map<Integer, String> teacherNames = new HashMap<>();
-
         StudentNoteDetailResponse response = new StudentNoteDetailResponse();
-        response.setNoteId(n.getNoteId());
-        response.setSubjectId(n.getSubjectId());
-        response.setSubjectName(resolveSubjectName(n.getSubjectId(), subjectNames));
-        response.setTitle(n.getTitle());
-        response.setDescription(n.getDescription());
-        response.setAttachmentUrl(n.getAttachmentUrl());
-        response.setTeacherName(resolveTeacherName(n.getUpdatedBy(), teacherNames));
-        response.setUpdatedDate(n.getUpdatedDate());
+        response.setNoteId(note.getNoteId());
+        response.setSubjectId(note.getSubjectId());
+        response.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
+        response.setTitle(note.getTitle());
+        response.setDescription(note.getDescription());
+        response.setAttachmentUrl(note.getAttachmentUrl());
+        response.setTeacherName(commonHelper.teacherName(note.getUpdatedBy()));
+        response.setUpdatedDate(note.getUpdatedDate());
         return response;
     }
 
@@ -215,34 +170,32 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 .findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
                         tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
 
-        Map<Integer, String> subjectNames = new HashMap<>();
-        LocalDate today = LocalDate.now();
 
         List<StudentExamsResponse.ExamItem> upcoming = new ArrayList<>();
         List<StudentExamsResponse.ExamItem> past = new ArrayList<>();
 
         for (Exam exam : exams) {
-            List<ExamSchedule> rows = examScheduleRepository
+            List<ExamSchedule> examSchedules = examScheduleRepository
                     .findByExamIdAndTenantIdOrderByExamDateAscExamScheduleIdAsc(exam.getExamId(), tenantId);
 
-            for (ExamSchedule row : rows) {
-                StudentExamsResponse.ExamItem item = new StudentExamsResponse.ExamItem();
-                item.setExamId(exam.getExamId());
-                item.setExamName(exam.getExamName());
-                item.setSubjectId(row.getSubjectId());
-                item.setSubjectName(resolveSubjectName(row.getSubjectId(), subjectNames));
-                item.setExamDate(row.getExamDate());
-                item.setStartTime(row.getStartTime());
-                item.setEndTime(row.getEndTime());
-                item.setMaxMarks(row.getMaxMarks() != null ? row.getMaxMarks() : exam.getMaxMarks());
-                item.setPassMarks(row.getPassMarks() != null ? row.getPassMarks() : exam.getPassMarks());
+            for (ExamSchedule examSchedule : examSchedules) {
+                StudentExamsResponse.ExamItem examItem = new StudentExamsResponse.ExamItem();
+                examItem.setExamId(exam.getExamId());
+                examItem.setExamName(exam.getExamName());
+                examItem.setSubjectId(examSchedule.getSubjectId());
+                examItem.setSubjectName(commonHelper.subjectName(examSchedule.getSubjectId()));
+                examItem.setExamDate(examSchedule.getExamDate());
+                examItem.setStartTime(examSchedule.getStartTime());
+                examItem.setEndTime(examSchedule.getEndTime());
+                examItem.setMaxMarks(examSchedule.getMaxMarks() != null ? examSchedule.getMaxMarks() : exam.getMaxMarks());
+                examItem.setPassMarks(examSchedule.getPassMarks() != null ? examSchedule.getPassMarks() : exam.getPassMarks());
 
-                if (row.getExamDate() != null && row.getExamDate().isBefore(today)) {
-                    item.setStatus("Completed");
-                    past.add(item);
+                if (examSchedule.getExamDate() != null && examSchedule.getExamDate().isBefore(LocalDate.now())) {
+                    examItem.setStatus("Completed");
+                    past.add(examItem);
                 } else {
-                    item.setStatus("Upcoming");
-                    upcoming.add(item);
+                    examItem.setStatus("Upcoming");
+                    upcoming.add(examItem);
                 }
             }
         }
@@ -257,7 +210,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Override
     public StudentTimetableResponse getTimetable(Integer studentId, Integer tenantId, String day) {
-
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         StudentClass studentClass = studentClassRepository
@@ -267,8 +219,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         Integer classId = studentClass.getClassId();
         Integer sectionId = studentClass.getSectionId();
 
-        StudentTimetableResponse response = new StudentTimetableResponse();
-        response.setDisplayClass(buildDisplayClass(studentClass));
+        StudentTimetableResponse studentTimetableResponse = new StudentTimetableResponse();
+        studentTimetableResponse.setDisplayClass(buildDisplayClass(studentClass));
 
         List<WorkingDay> workingDays = workingDayRepository.findByTenantIdAndIsActiveTrueOrderByDayOrder(tenantId);
         List<TimeSlot> slots = timeSlotRepository
@@ -280,9 +232,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         for (Timetable cell : cells) {
             cellByKey.put(cell.getWorkingDayId() + "-" + cell.getTimeSlotId(), cell);
         }
-
-        Map<Integer, String> subjectNames = new HashMap<>();
-        Map<Integer, String> teacherNames = new HashMap<>();
 
         String targetDay = resolveTargetDay(day, workingDays);
 
@@ -302,8 +251,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                         Timetable cell = cellByKey.get(workingDay.getWorkingDayId() + "-" + slot.getTimeSlotId());
                         if (cell != null) {
                             period.setSubjectId(cell.getSubjectId());
-                            period.setSubjectName(resolveSubjectName(cell.getSubjectId(), subjectNames));
-                            period.setTeacherName(resolveTeacherName(cell.getTeacherId(), teacherNames));
+                            period.setSubjectName(commonHelper.subjectName(cell.getSubjectId()));
+                            period.setTeacherName(commonHelper.teacherName(cell.getTeacherId()));
                         }
                     }
 
@@ -314,8 +263,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             days.add(new StudentTimetableResponse.DaySchedule(workingDay.getDayName(), periods));
         }
 
-        response.setDays(days);
-        return response;
+        studentTimetableResponse.setDays(days);
+        return studentTimetableResponse;
     }
 
     private String resolveTargetDay(String requestedDay, List<WorkingDay> workingDays) {
@@ -334,7 +283,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             }
         }
 
-        return workingDays.isEmpty() ? null : workingDays.get(0).getDayName();
+        return workingDays.isEmpty() ? null : workingDays.getFirst().getDayName();
     }
 
     private String buildDisplayClass(StudentClass studentClass) {
@@ -348,22 +297,9 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return (className != null && sectionName != null) ? className + " - " + sectionName : className;
     }
 
-    private String resolveSubjectName(Integer subjectId, Map<Integer, String> cache) {
-        if (subjectId == null) {
-            return null;
-        }
-        return cache.computeIfAbsent(subjectId, commonHelper::subjectName);
-    }
-
-    private String resolveTeacherName(Integer teacherId, Map<Integer, String> cache) {
-        if (teacherId == null) {
-            return null;
-        }
-        return cache.computeIfAbsent(teacherId, commonHelper::teacherName);
-    }
-
     @Override
     public StudentHomeResponse getStudentHome(Integer studentId, Integer tenantId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new CustomException("student", "Student not found"));
@@ -372,7 +308,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             throw new CustomException("student", "Student not found");
         }
 
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         Integer yearId = currentYear.getAcademicYearId();
 
         StudentHomeResponse response = new StudentHomeResponse();
@@ -462,31 +397,31 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             throw new CustomException("studentId", "Student not found");
         }
 
-        StudentDetailResponse response = new StudentDetailResponse();
-        response.setStudentId(student.getStudentId());
-        response.setAdmissionNo(student.getAdmissionNo());
-        response.setUsername(student.getUsername());
-        response.setStudentName(buildStudentName(student));
-        response.setPhotoUrl(student.getPhotoUrl());
+        StudentDetailResponse studentDetailResponse = new StudentDetailResponse();
+        studentDetailResponse.setStudentId(student.getStudentId());
+        studentDetailResponse.setAdmissionNo(student.getAdmissionNo());
+        studentDetailResponse.setUsername(student.getUsername());
+        studentDetailResponse.setStudentName(buildStudentName(student));
+        studentDetailResponse.setPhotoUrl(student.getPhotoUrl());
 
-        response.setDateOfBirth(student.getDateOfBirth());
-        response.setGender(student.getGender() != null ? String.valueOf(student.getGender()) : null);
-        response.setAadharNo(student.getAadharNo());
-        response.setEmail(student.getEmail());
-        response.setMobileNo(student.getMobileNo());
-        response.setIsHostel(student.getIsHostel());
+        studentDetailResponse.setDateOfBirth(student.getDateOfBirth());
+        studentDetailResponse.setGender(student.getGender() != null ? String.valueOf(student.getGender()) : null);
+        studentDetailResponse.setAadharNo(student.getAadharNo());
+        studentDetailResponse.setEmail(student.getEmail());
+        studentDetailResponse.setMobileNo(student.getMobileNo());
+        studentDetailResponse.setIsHostel(student.getIsHostel());
 
-        response.setFatherName(student.getFatherName());
-        response.setMotherName(student.getMotherName());
-        response.setParentMobile(student.getParentMobile());
-        response.setParentEmail(student.getParentEmail());
-        response.setParentAadhar(student.getParentAadhar());
+        studentDetailResponse.setFatherName(student.getFatherName());
+        studentDetailResponse.setMotherName(student.getMotherName());
+        studentDetailResponse.setParentMobile(student.getParentMobile());
+        studentDetailResponse.setParentEmail(student.getParentEmail());
+        studentDetailResponse.setParentAadhar(student.getParentAadhar());
 
-        response.setAddress(buildFullAddress(student));
+        studentDetailResponse.setAddress(buildFullAddress(student));
 
-        applyClassPlacement(response, student, tenantId);
+        applyClassPlacement(studentDetailResponse, student, tenantId);
 
-        return response;
+        return studentDetailResponse;
     }
 
     private void applyClassPlacement(StudentDetailResponse response, Student student, Integer tenantId) {

@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.constant.Constant;
 import com.edunest.dto.dashboard.DashboardSummaryResponse;
 import com.edunest.dto.dashboard.DashboardSummaryResponse.AttendanceToday;
 import com.edunest.dto.dashboard.DashboardSummaryResponse.LatestAnnouncement;
@@ -42,28 +43,27 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardSummaryResponse getSummary(Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        Integer yearId = currentYear.getAcademicYearId();
 
-        DashboardSummaryResponse response = new DashboardSummaryResponse();
-        response.setTotalStudents(studentRepository.countByTenantIdAndIsActiveTrue(tenantId));
-        response.setTotalTeachers(teacherRepository.countByTenantIdAndIsActiveTrue(tenantId));
-        response.setTotalClasses(classMasterRepository.countByTenantIdAndIsActiveTrue(tenantId));
+        DashboardSummaryResponse dashboardSummaryResponse = new DashboardSummaryResponse();
+        dashboardSummaryResponse.setTotalStudents(studentRepository.countByTenantIdAndIsActiveTrue(tenantId));
+        dashboardSummaryResponse.setTotalTeachers(teacherRepository.countByTenantIdAndIsActiveTrue(tenantId));
+        dashboardSummaryResponse.setTotalClasses(classMasterRepository.countByTenantIdAndIsActiveTrue(tenantId));
 
-        response.setAttendanceToday(buildAttendanceToday(tenantId, yearId));
-        response.setFeeCollectedThisMonth(feeCollectedThisMonth(tenantId, yearId));
-        response.setLatestAnnouncements(buildLatestAnnouncements(tenantId, yearId));
+        dashboardSummaryResponse.setAttendanceToday(buildAttendanceToday(tenantId, currentYear.getAcademicYearId()));
+        dashboardSummaryResponse.setFeeCollectedThisMonth(feeCollectedThisMonth(tenantId, currentYear.getAcademicYearId()));
+        dashboardSummaryResponse.setLatestAnnouncements(buildLatestAnnouncements(tenantId, currentYear.getAcademicYearId()));
 
-        return response;
+        return dashboardSummaryResponse;
     }
 
     private AttendanceToday buildAttendanceToday(Integer tenantId, Integer yearId) {
         LocalDate today = LocalDate.now();
         long present = attendanceRepository
-                .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, "P");
+                .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, Constant.PRESENT);
         long absent = attendanceRepository
-                .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, "A");
+                .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, Constant.ABSENT);
         long late = attendanceRepository
-                .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, "L");
+                .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, Constant.LATE);
         long marked = attendanceRepository
                 .countByTenantIdAndAcademicYearIdAndAttendanceDate(tenantId, yearId, today);
 
@@ -85,9 +85,9 @@ public class DashboardServiceImpl implements DashboardService {
                 .findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(tenantId, yearId);
 
         List<LatestAnnouncement> result = new ArrayList<>();
-        for (Announcement a : announcements) {
+        for (Announcement announcement : announcements) {
             if (result.size() >= 5) break;
-            result.add(new LatestAnnouncement(a.getAnnouncementId(), a.getTitle(), a.getAudience(), a.getPublishDate()));
+            result.add(new LatestAnnouncement(announcement.getAnnouncementId(), announcement.getTitle(), announcement.getAudience(), announcement.getPublishDate()));
         }
         return result;
     }

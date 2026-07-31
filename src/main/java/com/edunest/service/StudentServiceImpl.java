@@ -8,7 +8,10 @@ import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.helper.CryptoHelper;
-import com.edunest.repository.*;
+import com.edunest.repository.ClassMasterRepository;
+import com.edunest.repository.ClassSectionRepository;
+import com.edunest.repository.StudentClassRepository;
+import com.edunest.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,9 +38,6 @@ public class StudentServiceImpl implements StudentService {
 
     @Autowired
     ClassMasterRepository classMasterRepository;
-
-    @Autowired
-    TeacherRepository teacherRepository;
 
     @Autowired
     CommonHelper commonHelper;
@@ -100,26 +100,26 @@ public class StudentServiceImpl implements StudentService {
 
         String updatedByName = commonHelper.teacherName(student.getUpdatedBy());
 
-        StudentListResponse response = new StudentListResponse();
-        response.setStudentId(student.getStudentId());
-        response.setAdmissionNo(student.getAdmissionNo());
-        response.setStudentName(student.getFirstName() + " " + student.getLastName());
-        response.setGender(student.getGender());
-        response.setDateOfBirth(student.getDateOfBirth());
-        response.setMobileNo(student.getMobileNo());
-        response.setEmail(student.getEmail());
-        response.setClassName(className);
-        response.setSectionName(sectionName);
-        response.setDisplayClass(displayClass);
-        response.setRollNo(rollNo);
-        response.setIsActive(student.getIsActive());
-        response.setLastLogin(student.getLastLogin());
-        response.setFatherName(student.getFatherName());
-        response.setParentMobile(student.getParentMobile());
-        response.setUpdatedDate(student.getUpdatedDate());
-        response.setUpdatedBy(updatedByName);
-        response.setIsHostel(student.getIsHostel());
-        return response;
+        StudentListResponse studentListResponse = new StudentListResponse();
+        studentListResponse.setStudentId(student.getStudentId());
+        studentListResponse.setAdmissionNo(student.getAdmissionNo());
+        studentListResponse.setStudentName(student.getFirstName() + " " + student.getLastName());
+        studentListResponse.setGender(student.getGender());
+        studentListResponse.setDateOfBirth(student.getDateOfBirth());
+        studentListResponse.setMobileNo(student.getMobileNo());
+        studentListResponse.setEmail(student.getEmail());
+        studentListResponse.setClassName(className);
+        studentListResponse.setSectionName(sectionName);
+        studentListResponse.setDisplayClass(displayClass);
+        studentListResponse.setRollNo(rollNo);
+        studentListResponse.setIsActive(student.getIsActive());
+        studentListResponse.setLastLogin(student.getLastLogin());
+        studentListResponse.setFatherName(student.getFatherName());
+        studentListResponse.setParentMobile(student.getParentMobile());
+        studentListResponse.setUpdatedDate(student.getUpdatedDate());
+        studentListResponse.setUpdatedBy(updatedByName);
+        studentListResponse.setIsHostel(student.getIsHostel());
+        return studentListResponse;
     }
 
     @Override
@@ -161,11 +161,9 @@ public class StudentServiceImpl implements StudentService {
     @Override
     @Transactional
     public boolean saveStudent(Integer tenantId, Integer loginTeacherId, StudentRequest request) {
-
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         boolean isEdit = (request.getStudentId() != null);
         Student student;
-
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (isEdit) {
             student = studentRepository.findById(request.getStudentId()).orElseThrow(() -> new CustomException("studentId", "Student not found"));

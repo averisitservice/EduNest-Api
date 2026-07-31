@@ -3,31 +3,18 @@ package com.edunest.service;
 import com.edunest.dto.fee.FeePaymentRequest;
 import com.edunest.dto.fee.FeePaymentResponse;
 import com.edunest.dto.fee.FeeStatusResponse;
-import com.edunest.entity.AcademicYear;
-import com.edunest.entity.ClassFee;
-import com.edunest.entity.FeePayment;
-import com.edunest.entity.Student;
-import com.edunest.entity.StudentClass;
-import com.edunest.entity.Teacher;
+import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.AcademicYearRepository;
-import com.edunest.repository.ClassFeeRepository;
-import com.edunest.repository.FeePaymentRepository;
-import com.edunest.repository.StudentClassRepository;
-import com.edunest.repository.StudentRepository;
-import com.edunest.repository.TeacherRepository;
+import com.edunest.repository.*;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class FeeServiceImpl implements FeeService {
@@ -48,9 +35,6 @@ public class FeeServiceImpl implements FeeService {
     TeacherRepository teacherRepository;
 
     @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     CommonHelper commonHelper;
 
     @Override
@@ -61,35 +45,35 @@ public class FeeServiceImpl implements FeeService {
         BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee() : BigDecimal.ZERO;
         BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee() : BigDecimal.ZERO;
 
-        List<StudentClass> roster = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
 
         List<Integer> studentIds = new ArrayList<>();
-        for (StudentClass sc : roster) {
-            studentIds.add(sc.getStudentId());
+        for (StudentClass studentClass : studentClasses) {
+            studentIds.add(studentClass.getStudentId());
         }
 
         Map<Integer, BigDecimal> paidByStudent = new HashMap<>();
         if (!studentIds.isEmpty()) {
             List<FeePayment> payments = feePaymentRepository.findByTenantIdAndAcademicYearIdAndStudentIdIn(
                     tenantId, currentYear.getAcademicYearId(), studentIds);
-            for (FeePayment p : payments) {
-                paidByStudent.merge(p.getStudentId(), p.getAmount(), BigDecimal::add);
+            for (FeePayment feePayment : payments) {
+                paidByStudent.merge(feePayment.getStudentId(), feePayment.getAmount(), BigDecimal::add);
             }
         }
 
         List<FeeStatusResponse> result = new ArrayList<>();
-        for (StudentClass sc : roster) {
-            Student student = studentRepository.findById(sc.getStudentId()).orElse(null);
+        for (StudentClass studentClass : studentClasses) {
+            Student student = studentRepository.findById(studentClass.getStudentId()).orElse(null);
             boolean isHostel = student != null && Boolean.TRUE.equals(student.getIsHostel());
 
             // Hostel students owe the class annual fee plus the class hostel fee.
             BigDecimal studentAnnual = isHostel ? annualFee.add(hostelFee) : annualFee;
-            BigDecimal paid = paidByStudent.getOrDefault(sc.getStudentId(), BigDecimal.ZERO);
+            BigDecimal paid = paidByStudent.getOrDefault(studentClass.getStudentId(), BigDecimal.ZERO);
 
             FeeStatusResponse response = new FeeStatusResponse();
-            response.setStudentId(sc.getStudentId());
+            response.setStudentId(studentClass.getStudentId());
             response.setStudentName(student != null ? student.getFirstName() + " " + student.getLastName() : null);
-            response.setRollNo(sc.getRollNo());
+            response.setRollNo(studentClass.getRollNo());
             response.setAnnualFee(studentAnnual);
             response.setPaidAmount(paid);
             response.setDueAmount(studentAnnual.subtract(paid));
@@ -104,13 +88,6 @@ public class FeeServiceImpl implements FeeService {
     @Transactional
     public String collectPayment(Integer tenantId, Integer collectedBy, FeePaymentRequest request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-
-        if (request.getStudentId() == null) {
-            throw new CustomException("studentId", "Student is required");
-        }
-        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException("amount", "Amount must be greater than zero");
-        }
 
         StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(request.getStudentId(), tenantId)
                 .orElseThrow(() -> new CustomException("student", "Student is not assigned to a class"));
@@ -143,26 +120,22 @@ public class FeeServiceImpl implements FeeService {
                 .findByTenantIdAndStudentIdAndAcademicYearIdOrderByPaymentDateDescFeePaymentIdDesc(
                         tenantId, studentId, currentYear.getAcademicYearId());
 
-        List<FeePaymentResponse> result = new ArrayList<>();
-        for (FeePayment p : payments) {
+        List<FeePaymentResponse> feePaymentResponses = new ArrayList<>();
+
+        for (FeePayment payment : payments) {
             String collectedByName = null;
-            if (p.getCollectedBy() != null) {
-                Teacher teacher = teacherRepository.findById(p.getCollectedBy()).orElse(null);
+            if (payment.getCollectedBy() != null) {
+                Teacher teacher = teacherRepository.findById(payment.getCollectedBy()).orElse(null);
                 if (teacher != null) {
                     collectedByName = teacher.getFirstName() + " " + teacher.getLastName();
                 }
             }
 
             FeePaymentResponse response = new FeePaymentResponse();
-            response.setFeePaymentId(p.getFeePaymentId());
-            response.setAmount(p.getAmount());
-            response.setPaymentDate(p.getPaymentDate());
-            response.setPaymentMode(p.getPaymentMode());
-            response.setReceiptNo(p.getReceiptNo());
-            response.setRemarks(p.getRemarks());
+            BeanUtils.copyProperties(payment, response);
             response.setCollectedBy(collectedByName);
-            result.add(response);
+            feePaymentResponses.add(response);
         }
-        return result;
+        return feePaymentResponses;
     }
 }

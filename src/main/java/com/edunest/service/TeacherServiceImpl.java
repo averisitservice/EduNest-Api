@@ -14,6 +14,7 @@ import com.edunest.repository.TeacherClassRepository;
 import com.edunest.repository.TeacherRepository;
 import com.edunest.repository.TeacherSubjectRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,17 +43,13 @@ public class TeacherServiceImpl implements TeacherService {
         List<TeacherListResponse> responseList = new ArrayList<>();
 
         for (Teacher teacher : teachers) {
-            String updatedByName = commonHelper.teacherName(teacher.getUpdatedBy());
             TeacherListResponse response = new TeacherListResponse();
-            response.setTeacherId(teacher.getTeacherId());
-            response.setRoleId(teacher.getRoleId());
+            BeanUtils.copyProperties(teacher, response);
+
             response.setEmploymentId(teacher.getEmploymentTypeId());
-            response.setMobileNo(teacher.getMobileNo());
-            response.setEmail(teacher.getEmail());
             response.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
-            response.setLastLogin(teacher.getLastLogin());
-            response.setUpdatedDate(teacher.getUpdatedDate());
-            response.setUpdatedBy(updatedByName);
+            response.setUpdatedBy(commonHelper.teacherName(teacher.getUpdatedBy()));
+
             responseList.add(response);
         }
         return responseList;
@@ -60,19 +57,19 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     public List<TeacherListResponse> getTeachersBySubject(Integer tenantId, Integer subjectId) {
-        List<TeacherSubject> mappings = teacherSubjectRepository.findBySubjectIdAndTenantIdAndIsActiveTrue(subjectId, tenantId);
+        List<TeacherSubject> teacherSubjects = teacherSubjectRepository.findBySubjectIdAndTenantIdAndIsActiveTrue(subjectId, tenantId);
 
-        List<TeacherListResponse> result = new ArrayList<>();
-        for (TeacherSubject mapping : mappings) {
-            Teacher teacher = teacherRepository.findById(mapping.getTeacherId()).orElse(null);
+        List<TeacherListResponse> responseList = new ArrayList<>();
+        for (TeacherSubject teacherSubject : teacherSubjects) {
+            Teacher teacher = teacherRepository.findById(teacherSubject.getTeacherId()).orElse(null);
             if (teacher == null || !Boolean.TRUE.equals(teacher.getIsActive())) continue;
 
             TeacherListResponse response = new TeacherListResponse();
             response.setTeacherId(teacher.getTeacherId());
             response.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
-            result.add(response);
+            responseList.add(response);
         }
-        return result;
+        return responseList;
     }
 
     @Override
@@ -196,24 +193,12 @@ public class TeacherServiceImpl implements TeacherService {
             teacherSubjectRequests.add(tsRequest);
         }
 
-        TeacherDTO request = new TeacherDTO();
-        request.setRoleId(teacher.getRoleId());
-        request.setFirstName(teacher.getFirstName());
-        request.setLastName(teacher.getLastName());
-        request.setGender(teacher.getGender());
-        request.setDateOfBirth(teacher.getDateOfBirth());
-        request.setMobileNo(teacher.getMobileNo());
-        request.setEmail(teacher.getEmail());
-        request.setQualification(teacher.getQualification());
-        request.setJoiningDate(teacher.getJoiningDate());
-        request.setAddressLine1(teacher.getAddressLine1());
-        request.setCity(teacher.getCity());
-        request.setState(teacher.getState());
-        request.setPostalCode(teacher.getPostalCode());
-        request.setEmploymentTypeId(teacher.getEmploymentTypeId());
-        request.setTeacherClasses(teacherClassRequests);
-        request.setTeacherSubjects(teacherSubjectRequests);
+        TeacherDTO teacherDTO = new TeacherDTO();
+        BeanUtils.copyProperties(teacher, teacherDTO);
 
-        return request;
+        teacherDTO.setTeacherClasses(teacherClassRequests);
+        teacherDTO.setTeacherSubjects(teacherSubjectRequests);
+
+        return teacherDTO;
     }
 }

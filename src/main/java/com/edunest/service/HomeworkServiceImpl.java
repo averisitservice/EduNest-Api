@@ -6,9 +6,7 @@ import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Homework;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.AcademicYearRepository;
 import com.edunest.repository.HomeworkRepository;
-import com.edunest.repository.TeacherRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,51 +22,38 @@ public class HomeworkServiceImpl implements HomeworkService {
     HomeworkRepository homeworkRepository;
 
     @Autowired
-    TeacherRepository teacherRepository;
-
-    @Autowired
-    AcademicYearRepository academicYearRepository;
-
-    @Autowired
     CommonHelper commonHelper;
 
     @Override
     public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<Homework> items = homeworkRepository.findList(tenantId, currentYear.getAcademicYearId(), classId, sectionId);
+        List<Homework> homeworkList = homeworkRepository.findList(tenantId, currentYear.getAcademicYearId(), classId, sectionId);
 
-        List<HomeworkResponse> result = new ArrayList<>();
-        for (Homework h : items) {
-            HomeworkResponse response = new HomeworkResponse();
-            response.setHomeworkId(h.getHomeworkId());
-            response.setClassId(h.getClassId());
-            response.setSectionId(h.getSectionId());
-            response.setSubjectId(h.getSubjectId());
-            response.setSubjectName(commonHelper.subjectName(h.getSubjectId()));
-            response.setTitle(h.getTitle());
-            response.setDescription(h.getDescription());
-            response.setDueDate(h.getDueDate());
-            response.setAttachmentUrl(h.getAttachmentUrl());
-            response.setCreatedBy(commonHelper.teacherName(h.getCreatedBy()));
-            response.setUpdatedBy(commonHelper.teacherName(h.getUpdatedBy()));
-            response.setUpdatedDate(h.getUpdatedDate());
-            result.add(response);
+        List<HomeworkResponse> homeworkResponseList = new ArrayList<>();
+        for (Homework homework : homeworkList) {
+            HomeworkResponse homeworkResponse = new HomeworkResponse();
+            homeworkResponse.setHomeworkId(homework.getHomeworkId());
+            homeworkResponse.setClassId(homework.getClassId());
+            homeworkResponse.setSectionId(homework.getSectionId());
+            homeworkResponse.setSubjectId(homework.getSubjectId());
+            homeworkResponse.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
+            homeworkResponse.setTitle(homework.getTitle());
+            homeworkResponse.setDescription(homework.getDescription());
+            homeworkResponse.setDueDate(homework.getDueDate());
+            homeworkResponse.setAttachmentUrl(homework.getAttachmentUrl());
+            homeworkResponse.setCreatedBy(commonHelper.teacherName(homework.getCreatedBy()));
+            homeworkResponse.setUpdatedBy(commonHelper.teacherName(homework.getUpdatedBy()));
+            homeworkResponse.setUpdatedDate(homework.getUpdatedDate());
+            homeworkResponseList.add(homeworkResponse);
         }
-        return result;
+        return homeworkResponseList;
     }
 
     @Override
     @Transactional
     public boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-
-        if (request.getClassId() == null) {
-            throw new CustomException("classId", "Class is required");
-        }
-        if (request.getTitle() == null || request.getTitle().isBlank()) {
-            throw new CustomException("title", "Title is required");
-        }
 
         Homework homework;
         if (request.getHomeworkId() != null) {

@@ -11,6 +11,7 @@ import com.edunest.helper.CryptoHelper;
 import com.edunest.repository.TeacherRepository;
 import com.edunest.repository.TenantRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,29 +36,24 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public SchoolLookupResponse getTenantBySchoolCode(String schoolCode) {
-
-        if (schoolCode == null || schoolCode.trim().isEmpty()) {
-            throw new CustomException("schoolCode", "Please enter a school code");
-        }
-
         Tenant tenant = tenantRepository.findBySchoolCodeIgnoreCaseAndIsActiveTrue(schoolCode.trim())
                 .orElseThrow(() -> new CustomException("schoolCode", "Invalid school code"));
 
-        SchoolLookupResponse response = new SchoolLookupResponse();
-        response.setTenantId(tenant.getTenantId());
-        response.setSchoolCode(tenant.getSchoolCode());
-        response.setTenantName(tenant.getTenantName());
-        response.setSchoolBannerUrl(tenant.getSchoolBannerUrl());
-        response.setMobileLogoUrl(tenant.getMobileLogoUrl());
-        response.setLogoUrl(tenant.getLogoUrl());
-        response.setSingleLogoUrl(tenant.getSingleLogoUrl());
-        response.setPrimaryColor(tenant.getPrimaryColor());
-        response.setFaviconUrl(tenant.getFaviconUrl());
-        response.setCity(tenant.getCity());
-        response.setState(tenant.getState());
-        response.setIsHostel(tenant.getIsHostel());
+        SchoolLookupResponse schoolLookupResponse = new SchoolLookupResponse();
+        schoolLookupResponse.setTenantId(tenant.getTenantId());
+        schoolLookupResponse.setSchoolCode(tenant.getSchoolCode());
+        schoolLookupResponse.setTenantName(tenant.getTenantName());
+        schoolLookupResponse.setSchoolBannerUrl(tenant.getSchoolBannerUrl());
+        schoolLookupResponse.setMobileLogoUrl(tenant.getMobileLogoUrl());
+        schoolLookupResponse.setLogoUrl(tenant.getLogoUrl());
+        schoolLookupResponse.setSingleLogoUrl(tenant.getSingleLogoUrl());
+        schoolLookupResponse.setPrimaryColor(tenant.getPrimaryColor());
+        schoolLookupResponse.setFaviconUrl(tenant.getFaviconUrl());
+        schoolLookupResponse.setCity(tenant.getCity());
+        schoolLookupResponse.setState(tenant.getState());
+        schoolLookupResponse.setIsHostel(tenant.getIsHostel());
 
-        return response;
+        return schoolLookupResponse;
     }
 
     @Override
@@ -80,21 +76,9 @@ public class AuthServiceImpl implements AuthService {
         teacher.setLastLogin(LocalDateTime.now());
         teacherRepository.save(teacher);
 
-        String session = jwtHelper.generateAccessToken(teacher);
-        String refresh = jwtHelper.generateRefreshToken(teacher);
 
-        TenantResponse response = new TenantResponse();
-        response.setTenantId(tenant.getTenantId());
-        response.setSchoolCode(tenant.getSchoolCode());
-        response.setFaviconUrl(tenant.getFaviconUrl());
-        response.setSchoolBannerUrl(tenant.getSchoolBannerUrl());
-        response.setMobileLogoUrl(tenant.getMobileLogoUrl());
-        response.setLogoUrl(tenant.getLogoUrl());
-        response.setTenantName(tenant.getTenantName());
-        response.setSingleLogoUrl(tenant.getSingleLogoUrl());
-        response.setPrimaryColor(tenant.getPrimaryColor());
-        response.setFaviconUrl(tenant.getFaviconUrl());
-        response.setIsHostel(tenant.getIsHostel());
+        TenantResponse tenantResponse = new TenantResponse();
+        BeanUtils.copyProperties(tenant, tenantResponse);
 
         TeacherResponse teacherResponse = new TeacherResponse();
         teacherResponse.setTeacherId(teacher.getTeacherId());
@@ -104,10 +88,10 @@ public class AuthServiceImpl implements AuthService {
         teacherResponse.setEmail(teacher.getEmail());
 
         LoginResponse loginResponse = new LoginResponse();
-        loginResponse.setSession(session);
-        loginResponse.setRefresh(refresh);
+        loginResponse.setSession(jwtHelper.generateAccessToken(teacher));
+        loginResponse.setRefresh(jwtHelper.generateRefreshToken(teacher));
         loginResponse.setTeacher(teacherResponse);
-        loginResponse.setTenant(response);
+        loginResponse.setTenant(tenantResponse);
 
         return loginResponse;
     }
@@ -164,7 +148,6 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new CustomException("Teacher", "Teacher not found"));
 
         String newSession = jwtHelper.renewSessionJwt(teacher, request.getRefreshToken());
-
         return new RenewSessionResponse(new RenewSessionResponse.Token(newSession));
     }
 }
