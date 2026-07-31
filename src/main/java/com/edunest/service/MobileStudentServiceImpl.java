@@ -75,6 +75,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             item.setSubjectId(homework.getSubjectId());
             item.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
             item.setTitle(homework.getTitle());
+            item.setDueDate(homework.getDueDate());
             item.setUpdatedDate(homework.getUpdatedDate());
             studentHomeworkItems.add(item);
         }
