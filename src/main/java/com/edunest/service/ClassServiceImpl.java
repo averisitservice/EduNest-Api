@@ -1,7 +1,7 @@
 package com.edunest.service;
 
 import com.edunest.dto.classes.ClassListResponse;
-import com.edunest.dto.classes.ClassRequest;
+import com.edunest.dto.classes.ClassDTO;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
@@ -79,7 +79,7 @@ public class ClassServiceImpl implements ClassService {
     }
 
     @Override
-    public ClassRequest getClassById(Integer classId, Integer tenantId) {
+    public ClassDTO getClassById(Integer classId, Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         ClassMaster classMaster = classMasterRepository.findById(classId).orElseThrow(() -> new CustomException("Class", "Class not found"));
 
@@ -100,18 +100,18 @@ public class ClassServiceImpl implements ClassService {
             classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(classId, currentYear.getAcademicYearId(), tenantId);
         }
 
-        ClassRequest classRequest = new ClassRequest();
-        classRequest.setClassName(classMaster.getClassName());
-        classRequest.setAnnualFee(classFee != null ? classFee.getAnnualFee() : null);
-        classRequest.setHostelFee(classFee != null ? classFee.getHostelFee() : null);
-        classRequest.setSections(sectionNames);
-        classRequest.setSubjectIds(subjectIds);
-        return classRequest;
+        ClassDTO classDTO = new ClassDTO();
+        classDTO.setClassName(classMaster.getClassName());
+        classDTO.setAnnualFee(classFee != null ? classFee.getAnnualFee() : null);
+        classDTO.setHostelFee(classFee != null ? classFee.getHostelFee() : null);
+        classDTO.setSections(sectionNames);
+        classDTO.setSubjectIds(subjectIds);
+        return classDTO;
     }
 
     @Override
     @Transactional
-    public boolean saveClass(Integer classId, Integer tenantId, ClassRequest request) {
+    public boolean saveClass(Integer classId, Integer tenantId, ClassDTO request) {
 
         boolean isEdit = (classId != null);
         ClassMaster classMaster;

@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentRequest {
+public class StudentDTO {
     private Integer studentId;
     private String firstName;
     private String middleName;

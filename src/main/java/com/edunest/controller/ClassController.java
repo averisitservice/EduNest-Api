@@ -3,7 +3,7 @@ package com.edunest.controller;
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.classes.ClassListResponse;
-import com.edunest.dto.classes.ClassRequest;
+import com.edunest.dto.classes.ClassDTO;
 import com.edunest.entity.Subject;
 import com.edunest.service.ClassService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,13 +38,13 @@ public class ClassController {
     }
 
     @GetMapping("/{classId}")
-    public ResponseEntity<ResponseObject<ClassRequest>> getClassById(HttpServletRequest request, @PathVariable Integer classId) {
+    public ResponseEntity<ResponseObject<ClassDTO>> getClassById(HttpServletRequest request, @PathVariable Integer classId) {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
         Integer tenantId = jwtHelper.extractTenantId(token);
 
-        ResponseObject<ClassRequest> response = new ResponseObject<>();
+        ResponseObject<ClassDTO> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(classService.getClassById(classId, tenantId));
         return ResponseEntity.ok(response);
@@ -64,7 +64,7 @@ public class ClassController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseObject<Boolean>> saveClass(HttpServletRequest request, @RequestBody ClassRequest classRequest) {
+    public ResponseEntity<ResponseObject<Boolean>> saveClass(HttpServletRequest request, @RequestBody ClassDTO classDTO) {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
@@ -72,7 +72,7 @@ public class ClassController {
 
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(classService.saveClass(classRequest.getClassId(), tenantId, classRequest));
+        response.setData(classService.saveClass(classDTO.getClassId(), tenantId, classDTO));
         return ResponseEntity.ok(response);
     }
 

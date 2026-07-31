@@ -175,6 +175,20 @@ These conventions apply to all new and edited code in this repository.
 
 - **Do NOT write comments in Java code.** No line comments (`//`), block comments (`/* */`), or Javadoc (`/** */`). Keep method and variable names descriptive enough that the code explains itself.
 - **Do NOT use `@Builder` (or `@Builder.Default`) on entities or DTOs.** Use `@Getter/@Setter/@NoArgsConstructor/@AllArgsConstructor` and plain field initializers; construct objects with `new` + setters.
+- **Variable names must be descriptive, full words** — no cryptic abbreviations (`sc`, `cs`, `wd`, `e`, `a`, `m`). Match the entity/DTO type name, camelCased: an `Exam` variable is `exam`, a `ClassSection` variable is `classSection`, an `ExamScheduleRequest` variable is `examScheduleRequest`.
+- **`for`-each loop variables follow the same rule**: name the loop variable as the singular of the collection it iterates, matching its element type — not a single letter or abbreviation.
+  ```java
+  // Do this
+  for (Student student : students) { ... }
+  for (ClassSection classSection : classSections) { ... }
+  for (ExamScheduleRequest examScheduleRequest : subjects) { ... }
+
+  // Not this
+  for (Student s : students) { ... }
+  for (ClassSection cs : classSections) { ... }
+  ```
+  The one exception is a short-lived stream/lambda parameter used only inline (e.g. `.filter(a -> a.getStatus().equals("P"))`) where the surrounding context makes the type obvious.
+- **DTO naming depends on whether the shape is one-way or shared.** If a DTO is only ever sent to the server, name it `XxxRequest`; if it's only ever sent back, name it `XxxResponse`. If the same class is used as *both* the save-request body and the get-by-id response (a common shortcut when create/read share a shape), name it `XxxDTO` instead — `XxxRequest` returned from a GET endpoint reads backwards. Example: `Student` save/get both use `StudentDTO`, not `StudentRequest`.
 
 ### Layout & conventions
 

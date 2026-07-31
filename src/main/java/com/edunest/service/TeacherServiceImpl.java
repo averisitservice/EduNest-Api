@@ -1,9 +1,9 @@
 package com.edunest.service;
 
-import com.edunest.dto.teacher.TeacherClassRequest;
+import com.edunest.dto.teacher.TeacherClassDTO;
 import com.edunest.dto.teacher.TeacherDTO;
 import com.edunest.dto.teacher.TeacherListResponse;
-import com.edunest.dto.teacher.TeacherSubjectRequest;
+import com.edunest.dto.teacher.TeacherSubjectDTO;
 import com.edunest.entity.Teacher;
 import com.edunest.entity.TeacherClass;
 import com.edunest.entity.TeacherSubject;
@@ -141,12 +141,12 @@ public class TeacherServiceImpl implements TeacherService {
                 List<TeacherClass> oldClasses = teacherClassRepository.findByTeacherIdAndTenantId(savedTeacherId, tenantId);
                 teacherClassRepository.deleteAll(oldClasses);
             }
-            for (TeacherClassRequest tc : request.getTeacherClasses()) {
+            for (TeacherClassDTO teacherClassDTO : request.getTeacherClasses()) {
                 TeacherClass teacherClass = new TeacherClass();
                 teacherClass.setTenantId(tenantId);
                 teacherClass.setTeacherId(savedTeacherId);
-                teacherClass.setClassId(tc.getClassId());
-                teacherClass.setSectionId(tc.getSectionId());
+                teacherClass.setClassId(teacherClassDTO.getClassId());
+                teacherClass.setSectionId(teacherClassDTO.getSectionId());
                 teacherClass.setIsActive(true);
                 teacherClassRepository.save(teacherClass);
             }
@@ -158,11 +158,11 @@ public class TeacherServiceImpl implements TeacherService {
                 List<TeacherSubject> oldSubjects = teacherSubjectRepository.findByTeacherIdAndTenantId(savedTeacherId, tenantId);
                 teacherSubjectRepository.deleteAll(oldSubjects);
             }
-            for (TeacherSubjectRequest ts : request.getTeacherSubjects()) {
+            for (TeacherSubjectDTO teacherSubjectDTO : request.getTeacherSubjects()) {
                 TeacherSubject teacherSubject = new TeacherSubject();
                 teacherSubject.setTenantId(tenantId);
                 teacherSubject.setTeacherId(savedTeacherId);
-                teacherSubject.setSubjectId(ts.getSubjectId());
+                teacherSubject.setSubjectId(teacherSubjectDTO.getSubjectId());
                 teacherSubject.setIsActive(true);
                 teacherSubjectRepository.save(teacherSubject);
             }
@@ -178,26 +178,26 @@ public class TeacherServiceImpl implements TeacherService {
 
         List<TeacherSubject> teacherSubjects = teacherSubjectRepository.findByTeacherIdAndTenantId(teacherId, teacher.getTenantId());
 
-        List<TeacherClassRequest> teacherClassRequests = new ArrayList<>();
-        for (TeacherClass tc : teacherClasses) {
-            TeacherClassRequest tcRequest = new TeacherClassRequest();
-            tcRequest.setClassId(tc.getClassId());
-            tcRequest.setSectionId(tc.getSectionId());
-            teacherClassRequests.add(tcRequest);
+        List<TeacherClassDTO> teacherClassDTOList = new ArrayList<>();
+        for (TeacherClass teacherClass : teacherClasses) {
+            TeacherClassDTO teacherClassDTO = new TeacherClassDTO();
+            teacherClassDTO.setClassId(teacherClass.getClassId());
+            teacherClassDTO.setSectionId(teacherClass.getSectionId());
+            teacherClassDTOList.add(teacherClassDTO);
         }
 
-        List<TeacherSubjectRequest> teacherSubjectRequests = new ArrayList<>();
-        for (TeacherSubject ts : teacherSubjects) {
-            TeacherSubjectRequest tsRequest = new TeacherSubjectRequest();
-            tsRequest.setSubjectId(ts.getSubjectId());
-            teacherSubjectRequests.add(tsRequest);
+        List<TeacherSubjectDTO> teacherSubjectDTOList = new ArrayList<>();
+        for (TeacherSubject teacherSubject : teacherSubjects) {
+            TeacherSubjectDTO teacherSubjectDTO = new TeacherSubjectDTO();
+            teacherSubjectDTO.setSubjectId(teacherSubject.getSubjectId());
+            teacherSubjectDTOList.add(teacherSubjectDTO);
         }
 
         TeacherDTO teacherDTO = new TeacherDTO();
         BeanUtils.copyProperties(teacher, teacherDTO);
 
-        teacherDTO.setTeacherClasses(teacherClassRequests);
-        teacherDTO.setTeacherSubjects(teacherSubjectRequests);
+        teacherDTO.setTeacherClasses(teacherClassDTOList);
+        teacherDTO.setTeacherSubjects(teacherSubjectDTOList);
 
         return teacherDTO;
     }

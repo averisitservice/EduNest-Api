@@ -29,7 +29,7 @@ public class TeacherDTO {
     private String state;
     private String postalCode;
     private Integer employmentTypeId;
-    private List<TeacherClassRequest> teacherClasses;
-    private List<TeacherSubjectRequest> teacherSubjects;
+    private List<TeacherClassDTO> teacherClasses;
+    private List<TeacherSubjectDTO> teacherSubjects;
 }
 

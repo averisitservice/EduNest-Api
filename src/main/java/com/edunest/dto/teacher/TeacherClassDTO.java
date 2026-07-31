@@ -6,6 +6,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeacherSubjectRequest {
-    private Integer subjectId;
+public class TeacherClassDTO {
+    private Integer classId;
+    private Integer sectionId;
 }

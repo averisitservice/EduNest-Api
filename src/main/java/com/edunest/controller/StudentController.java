@@ -4,7 +4,7 @@ import com.edunest.common.PagedResponse;
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.student.StudentListResponse;
-import com.edunest.dto.student.StudentRequest;
+import com.edunest.dto.student.StudentDTO;
 import com.edunest.service.StudentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,20 +44,20 @@ public class StudentController {
     }
 
     @GetMapping("/{studentId}")
-    public ResponseEntity<ResponseObject<StudentRequest>> getStudentById(HttpServletRequest request, @PathVariable Integer studentId) {
+    public ResponseEntity<ResponseObject<StudentDTO>> getStudentById(HttpServletRequest request, @PathVariable Integer studentId) {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
         Integer tenantId = jwtHelper.extractTenantId(token);
 
-        ResponseObject<StudentRequest> response = new ResponseObject<>();
+        ResponseObject<StudentDTO> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(studentService.getStudentById(studentId, tenantId));
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    public ResponseEntity<ResponseObject<Boolean>> saveStudent(HttpServletRequest request, @RequestBody StudentRequest studentRequest) {
+    public ResponseEntity<ResponseObject<Boolean>> saveStudent(HttpServletRequest request, @RequestBody StudentDTO studentDTO) {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
@@ -66,7 +66,7 @@ public class StudentController {
 
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(studentService.saveStudent(tenantId, loginTeacherId, studentRequest));
+        response.setData(studentService.saveStudent(tenantId, loginTeacherId, studentDTO));
         return ResponseEntity.ok(response);
     }
 

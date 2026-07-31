@@ -3,7 +3,7 @@ package com.edunest.service;
 
 import com.edunest.common.PagedResponse;
 import com.edunest.dto.student.StudentListResponse;
-import com.edunest.dto.student.StudentRequest;
+import com.edunest.dto.student.StudentDTO;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
@@ -123,12 +123,12 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public StudentRequest getStudentById(Integer studentId, Integer tenantId) {
+    public StudentDTO getStudentById(Integer studentId, Integer tenantId) {
         Student student = studentRepository.findById(studentId).orElseThrow(() -> new CustomException("studentId", "Student not found"));
 
         StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId).orElse(null);
 
-        StudentRequest request = new StudentRequest();
+        StudentDTO request = new StudentDTO();
         request.setStudentId(student.getStudentId());
         request.setFirstName(student.getFirstName());
         request.setMiddleName(student.getMiddleName());
@@ -160,7 +160,7 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
-    public boolean saveStudent(Integer tenantId, Integer loginTeacherId, StudentRequest request) {
+    public boolean saveStudent(Integer tenantId, Integer loginTeacherId, StudentDTO request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         boolean isEdit = (request.getStudentId() != null);
         Student student;

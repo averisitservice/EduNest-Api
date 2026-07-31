@@ -12,7 +12,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClassRequest {
+public class ClassDTO {
     private Integer classId;
     private String className;
     private BigDecimal annualFee;
