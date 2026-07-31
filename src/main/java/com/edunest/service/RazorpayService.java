@@ -18,5 +18,7 @@ public interface RazorpayService {
 
     boolean verifyAndRecordPayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature);
 
+    RazorpayOrder getOrder(Integer razorpayOrderId);
+
     String getKeyId();
 }

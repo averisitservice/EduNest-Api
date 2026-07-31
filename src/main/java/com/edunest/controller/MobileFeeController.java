@@ -2,15 +2,20 @@ package com.edunest.controller;
 
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
+import com.edunest.dto.fee.StudentFeeDetailResponse;
+import com.edunest.dto.mobile.CreateFeeOrderRequest;
 import com.edunest.dto.mobile.FeeOrderResponse;
 import com.edunest.dto.mobile.VerifyPaymentRequest;
 import com.edunest.dto.mobile.VerifyPaymentResponse;
 import com.edunest.entity.RazorpayOrder;
+import com.edunest.error.CustomException;
+import com.edunest.service.FeeService;
 import com.edunest.service.RazorpayService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,23 +27,55 @@ import java.math.BigDecimal;
 @RequestMapping("/api/student/fee")
 public class MobileFeeController {
 
-    private static final BigDecimal STATIC_FEE_AMOUNT = BigDecimal.valueOf(1000);
-
     @Autowired
     RazorpayService razorpayService;
 
     @Autowired
+    FeeService feeService;
+
+    @Autowired
     JwtHelper jwtHelper;
 
-    @PostMapping("/create-order")
-    public ResponseEntity<ResponseObject<FeeOrderResponse>> createOrder(HttpServletRequest request) {
+    @GetMapping("/detail")
+    public ResponseEntity<ResponseObject<StudentFeeDetailResponse>> getFeeDetail(HttpServletRequest request) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer studentId = jwtHelper.extractStudentId(token);
         Integer tenantId = jwtHelper.extractTenantId(token);
 
+        ResponseObject<StudentFeeDetailResponse> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(feeService.getStudentFeeDetail(tenantId, studentId));
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/create-order")
+    public ResponseEntity<ResponseObject<FeeOrderResponse>> createOrder(
+            HttpServletRequest request,
+            @RequestBody(required = false) CreateFeeOrderRequest createFeeOrderRequest) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        BigDecimal pendingAmount = feeService.getStudentFeeDetail(tenantId, studentId).getPendingAmount();
+        if (pendingAmount == null || pendingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException("amount", "No pending fee to pay");
+        }
+
+        BigDecimal amount = createFeeOrderRequest != null ? createFeeOrderRequest.getAmount() : null;
+        if (amount == null) {
+            amount = pendingAmount;
+        }
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException("amount", "Amount must be greater than zero");
+        }
+        if (amount.compareTo(pendingAmount) > 0) {
+            throw new CustomException("amount", "Amount cannot be more than the pending fee");
+        }
+
         String receipt = "FEE-" + studentId + "-" + System.currentTimeMillis();
-        RazorpayOrder razorpayOrder = razorpayService.createOrder(tenantId, studentId, STATIC_FEE_AMOUNT, "INR", receipt);
+        RazorpayOrder razorpayOrder = razorpayService.createOrder(tenantId, studentId, amount, "INR", receipt);
 
         FeeOrderResponse feeOrderResponse = new FeeOrderResponse();
         feeOrderResponse.setRazorpayOrderId(razorpayOrder.getRazorpayOrderId());
@@ -61,6 +98,12 @@ public class MobileFeeController {
                 verifyPaymentRequest.getRazorpayOrderId(),
                 verifyPaymentRequest.getRazorpayPaymentId(),
                 verifyPaymentRequest.getRazorpaySignature());
+
+        if (verified) {
+            RazorpayOrder order = razorpayService.getOrder(verifyPaymentRequest.getRazorpayOrderId());
+            feeService.recordOnlinePayment(order.getTenantId(), order.getStudentId(), order.getAmount(),
+                    verifyPaymentRequest.getRazorpayPaymentId());
+        }
 
         VerifyPaymentResponse verifyPaymentResponse = new VerifyPaymentResponse();
         verifyPaymentResponse.setVerified(verified);

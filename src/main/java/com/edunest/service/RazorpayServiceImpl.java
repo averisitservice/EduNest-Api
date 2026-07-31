@@ -147,6 +147,12 @@ public class RazorpayServiceImpl implements RazorpayService {
     }
 
     @Override
+    public RazorpayOrder getOrder(Integer razorpayOrderId) {
+        return razorpayOrderRepository.findById(razorpayOrderId)
+                .orElseThrow(() -> new CustomException("razorpayOrderId", "Razorpay order not found"));
+    }
+
+    @Override
     public String getKeyId() {
         return keyId;
     }

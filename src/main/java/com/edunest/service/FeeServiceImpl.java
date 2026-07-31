@@ -3,6 +3,7 @@ package com.edunest.service;
 import com.edunest.dto.fee.FeePaymentRequest;
 import com.edunest.dto.fee.FeePaymentResponse;
 import com.edunest.dto.fee.FeeStatusResponse;
+import com.edunest.dto.fee.StudentFeeDetailResponse;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
@@ -33,6 +34,12 @@ public class FeeServiceImpl implements FeeService {
 
     @Autowired
     TeacherRepository teacherRepository;
+
+    @Autowired
+    ClassMasterRepository classMasterRepository;
+
+    @Autowired
+    ClassSectionRepository classSectionRepository;
 
     @Autowired
     CommonHelper commonHelper;
@@ -92,8 +99,7 @@ public class FeeServiceImpl implements FeeService {
         StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(request.getStudentId(), tenantId)
                 .orElseThrow(() -> new CustomException("student", "Student is not assigned to a class"));
 
-        long count = feePaymentRepository.countByTenantIdAndAcademicYearId(tenantId, currentYear.getAcademicYearId());
-        String receiptNo = "RC-" + currentYear.getYearName() + "-" + String.format("%05d", count + 1);
+        String receiptNo = nextReceiptNo(tenantId, currentYear);
 
         FeePayment payment = new FeePayment();
         payment.setTenantId(tenantId);
@@ -110,6 +116,33 @@ public class FeeServiceImpl implements FeeService {
         feePaymentRepository.save(payment);
 
         return receiptNo;
+    }
+
+    @Override
+    @Transactional
+    public void recordOnlinePayment(Integer tenantId, Integer studentId, BigDecimal amount, String razorpayPaymentId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+
+        StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId)
+                .orElseThrow(() -> new CustomException("student", "Student is not assigned to a class"));
+
+        FeePayment payment = new FeePayment();
+        payment.setTenantId(tenantId);
+        payment.setStudentId(studentId);
+        payment.setClassId(studentClass.getClassId());
+        payment.setSectionId(studentClass.getSectionId());
+        payment.setAcademicYearId(currentYear.getAcademicYearId());
+        payment.setAmount(amount);
+        payment.setPaymentDate(LocalDate.now());
+        payment.setPaymentMode("ONLINE");
+        payment.setReceiptNo(nextReceiptNo(tenantId, currentYear));
+        payment.setRemarks("Razorpay payment ID: " + razorpayPaymentId);
+        feePaymentRepository.save(payment);
+    }
+
+    private String nextReceiptNo(Integer tenantId, AcademicYear currentYear) {
+        long count = feePaymentRepository.countByTenantIdAndAcademicYearId(tenantId, currentYear.getAcademicYearId());
+        return "RC-" + currentYear.getYearName() + "-" + String.format("%05d", count + 1);
     }
 
     @Override
@@ -137,5 +170,52 @@ public class FeeServiceImpl implements FeeService {
             feePaymentResponses.add(response);
         }
         return feePaymentResponses;
+    }
+
+    @Override
+    public StudentFeeDetailResponse getStudentFeeDetail(Integer tenantId, Integer studentId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new CustomException("studentId", "Student not found"));
+
+        StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId)
+                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
+
+        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(
+                studentClass.getClassId(), currentYear.getAcademicYearId(), tenantId);
+        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee() : BigDecimal.ZERO;
+        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee() : BigDecimal.ZERO;
+        boolean isHostel = Boolean.TRUE.equals(student.getIsHostel());
+        BigDecimal totalFee = isHostel ? annualFee.add(hostelFee) : annualFee;
+
+        List<FeePaymentResponse> payments = getPaymentHistory(tenantId, studentId);
+        BigDecimal paidAmount = BigDecimal.ZERO;
+        for (FeePaymentResponse payment : payments) {
+            paidAmount = paidAmount.add(payment.getAmount());
+        }
+
+        StudentFeeDetailResponse response = new StudentFeeDetailResponse();
+        response.setStudentId(studentId);
+        response.setStudentName(student.getFirstName() + " " + student.getLastName());
+        response.setDisplayClass(buildDisplayClass(studentClass));
+        response.setRollNo(studentClass.getRollNo());
+        response.setAcademicYearName(currentYear.getYearName());
+        response.setTotalFee(totalFee);
+        response.setPaidAmount(paidAmount);
+        response.setPendingAmount(totalFee.subtract(paidAmount));
+        response.setPayments(payments);
+        return response;
+    }
+
+    private String buildDisplayClass(StudentClass studentClass) {
+        ClassMaster classMaster = classMasterRepository.findById(studentClass.getClassId()).orElse(null);
+        String className = classMaster != null ? classMaster.getClassName() : null;
+        String sectionName = null;
+        if (studentClass.getSectionId() != null) {
+            ClassSection classSection = classSectionRepository.findById(studentClass.getSectionId()).orElse(null);
+            sectionName = classSection != null ? classSection.getSectionName() : null;
+        }
+        return (className != null && sectionName != null) ? className + " - " + sectionName : className;
     }
 }
