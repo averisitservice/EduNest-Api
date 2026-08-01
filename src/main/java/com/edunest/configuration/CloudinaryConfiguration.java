@@ -45,35 +45,6 @@ public class CloudinaryConfiguration {
         ));
     }
 
-    public Map<String, Object> generateUploadSignature(String folder) {
-        try {
-            long timestamp = System.currentTimeMillis() / 1000;
-
-            Map<String, Object> paramsToSign = new HashMap<>();
-            paramsToSign.put("timestamp", timestamp);
-            if (StringUtils.hasText(folder)) {
-                paramsToSign.put("folder", folder);
-            }
-
-            String signature = cloudinary.apiSignRequest(paramsToSign, apiSecret);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("uploadUrl", "https://api.cloudinary.com/v1_1/" + cloudName + "/auto/upload");
-            response.put("apiKey", apiKey);
-            response.put("timestamp", timestamp);
-            response.put("signature", signature);
-            response.put("cloudName", cloudName);
-            if (StringUtils.hasText(folder)) {
-                response.put("folder", folder);
-            }
-
-            return response;
-        } catch (Exception e) {
-            log.error("Error generating Cloudinary upload signature: folder={}, error={}", folder, e.getMessage(), e);
-            throw new CustomException("cloudinary", "Failed to generate Cloudinary upload signature: " + e.getMessage());
-        }
-    }
-
     public Map<String, Object> uploadFile(MultipartFile file, String folder) {
         try {
             Map<String, Object> uploadParams = new HashMap<>();

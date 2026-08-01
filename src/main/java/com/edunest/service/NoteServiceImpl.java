@@ -1,6 +1,5 @@
 package com.edunest.service;
 
-import com.edunest.configuration.CloudinaryConfiguration;
 import com.edunest.dto.note.NoteRequest;
 import com.edunest.dto.note.NoteResponse;
 import com.edunest.entity.AcademicYear;
@@ -30,7 +29,7 @@ public class NoteServiceImpl implements NoteService {
     CommonHelper commonHelper;
 
     @Autowired
-    CloudinaryConfiguration cloudinaryService;
+    FileStorageService fileStorageService;
 
     @Override
     public List<NoteResponse> getNoteList(Integer tenantId, Integer classId, Integer sectionId) {
@@ -81,7 +80,7 @@ public class NoteServiceImpl implements NoteService {
         note.setDescription(request.getDescription());
 
         if (file != null && !file.isEmpty()) {
-            Map<String, Object> uploadResult = cloudinaryService.uploadFile(file, ATTACHMENT_FOLDER);
+            Map<String, Object> uploadResult = fileStorageService.uploadFile(file, ATTACHMENT_FOLDER);
             note.setAttachmentUrl(String.valueOf(uploadResult.get("secure_url")));
         } else if (request.getNoteId() == null) {
             note.setAttachmentUrl(request.getAttachmentUrl());

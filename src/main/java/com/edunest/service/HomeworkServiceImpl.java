@@ -1,6 +1,5 @@
 package com.edunest.service;
 
-import com.edunest.configuration.CloudinaryConfiguration;
 import com.edunest.dto.homework.HomeworkRequest;
 import com.edunest.dto.homework.HomeworkResponse;
 import com.edunest.entity.AcademicYear;
@@ -30,7 +29,7 @@ public class HomeworkServiceImpl implements HomeworkService {
     CommonHelper commonHelper;
 
     @Autowired
-    CloudinaryConfiguration cloudinaryService;
+    FileStorageService fileStorageService;
 
     @Override
     public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId) {
@@ -83,7 +82,7 @@ public class HomeworkServiceImpl implements HomeworkService {
         homework.setDueDate(request.getDueDate());
 
         if (file != null && !file.isEmpty()) {
-            Map<String, Object> uploadResult = cloudinaryService.uploadFile(file, ATTACHMENT_FOLDER);
+            Map<String, Object> uploadResult = fileStorageService.uploadFile(file, ATTACHMENT_FOLDER);
             homework.setAttachmentUrl(String.valueOf(uploadResult.get("secure_url")));
         } else if (request.getHomeworkId() == null) {
             homework.setAttachmentUrl(request.getAttachmentUrl());
