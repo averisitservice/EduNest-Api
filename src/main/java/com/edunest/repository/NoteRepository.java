@@ -23,14 +23,6 @@ public interface NoteRepository extends JpaRepository<Note, Integer> {
     @Query("SELECT n FROM Note n WHERE n.tenantId = :tenantId AND n.academicYearId = :academicYearId "
             + "AND n.isActive = true AND n.classId = :classId "
             + "AND (n.sectionId IS NULL OR n.sectionId = :sectionId) "
-            + "ORDER BY n.noteId DESC")
-    List<Note> findForStudent(
-            @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
-            @Param("classId") Integer classId, @Param("sectionId") Integer sectionId);
-
-    @Query("SELECT n FROM Note n WHERE n.tenantId = :tenantId AND n.academicYearId = :academicYearId "
-            + "AND n.isActive = true AND n.classId = :classId "
-            + "AND (n.sectionId IS NULL OR n.sectionId = :sectionId) "
             + "AND (:fromDate IS NULL OR n.createdDate >= :fromDate) "
             + "AND (:toDate IS NULL OR n.createdDate <= :toDate) "
             + "ORDER BY n.noteId DESC")
