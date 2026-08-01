@@ -4,6 +4,8 @@ import com.edunest.dto.fee.FeePaymentRequest;
 import com.edunest.dto.fee.FeePaymentResponse;
 import com.edunest.dto.fee.FeeStatusResponse;
 import com.edunest.dto.fee.StudentFeeDetailResponse;
+import com.edunest.dto.mobile.FeeOrderResponse;
+import com.edunest.dto.mobile.VerifyPaymentResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,4 +21,8 @@ public interface FeeService {
     StudentFeeDetailResponse getStudentFeeDetail(Integer tenantId, Integer studentId);
 
     void recordOnlinePayment(Integer tenantId, Integer studentId, BigDecimal amount, String razorpayPaymentId);
+
+    FeeOrderResponse createFeeOrder(Integer tenantId, Integer studentId, BigDecimal requestedAmount);
+
+    VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature);
 }

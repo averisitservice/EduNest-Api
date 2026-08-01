@@ -4,6 +4,8 @@ import com.edunest.dto.fee.FeePaymentRequest;
 import com.edunest.dto.fee.FeePaymentResponse;
 import com.edunest.dto.fee.FeeStatusResponse;
 import com.edunest.dto.fee.StudentFeeDetailResponse;
+import com.edunest.dto.mobile.FeeOrderResponse;
+import com.edunest.dto.mobile.VerifyPaymentResponse;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
@@ -43,6 +45,9 @@ public class FeeServiceImpl implements FeeService {
 
     @Autowired
     CommonHelper commonHelper;
+
+    @Autowired
+    RazorpayService razorpayService;
 
     @Override
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {
@@ -206,6 +211,49 @@ public class FeeServiceImpl implements FeeService {
         response.setPendingAmount(totalFee.subtract(paidAmount));
         response.setPayments(payments);
         return response;
+    }
+
+    @Override
+    public FeeOrderResponse createFeeOrder(Integer tenantId, Integer studentId, BigDecimal requestedAmount) {
+        BigDecimal pendingAmount = getStudentFeeDetail(tenantId, studentId).getPendingAmount();
+        if (pendingAmount == null || pendingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException("amount", "No pending fee to pay");
+        }
+
+        BigDecimal amount = requestedAmount != null ? requestedAmount : pendingAmount;
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException("amount", "Amount must be greater than zero");
+        }
+        if (amount.compareTo(pendingAmount) > 0) {
+            throw new CustomException("amount", "Amount cannot be more than the pending fee");
+        }
+
+        String receipt = "FEE-" + studentId + "-" + System.currentTimeMillis();
+        RazorpayOrder razorpayOrder = razorpayService.createOrder(tenantId, studentId, amount, "INR", receipt);
+
+        FeeOrderResponse feeOrderResponse = new FeeOrderResponse();
+        feeOrderResponse.setRazorpayOrderId(razorpayOrder.getRazorpayOrderId());
+        feeOrderResponse.setRazorpayOrderRef(razorpayOrder.getRazorpayOrderRef());
+        feeOrderResponse.setAmount(razorpayOrder.getAmount());
+        feeOrderResponse.setCurrency(razorpayOrder.getCurrency());
+        feeOrderResponse.setKeyId(razorpayService.getKeyId());
+        return feeOrderResponse;
+    }
+
+    @Override
+    @Transactional
+    public VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature) {
+        boolean verified = razorpayService.verifyAndRecordPayment(razorpayOrderId, razorpayPaymentId, razorpaySignature);
+
+        if (verified) {
+            RazorpayOrder razorpayOrder = razorpayService.getOrder(razorpayOrderId);
+            recordOnlinePayment(razorpayOrder.getTenantId(), razorpayOrder.getStudentId(), razorpayOrder.getAmount(), razorpayPaymentId);
+        }
+
+        VerifyPaymentResponse verifyPaymentResponse = new VerifyPaymentResponse();
+        verifyPaymentResponse.setVerified(verified);
+        verifyPaymentResponse.setStatus(verified ? "PAID" : "FAILED");
+        return verifyPaymentResponse;
     }
 
     private String buildDisplayClass(StudentClass studentClass) {
