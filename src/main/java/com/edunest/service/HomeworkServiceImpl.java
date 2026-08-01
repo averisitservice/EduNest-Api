@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.configuration.CloudinaryConfiguration;
 import com.edunest.dto.homework.HomeworkRequest;
 import com.edunest.dto.homework.HomeworkResponse;
 import com.edunest.entity.AcademicYear;
@@ -29,7 +30,7 @@ public class HomeworkServiceImpl implements HomeworkService {
     CommonHelper commonHelper;
 
     @Autowired
-    CloudinaryService cloudinaryService;
+    CloudinaryConfiguration cloudinaryService;
 
     @Override
     public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId) {

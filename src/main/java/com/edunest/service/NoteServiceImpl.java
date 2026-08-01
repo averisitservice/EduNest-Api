@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.configuration.CloudinaryConfiguration;
 import com.edunest.dto.note.NoteRequest;
 import com.edunest.dto.note.NoteResponse;
 import com.edunest.entity.AcademicYear;
@@ -29,7 +30,7 @@ public class NoteServiceImpl implements NoteService {
     CommonHelper commonHelper;
 
     @Autowired
-    CloudinaryService cloudinaryService;
+    CloudinaryConfiguration cloudinaryService;
 
     @Override
     public List<NoteResponse> getNoteList(Integer tenantId, Integer classId, Integer sectionId) {
