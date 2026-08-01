@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.configuration.RazorpayConfiguration;
 import com.edunest.dto.fee.FeePaymentRequest;
 import com.edunest.dto.fee.FeePaymentResponse;
 import com.edunest.dto.fee.FeeStatusResponse;
@@ -47,7 +48,7 @@ public class FeeServiceImpl implements FeeService {
     CommonHelper commonHelper;
 
     @Autowired
-    RazorpayService razorpayService;
+    RazorpayConfiguration razorpayService;
 
     @Override
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {

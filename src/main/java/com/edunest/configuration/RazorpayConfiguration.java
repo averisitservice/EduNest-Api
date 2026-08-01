@@ -1,4 +1,4 @@
-package com.edunest.service;
+package com.edunest.configuration;
 
 import com.edunest.entity.PaymentWebhookLog;
 import com.edunest.entity.RazorpayOrder;
@@ -11,10 +11,12 @@ import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -25,8 +27,9 @@ import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
-@Service
-public class RazorpayServiceImpl implements RazorpayService {
+@Slf4j
+@Configuration
+public class RazorpayConfiguration {
 
     @Value("${razorpay.key-id}")
     private String keyId;
@@ -46,11 +49,19 @@ public class RazorpayServiceImpl implements RazorpayService {
     PaymentWebhookLogRepository paymentWebhookLogRepository;
 
     @PostConstruct
-    private void init() throws RazorpayException {
-        this.razorpayClient = new RazorpayClient(keyId, keySecret);
+    private void init() {
+        this.razorpayClient = razorpayClient();
     }
 
-    @Override
+    @Bean
+    public RazorpayClient razorpayClient() {
+        try {
+            return new RazorpayClient(keyId, keySecret);
+        } catch (RazorpayException e) {
+            throw new CustomException("razorpay", "Failed to initialize Razorpay client: " + e.getMessage());
+        }
+    }
+
     public RazorpayOrder createOrder(Integer tenantId, Integer studentId, BigDecimal amount, String currency, String receipt) {
         String resolvedCurrency = StringUtils.hasText(currency) ? currency : "INR";
         long amountInPaise = amount.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValueExact();
@@ -72,13 +83,15 @@ public class RazorpayServiceImpl implements RazorpayService {
             razorpayOrder.setReceipt(receipt);
             razorpayOrder.setStatus("created");
 
-            return razorpayOrderRepository.save(razorpayOrder);
+            RazorpayOrder saved = razorpayOrderRepository.save(razorpayOrder);
+            log.info("Successfully created Razorpay order: razorpayOrderRef={}, amount={}", saved.getRazorpayOrderRef(), amount);
+            return saved;
         } catch (RazorpayException e) {
+            log.error("Error creating Razorpay order: studentId={}, amount={}, error={}", studentId, amount, e.getMessage(), e);
             throw new CustomException("razorpayOrder", "Failed to create Razorpay order: " + e.getMessage());
         }
     }
 
-    @Override
     public boolean verifySignature(String razorpayOrderRef, String razorpayPaymentId, String razorpaySignature) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
@@ -98,11 +111,11 @@ public class RazorpayServiceImpl implements RazorpayService {
             }
             return MessageDigest.isEqual(expected, actual);
         } catch (Exception e) {
+            log.error("Error verifying Razorpay signature: razorpayOrderRef={}, error={}", razorpayOrderRef, e.getMessage(), e);
             throw new CustomException("razorpaySignature", "Failed to verify Razorpay signature: " + e.getMessage());
         }
     }
 
-    @Override
     @Transactional
     public RazorpayTransaction recordTransaction(Integer razorpayOrderId, String razorpayPaymentId,
                                                   String razorpaySignature, String status, String failureReason) {
@@ -120,18 +133,17 @@ public class RazorpayServiceImpl implements RazorpayService {
         razorpayOrder.setStatus(status);
         razorpayOrderRepository.save(razorpayOrder);
 
+        log.info("Recorded Razorpay transaction: razorpayOrderId={}, paymentId={}, status={}", razorpayOrderId, razorpayPaymentId, status);
         return savedTransaction;
     }
 
-    @Override
     public void saveWebhookPayload(String payRequestId, String paymentJson) {
-        PaymentWebhookLog log = new PaymentWebhookLog();
-        log.setPayRequestId(payRequestId);
-        log.setPaymentJson(paymentJson);
-        paymentWebhookLogRepository.save(log);
+        PaymentWebhookLog webhookLog = new PaymentWebhookLog();
+        webhookLog.setPayRequestId(payRequestId);
+        webhookLog.setPaymentJson(paymentJson);
+        paymentWebhookLogRepository.save(webhookLog);
     }
 
-    @Override
     @Transactional
     public boolean verifyAndRecordPayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature) {
         RazorpayOrder razorpayOrder = razorpayOrderRepository.findById(razorpayOrderId)
@@ -146,14 +158,8 @@ public class RazorpayServiceImpl implements RazorpayService {
         return isValid;
     }
 
-    @Override
     public RazorpayOrder getOrder(Integer razorpayOrderId) {
         return razorpayOrderRepository.findById(razorpayOrderId)
                 .orElseThrow(() -> new CustomException("razorpayOrderId", "Razorpay order not found"));
-    }
-
-    @Override
-    public String getKeyId() {
-        return keyId;
     }
 }
