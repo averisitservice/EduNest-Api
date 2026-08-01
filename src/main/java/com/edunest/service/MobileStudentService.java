@@ -24,7 +24,7 @@ public interface MobileStudentService {
 
     List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate);
 
-    List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId);
+    List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate);
 
     StudentHomeworkDetailResponse getHomeworkDetail(Integer studentId, Integer tenantId, Integer homeworkId);
 

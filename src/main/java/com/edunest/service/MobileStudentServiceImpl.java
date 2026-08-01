@@ -64,7 +64,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        List<Homework> homeworkList = homeworkRepository.findForStudentInDateRange(
+        List<Homework> homeworkList = homeworkRepository.findHomeForStudentInDateRange(
                 tenantId, currentYear.getAcademicYearId(),
                 studentClass.getClassId(), studentClass.getSectionId(), fromDate, toDate);
 
@@ -83,13 +83,15 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     }
 
     @Override
-    public List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId) {
+    public List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        List<Note> notes = noteRepository.findForStudent(
+        List<Note> notes = noteRepository.findNoteForStudentInDateRange(
                 tenantId, currentYear.getAcademicYearId(),
-                studentClass.getClassId(), studentClass.getSectionId());
+                studentClass.getClassId(), studentClass.getSectionId(),
+                fromDate != null ? fromDate.atStartOfDay() : null,
+                toDate != null ? toDate.atTime(23, 59, 59) : null);
 
         List<StudentNoteItem> studentNoteItems = new ArrayList<>();
         for (Note note : notes) {

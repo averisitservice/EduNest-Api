@@ -96,7 +96,10 @@ public class MobileStudentController {
     }
 
     @GetMapping("/notes")
-    public ResponseEntity<ResponseObject<List<StudentNoteItem>>> getNotes(HttpServletRequest request) {
+    public ResponseEntity<ResponseObject<List<StudentNoteItem>>> getNotes(
+            HttpServletRequest request,
+            @RequestParam(required = false) LocalDate fromDate,
+            @RequestParam(required = false) LocalDate toDate) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer studentId = jwtHelper.extractStudentId(token);
@@ -104,7 +107,7 @@ public class MobileStudentController {
 
         ResponseObject<List<StudentNoteItem>> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(mobileStudentService.getNotes(studentId, tenantId));
+        response.setData(mobileStudentService.getNotes(studentId, tenantId, fromDate, toDate));
 
         return ResponseEntity.ok(response);
     }

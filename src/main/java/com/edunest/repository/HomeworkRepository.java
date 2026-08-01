@@ -34,7 +34,7 @@ public interface HomeworkRepository extends JpaRepository<Homework, Integer> {
             + "AND (:fromDate IS NULL OR h.dueDate >= :fromDate) "
             + "AND (:toDate IS NULL OR h.dueDate <= :toDate) "
             + "ORDER BY h.homeworkId DESC")
-    List<Homework> findForStudentInDateRange(
+    List<Homework> findHomeForStudentInDateRange(
             @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
             @Param("classId") Integer classId, @Param("sectionId") Integer sectionId,
             @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);

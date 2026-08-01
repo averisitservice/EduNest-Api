@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -26,4 +27,15 @@ public interface NoteRepository extends JpaRepository<Note, Integer> {
     List<Note> findForStudent(
             @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
             @Param("classId") Integer classId, @Param("sectionId") Integer sectionId);
+
+    @Query("SELECT n FROM Note n WHERE n.tenantId = :tenantId AND n.academicYearId = :academicYearId "
+            + "AND n.isActive = true AND n.classId = :classId "
+            + "AND (n.sectionId IS NULL OR n.sectionId = :sectionId) "
+            + "AND (:fromDate IS NULL OR n.createdDate >= :fromDate) "
+            + "AND (:toDate IS NULL OR n.createdDate <= :toDate) "
+            + "ORDER BY n.noteId DESC")
+    List<Note> findNoteForStudentInDateRange(
+            @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
+            @Param("classId") Integer classId, @Param("sectionId") Integer sectionId,
+            @Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
 }
