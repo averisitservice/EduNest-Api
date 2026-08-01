@@ -1,0 +1,17 @@
+package com.edunest.repository;
+
+import com.edunest.entity.Leave;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface LeaveRepository extends JpaRepository<Leave, Integer> {
+
+    @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.studentId = :studentId "
+            + "ORDER BY l.leaveId DESC")
+    List<Leave> findByStudentId(@Param("tenantId") Integer tenantId, @Param("studentId") Integer studentId);
+}
