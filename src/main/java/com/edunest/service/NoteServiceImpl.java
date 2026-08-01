@@ -10,19 +10,26 @@ import com.edunest.repository.NoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class NoteServiceImpl implements NoteService {
+
+    private static final String ATTACHMENT_FOLDER = "edunest/note";
 
     @Autowired
     NoteRepository noteRepository;
 
     @Autowired
     CommonHelper commonHelper;
+
+    @Autowired
+    CloudinaryService cloudinaryService;
 
     @Override
     public List<NoteResponse> getNoteList(Integer tenantId, Integer classId, Integer sectionId) {
@@ -51,7 +58,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional
-    public boolean saveNote(Integer tenantId, Integer loginTeacherId, NoteRequest request) {
+    public boolean saveNote(Integer tenantId, Integer loginTeacherId, NoteRequest request, MultipartFile file) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         Note note;
@@ -71,7 +78,14 @@ public class NoteServiceImpl implements NoteService {
         note.setSubjectId(request.getSubjectId());
         note.setTitle(request.getTitle());
         note.setDescription(request.getDescription());
-        note.setAttachmentUrl(request.getAttachmentUrl());
+
+        if (file != null && !file.isEmpty()) {
+            Map<String, Object> uploadResult = cloudinaryService.uploadFile(file, ATTACHMENT_FOLDER);
+            note.setAttachmentUrl(String.valueOf(uploadResult.get("secure_url")));
+        } else if (request.getNoteId() == null) {
+            note.setAttachmentUrl(request.getAttachmentUrl());
+        }
+
         note.setUpdatedBy(loginTeacherId);
         note.setUpdatedDate(LocalDateTime.now());
         noteRepository.save(note);

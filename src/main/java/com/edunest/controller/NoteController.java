@@ -8,8 +8,10 @@ import com.edunest.service.NoteService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -38,9 +40,11 @@ public class NoteController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseObject<Boolean>> saveNote(
-            HttpServletRequest request, @RequestBody NoteRequest noteRequest) {
+            HttpServletRequest request,
+            @RequestPart("data") NoteRequest noteRequest,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer tenantId = jwtHelper.extractTenantId(token);
@@ -48,7 +52,7 @@ public class NoteController {
 
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(noteService.saveNote(tenantId, loginTeacherId, noteRequest));
+        response.setData(noteService.saveNote(tenantId, loginTeacherId, noteRequest, file));
         return ResponseEntity.ok(response);
     }
 

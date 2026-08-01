@@ -10,19 +10,26 @@ import com.edunest.repository.HomeworkRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class HomeworkServiceImpl implements HomeworkService {
+
+    private static final String ATTACHMENT_FOLDER = "edunest/homework";
 
     @Autowired
     HomeworkRepository homeworkRepository;
 
     @Autowired
     CommonHelper commonHelper;
+
+    @Autowired
+    CloudinaryService cloudinaryService;
 
     @Override
     public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId) {
@@ -52,7 +59,7 @@ public class HomeworkServiceImpl implements HomeworkService {
 
     @Override
     @Transactional
-    public boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request) {
+    public boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request, MultipartFile file) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         Homework homework;
@@ -73,7 +80,14 @@ public class HomeworkServiceImpl implements HomeworkService {
         homework.setTitle(request.getTitle());
         homework.setDescription(request.getDescription());
         homework.setDueDate(request.getDueDate());
-        homework.setAttachmentUrl(request.getAttachmentUrl());
+
+        if (file != null && !file.isEmpty()) {
+            Map<String, Object> uploadResult = cloudinaryService.uploadFile(file, ATTACHMENT_FOLDER);
+            homework.setAttachmentUrl(String.valueOf(uploadResult.get("secure_url")));
+        } else if (request.getHomeworkId() == null) {
+            homework.setAttachmentUrl(request.getAttachmentUrl());
+        }
+
         homework.setUpdatedBy(loginTeacherId);
         homework.setUpdatedDate(LocalDateTime.now());
         homeworkRepository.save(homework);
