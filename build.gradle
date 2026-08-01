@@ -48,6 +48,9 @@ dependencies {
 	// Razorpay
 	implementation 'com.razorpay:razorpay-java:1.4.4'
 
+	// Cloudinary
+	implementation 'com.cloudinary:cloudinary-http5:1.39.0'
+
 }
 
 tasks.named('test') {
