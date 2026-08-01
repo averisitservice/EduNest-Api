@@ -88,12 +88,10 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         StudentProfileResponse profile = new StudentProfileResponse();
         profile.setStudentId(student.getStudentId());
         profile.setAdmissionNo(student.getAdmissionNo());
-        profile.setUsername(student.getUsername());
         profile.setStudentName(commonHelper.studentName(student.getStudentId()));
         profile.setEmail(student.getEmail());
         profile.setMobileNo(student.getMobileNo());
         profile.setPhotoUrl(student.getPhotoUrl());
-        profile.setIsHostel(student.getIsHostel());
 
         applyClassPlacement(profile, student);
 
@@ -159,10 +157,6 @@ public class MobileAuthServiceImpl implements MobileAuthService {
             sectionName = classSection != null ? classSection.getSectionName() : null;
         }
 
-        profile.setClassId(studentClass.getClassId());
-        profile.setClassName(className);
-        profile.setSectionId(studentClass.getSectionId());
-        profile.setSectionName(sectionName);
         profile.setDisplayClass(
                 (className != null && sectionName != null) ? className + " - " + sectionName : className);
         profile.setRollNo(studentClass.getRollNo());

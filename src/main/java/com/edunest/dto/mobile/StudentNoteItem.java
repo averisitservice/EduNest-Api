@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class StudentNoteItem {
     private Integer noteId;
-    private Integer subjectId;
     private String subjectName;
     private String title;
     private LocalDateTime updatedDate;

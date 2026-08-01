@@ -21,7 +21,6 @@ public class MobileSchoolServiceImpl implements MobileSchoolService {
                 .orElseThrow(() -> new CustomException("tenant", "School not found"));
 
         SchoolContactResponse response = new SchoolContactResponse();
-        response.setTenantId(tenant.getTenantId());
         response.setSchoolName(tenant.getTenantName());
         response.setLogoUrl((tenant.getMobileLogoUrl() != null && !tenant.getMobileLogoUrl().isBlank())
                 ? tenant.getMobileLogoUrl()

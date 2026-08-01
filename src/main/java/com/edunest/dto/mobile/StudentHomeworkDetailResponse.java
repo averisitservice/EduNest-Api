@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class StudentHomeworkDetailResponse {
     private Integer homeworkId;
-    private Integer subjectId;
     private String subjectName;
     private String title;
     private String description;

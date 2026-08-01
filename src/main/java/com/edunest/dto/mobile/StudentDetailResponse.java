@@ -15,7 +15,6 @@ public class StudentDetailResponse {
 
     private Integer studentId;
     private String admissionNo;
-    private String username;
     private String studentName;
     private String photoUrl;
 
@@ -24,12 +23,7 @@ public class StudentDetailResponse {
     private String aadharNo;
     private String email;
     private String mobileNo;
-    private Boolean isHostel;
 
-    private Integer classId;
-    private String className;
-    private Integer sectionId;
-    private String sectionName;
     private String displayClass;
     private String rollNo;
     private String classTeacherName;

@@ -72,7 +72,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         for (Homework homework : homeworkList) {
             StudentHomeworkItem item = new StudentHomeworkItem();
             item.setHomeworkId(homework.getHomeworkId());
-            item.setSubjectId(homework.getSubjectId());
             item.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
             item.setTitle(homework.getTitle());
             item.setDueDate(homework.getDueDate());
@@ -97,7 +96,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         for (Note note : notes) {
             StudentNoteItem item = new StudentNoteItem();
             item.setNoteId(note.getNoteId());
-            item.setSubjectId(note.getSubjectId());
             item.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
             item.setTitle(note.getTitle());
             item.setUpdatedDate(note.getUpdatedDate());
@@ -120,7 +118,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
         StudentHomeworkDetailResponse studentHomeworkDetailResponse = new StudentHomeworkDetailResponse();
         studentHomeworkDetailResponse.setHomeworkId(homework.getHomeworkId());
-        studentHomeworkDetailResponse.setSubjectId(homework.getSubjectId());
         studentHomeworkDetailResponse.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
         studentHomeworkDetailResponse.setTitle(homework.getTitle());
         studentHomeworkDetailResponse.setDescription(homework.getDescription());
@@ -145,7 +142,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
         StudentNoteDetailResponse response = new StudentNoteDetailResponse();
         response.setNoteId(note.getNoteId());
-        response.setSubjectId(note.getSubjectId());
         response.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
         response.setTitle(note.getTitle());
         response.setDescription(note.getDescription());
@@ -183,7 +179,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
             for (ExamSchedule examSchedule : examSchedules) {
                 StudentExamsResponse.ExamItem examItem = new StudentExamsResponse.ExamItem();
-                examItem.setExamId(exam.getExamId());
                 examItem.setExamName(exam.getExamName());
                 examItem.setSubjectId(examSchedule.getSubjectId());
                 examItem.setSubjectName(commonHelper.subjectName(examSchedule.getSubjectId()));
@@ -403,7 +398,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         StudentDetailResponse studentDetailResponse = new StudentDetailResponse();
         studentDetailResponse.setStudentId(student.getStudentId());
         studentDetailResponse.setAdmissionNo(student.getAdmissionNo());
-        studentDetailResponse.setUsername(student.getUsername());
         studentDetailResponse.setStudentName(buildStudentName(student));
         studentDetailResponse.setPhotoUrl(student.getPhotoUrl());
 
@@ -412,7 +406,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         studentDetailResponse.setAadharNo(student.getAadharNo());
         studentDetailResponse.setEmail(student.getEmail());
         studentDetailResponse.setMobileNo(student.getMobileNo());
-        studentDetailResponse.setIsHostel(student.getIsHostel());
 
         studentDetailResponse.setFatherName(student.getFatherName());
         studentDetailResponse.setMotherName(student.getMotherName());
@@ -445,10 +438,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             sectionName = classSection != null ? classSection.getSectionName() : null;
         }
 
-        response.setClassId(studentClass.getClassId());
-        response.setClassName(className);
-        response.setSectionId(studentClass.getSectionId());
-        response.setSectionName(sectionName);
         response.setDisplayClass(
                 (className != null && sectionName != null) ? className + " - " + sectionName : className);
         response.setRollNo(studentClass.getRollNo());

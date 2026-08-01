@@ -23,7 +23,6 @@ public class StudentExamsResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ExamItem {
-        private Integer examId;
         private String examName;
         private Integer subjectId;
         private String subjectName;
