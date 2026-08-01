@@ -10,7 +10,7 @@ Spring Boot REST API powering EduNest — a multi-tenant school/institute manage
 - **PostgreSQL** — primary database (MySQL connector also on the classpath)
 - **Spring Security** — stateless auth via a custom JWT filter
 - **JJWT 0.12.6** — JWT issuing/parsing
-- **Razorpay Java SDK** — payment order creation/verification (`RazorpayService`, not yet wired to a controller)
+- **Razorpay Java SDK** — payment order creation/verification (`RazorpayService`, exposed via `MobileFeeController`)
 - **Lombok** — boilerplate reduction
 - **Gradle** — build tool
 
@@ -157,11 +157,13 @@ All responses are wrapped in a common `ResponseObject<T>` (`{ success, data, ...
 
 ### Other modules
 
-`AnnouncementController`, `AttendanceController`, `DashboardController`, `EventController`, `ExamController`, `FeeController`, and `HomeworkController` follow the same list/get/save/delete pattern scoped by `tenantId`. `MobileAuthController`, `MobileStudentController`, and `MobileSchoolController` expose the equivalent read-only/self-service views for the student mobile app under `/api/...`.
+`AnnouncementController`, `AttendanceController`, `DashboardController`, `EventController`, `ExamController`, `FeeController`, and `HomeworkController` follow the same list/get/save/delete pattern scoped by `tenantId`. `MobileAuthController` and `MobileStudentController` expose the equivalent read-only/self-service views for the student mobile app under `/api/...` (student login/password, home/profile, timetable, exams, homework, notes — `GET /api/student/homework` and `GET /api/student/notes` both accept optional `fromDate`/`toDate` query params for date-range filtering).
+
+`MobileFeeController` (`/api/student/fee`) handles the mobile fee-payment flow: `GET /detail` (pending/paid summary), `POST /create-order` (creates a Razorpay order for the pending or a partial amount), `POST /verify-payment` (verifies the Razorpay signature and records the payment). Business logic for order creation/verification lives in `FeeService`, which delegates the Razorpay-specific parts to `RazorpayService`.
 
 ## Domain Model (key entities)
 
-`Tenant`, `Role`, `Teacher`, `Student`, `ClassMaster`, `ClassSection`, `ClassSubject`, `ClassFee`, `Subject`, `TeacherClass`, `TeacherSubject`, `StudentClass`, `AcademicYear`, `EmploymentType`, `WorkingDay`, `TimeSlot`, `Timetable`, `Announcement`, `Attendance`, `Event`, `Exam`, `ExamMark`, `ExamSchedule`, `Homework`, `FeePayment`, `RazorpayOrder`, `RazorpayTransaction`, `PaymentWebhookLog`.
+`Tenant`, `Role`, `Teacher`, `Student`, `ClassMaster`, `ClassSection`, `ClassSubject`, `ClassFee`, `Subject`, `TeacherClass`, `TeacherSubject`, `StudentClass`, `AcademicYear`, `EmploymentType`, `WorkingDay`, `TimeSlot`, `Timetable`, `Announcement`, `Attendance`, `Event`, `Exam`, `ExamMark`, `ExamSchedule`, `Homework`, `Note`, `FeePayment`, `RazorpayOrder`, `RazorpayTransaction`, `PaymentWebhookLog`.
 
 ## Error Handling
 
