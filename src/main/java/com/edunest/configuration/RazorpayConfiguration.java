@@ -162,4 +162,8 @@ public class RazorpayConfiguration {
         return razorpayOrderRepository.findById(razorpayOrderId)
                 .orElseThrow(() -> new CustomException("razorpayOrderId", "Razorpay order not found"));
     }
+
+    public String getKeyId() {
+        return keyId;
+    }
 }

@@ -10,7 +10,8 @@ Spring Boot REST API powering EduNest — a multi-tenant school/institute manage
 - **PostgreSQL** — primary database (MySQL connector also on the classpath)
 - **Spring Security** — stateless auth via a custom JWT filter
 - **JJWT 0.12.6** — JWT issuing/parsing
-- **Razorpay Java SDK** — payment order creation/verification (`RazorpayService`, exposed via `MobileFeeController`)
+- **Razorpay Java SDK** — payment order creation/verification (`RazorpayConfiguration`, exposed via `MobileFeeController`)
+- **Cloudinary Java SDK** / **AWS SDK v2 (S3)** — file storage for homework/note attachments, switched via the `is-live` property (`CloudinaryConfiguration`, `AwsConfiguration`, unified behind `FileStorageService`)
 - **Lombok** — boilerplate reduction
 - **Gradle** — build tool
 
@@ -20,7 +21,9 @@ Spring Boot REST API powering EduNest — a multi-tenant school/institute manage
 src/main/java/com/edunest/
 ├── EdunestApplication.java     # Spring Boot entry point
 ├── common/                     # Shared response wrapper (ResponseObject)
-├── configuration/              # JWT filter/helper, Spring Security config
+├── configuration/              # JWT filter/helper, Spring Security config, third-party client config
+│                                #   (Razorpay, Cloudinary, AWS S3 — each holds its client @Bean plus
+│                                #   the business/CRUD methods directly, no separate service interface)
 ├── constant/                   # App-wide constants
 ├── controller/                 # REST controllers (auth, student, teacher, class, timetable, lookup,
 │                                #   announcement, attendance, dashboard, event, exam, fee, homework,
@@ -30,7 +33,8 @@ src/main/java/com/edunest/
 ├── error/                      # Custom exception + global exception handler
 ├── helper/                     # Utility helpers (CryptoHelper, CommonHelper)
 ├── repository/                 # Spring Data JPA repositories
-└── service/                    # Service interfaces + implementations
+└── service/                    # Service interfaces + implementations (FileStorageService switches
+                                 #   between Cloudinary/AWS S3 based on `is-live`)
 
 src/main/resources/
 ├── application.properties      # Runtime configuration
@@ -44,7 +48,9 @@ The app is multi-tenant: most authenticated endpoints derive a `tenantId` (and o
 - JDK 21
 - PostgreSQL instance with a database named `EduNest`
 - (Optional) Gmail account with an app password if you need email sending to work
-- (Optional) Razorpay `key_id` / `key_secret` if you plan to wire up `RazorpayService`
+- (Optional) Razorpay `key_id` / `key_secret` if you plan to wire up `RazorpayConfiguration`
+- (Optional) Cloudinary credentials (`cloud-name` / `api-key` / `api-secret`) for file uploads when `is-live=false`
+- (Optional) AWS S3 credentials + bucket for file uploads when `is-live=true`
 
 ## Configuration
 
@@ -60,7 +66,10 @@ Runtime config lives in `src/main/resources/application.properties`. Key propert
 | `security.jwt.expiration-time` | Access token TTL (ms) |
 | `security.jwt.refresh-expiration-time` | Refresh/session TTL (s) |
 | `APP_KEY` / `APP_IV` | Symmetric encryption key/IV used by `CryptoHelper` |
-| `razorpay.key-id` / `razorpay.key-secret` | Razorpay API credentials used by `RazorpayService` |
+| `razorpay.key-id` / `razorpay.key-secret` | Razorpay API credentials used by `RazorpayConfiguration` |
+| `is-live` | File storage switch: `true` uploads attachments to AWS S3, `false` uploads to Cloudinary |
+| `cloudinary.cloud-name` / `cloudinary.api-key` / `cloudinary.api-secret` | Cloudinary credentials used by `CloudinaryConfiguration` |
+| `aws.access-key` / `aws.secret-key` / `aws.region` / `aws.s3.bucket-name` | AWS S3 credentials used by `AwsConfiguration` |
 
 > **Security note:** `application.properties` currently contains real credentials and is tracked by git (not in `.gitignore`). Move these to environment variables or a local, git-ignored properties file before pushing/sharing the repo.
 
@@ -159,7 +168,9 @@ All responses are wrapped in a common `ResponseObject<T>` (`{ success, data, ...
 
 `AnnouncementController`, `AttendanceController`, `DashboardController`, `EventController`, `ExamController`, `FeeController`, and `HomeworkController` follow the same list/get/save/delete pattern scoped by `tenantId`. `MobileAuthController` and `MobileStudentController` expose the equivalent read-only/self-service views for the student mobile app under `/api/...` (student login/password, home/profile, timetable, exams, homework, notes — `GET /api/student/homework` and `GET /api/student/notes` both accept optional `fromDate`/`toDate` query params for date-range filtering).
 
-`MobileFeeController` (`/api/student/fee`) handles the mobile fee-payment flow: `GET /detail` (pending/paid summary), `POST /create-order` (creates a Razorpay order for the pending or a partial amount), `POST /verify-payment` (verifies the Razorpay signature and records the payment). Business logic for order creation/verification lives in `FeeService`, which delegates the Razorpay-specific parts to `RazorpayService`.
+`HomeworkController` (`POST /homework`) and `NoteController` (`POST /note`) accept `multipart/form-data`: a `data` part with the JSON request body and an optional `file` part for the attachment. When a file is present, `HomeworkServiceImpl`/`NoteServiceImpl` upload it via `FileStorageService` (Cloudinary or AWS S3, per `is-live`) and store the resulting URL as `attachmentUrl`.
+
+`MobileFeeController` (`/api/student/fee`) handles the mobile fee-payment flow: `GET /detail` (pending/paid summary), `POST /create-order` (creates a Razorpay order for the pending or a partial amount), `POST /verify-payment` (verifies the Razorpay signature and records the payment). Business logic for order creation/verification lives in `FeeService`, which delegates the Razorpay-specific parts to `RazorpayConfiguration`.
 
 ## Domain Model (key entities)
 
