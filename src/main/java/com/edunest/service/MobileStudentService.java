@@ -9,6 +9,7 @@ import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface MobileStudentService {
@@ -21,7 +22,7 @@ public interface MobileStudentService {
 
     StudentExamsResponse getExams(Integer studentId, Integer tenantId);
 
-    List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId);
+    List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate);
 
     List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId);
 

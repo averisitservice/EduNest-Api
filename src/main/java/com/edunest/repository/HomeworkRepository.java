@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -26,4 +27,15 @@ public interface HomeworkRepository extends JpaRepository<Homework, Integer> {
     List<Homework> findForStudent(
             @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
             @Param("classId") Integer classId, @Param("sectionId") Integer sectionId);
+
+    @Query("SELECT h FROM Homework h WHERE h.tenantId = :tenantId AND h.academicYearId = :academicYearId "
+            + "AND h.isActive = true AND h.classId = :classId "
+            + "AND (h.sectionId IS NULL OR h.sectionId = :sectionId) "
+            + "AND (:fromDate IS NULL OR h.dueDate >= :fromDate) "
+            + "AND (:toDate IS NULL OR h.dueDate <= :toDate) "
+            + "ORDER BY h.homeworkId DESC")
+    List<Homework> findForStudentInDateRange(
+            @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
+            @Param("classId") Integer classId, @Param("sectionId") Integer sectionId,
+            @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 }

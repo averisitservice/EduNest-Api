@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -78,7 +79,10 @@ public class MobileStudentController {
     }
 
     @GetMapping("/homework")
-    public ResponseEntity<ResponseObject<List<StudentHomeworkItem>>> getHomework(HttpServletRequest request) {
+    public ResponseEntity<ResponseObject<List<StudentHomeworkItem>>> getHomework(
+            HttpServletRequest request,
+            @RequestParam(required = false) LocalDate fromDate,
+            @RequestParam(required = false) LocalDate toDate) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer studentId = jwtHelper.extractStudentId(token);
@@ -86,7 +90,7 @@ public class MobileStudentController {
 
         ResponseObject<List<StudentHomeworkItem>> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(mobileStudentService.getHomework(studentId, tenantId));
+        response.setData(mobileStudentService.getHomework(studentId, tenantId, fromDate, toDate));
 
         return ResponseEntity.ok(response);
     }

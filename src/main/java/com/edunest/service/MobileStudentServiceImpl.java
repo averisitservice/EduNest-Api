@@ -60,13 +60,13 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     CommonHelper commonHelper;
 
     @Override
-    public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId) {
+    public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        List<Homework> homeworkList = homeworkRepository.findForStudent(
+        List<Homework> homeworkList = homeworkRepository.findForStudentInDateRange(
                 tenantId, currentYear.getAcademicYearId(),
-                studentClass.getClassId(), studentClass.getSectionId());
+                studentClass.getClassId(), studentClass.getSectionId(), fromDate, toDate);
 
         List<StudentHomeworkItem> studentHomeworkItems = new ArrayList<>();
         for (Homework homework : homeworkList) {
