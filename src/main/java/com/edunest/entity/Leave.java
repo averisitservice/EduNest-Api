@@ -50,4 +50,7 @@ public class Leave {
 
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
+
+    @Column(name = "updated_by")
+    private Integer updatedBy;
 }

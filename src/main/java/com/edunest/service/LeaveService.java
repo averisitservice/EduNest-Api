@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.dto.leave.LeaveListResponse;
 import com.edunest.dto.leave.LeaveRequest;
 import com.edunest.dto.leave.LeaveResponse;
 
@@ -12,4 +13,8 @@ public interface LeaveService {
     boolean submitLeave(Integer tenantId, Integer studentId, LeaveRequest request);
 
     boolean deleteLeave(Integer tenantId, Integer studentId, Integer leaveId);
+
+    List<LeaveListResponse> getLeaveListForClass(Integer tenantId, Integer classId, Integer sectionId);
+
+    boolean updateLeaveStatus(Integer tenantId, Integer teacherId, Integer leaveId, String status);
 }

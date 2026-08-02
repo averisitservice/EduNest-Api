@@ -14,4 +14,11 @@ public interface LeaveRepository extends JpaRepository<Leave, Integer> {
     @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.studentId = :studentId "
             + "ORDER BY l.leaveId DESC")
     List<Leave> findByStudentId(@Param("tenantId") Integer tenantId, @Param("studentId") Integer studentId);
+
+    @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.classId = :classId "
+            + "AND (:sectionId IS NULL OR l.sectionId = :sectionId) "
+            + "ORDER BY l.leaveId DESC")
+    List<Leave> findByClassAndSection(
+            @Param("tenantId") Integer tenantId, @Param("classId") Integer classId,
+            @Param("sectionId") Integer sectionId);
 }
