@@ -7,7 +7,6 @@ import com.edunest.error.CustomException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,8 +34,7 @@ public class CloudinaryConfiguration {
         this.cloudinary = cloudinary();
     }
 
-    @Bean
-    public Cloudinary cloudinary() {
+    private Cloudinary cloudinary() {
         return new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", cloudName,
                 "api_key", apiKey,

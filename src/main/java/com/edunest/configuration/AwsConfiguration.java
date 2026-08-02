@@ -4,7 +4,6 @@ import com.edunest.error.CustomException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,8 +45,7 @@ public class AwsConfiguration {
         this.s3Client = s3Client();
     }
 
-    @Bean
-    public S3Client s3Client() {
+    private S3Client s3Client() {
         return S3Client.builder()
                 .region(Region.of(region))
                 .credentialsProvider(StaticCredentialsProvider.create(
