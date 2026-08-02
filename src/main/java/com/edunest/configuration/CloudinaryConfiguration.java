@@ -50,7 +50,7 @@ public class CloudinaryConfiguration {
                 uploadParams.put("folder", folder);
             }
 
-            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(uploadParams));
+            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), uploadParams);
             log.info("Successfully uploaded file to Cloudinary: publicId={}, folder={}", result.get("public_id"), folder);
             return result;
         } catch (Exception e) {
@@ -77,7 +77,7 @@ public class CloudinaryConfiguration {
             uploadParams.put("public_id", publicId);
             uploadParams.put("overwrite", true);
 
-            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(uploadParams));
+            Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), uploadParams);
             log.info("Successfully updated Cloudinary file: publicId={}", publicId);
             return result;
         } catch (Exception e) {
