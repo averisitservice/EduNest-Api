@@ -23,8 +23,8 @@ public interface HomeworkRepository extends JpaRepository<Homework, Integer> {
     @Query("SELECT h FROM Homework h WHERE h.tenantId = :tenantId AND h.academicYearId = :academicYearId "
             + "AND h.isActive = true AND h.classId = :classId "
             + "AND (h.sectionId IS NULL OR h.sectionId = :sectionId) "
-            + "AND (CAST(:fromDate AS date) IS NULL OR h.dueDate >= CAST(:fromDate AS date)) "
-            + "AND (CAST(:toDate AS date) IS NULL OR h.dueDate <= CAST(:toDate AS date)) "
+            + "AND h.dueDate >= COALESCE(:fromDate, h.dueDate) "
+            + "AND h.dueDate <= COALESCE(:toDate, h.dueDate) "
             + "ORDER BY h.homeworkId DESC")
     List<Homework> findHomeForStudentInDateRange(
             @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
