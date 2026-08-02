@@ -48,4 +48,18 @@ public class LeaveController {
         response.setData(leaveService.submitLeave(tenantId, studentId, leaveRequest));
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/{leaveId}")
+    public ResponseEntity<ResponseObject<Boolean>> deleteLeave(
+            HttpServletRequest request, @PathVariable Integer leaveId) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<Boolean> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(leaveService.deleteLeave(tenantId, studentId, leaveId));
+        return ResponseEntity.ok(response);
+    }
 }

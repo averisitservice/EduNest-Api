@@ -73,4 +73,21 @@ public class LeaveServiceImpl implements LeaveService {
         leaveRepository.save(leave);
         return true;
     }
+
+    @Override
+    @Transactional
+    public boolean deleteLeave(Integer tenantId, Integer studentId, Integer leaveId) {
+        Leave leave = leaveRepository.findById(leaveId)
+                .orElseThrow(() -> new CustomException("leaveId", "Leave request not found"));
+
+        if (!leave.getTenantId().equals(tenantId) || !leave.getStudentId().equals(studentId)) {
+            throw new CustomException("leaveId", "Leave request not found");
+        }
+        if (!"PENDING".equals(leave.getStatus())) {
+            throw new CustomException("status", "Only pending leave requests can be deleted");
+        }
+
+        leaveRepository.delete(leave);
+        return true;
+    }
 }
