@@ -270,8 +270,19 @@ public class ExamServiceImpl implements ExamService {
         Exam exam = examRepository.findById(request.getExamId())
                 .orElseThrow(() -> new CustomException("examId", "Exam not found"));
 
-        if (request.getRecords() == null) {
-            return true;
+        if (request.getRecords() == null || request.getRecords().isEmpty()) {
+            throw new CustomException("records", "Please enter marks for at least one student.");
+        }
+
+        boolean hasMarks = false;
+        for (ExamMarksSaveRequest.MarkItem item : request.getRecords()) {
+            if (item.getMarksObtained() != null) {
+                hasMarks = true;
+                break;
+            }
+        }
+        if (!hasMarks) {
+            throw new CustomException("records", "Please enter marks for at least one student.");
         }
 
         BigDecimal maxMarks = BigDecimal.valueOf(exam.getMaxMarks());
