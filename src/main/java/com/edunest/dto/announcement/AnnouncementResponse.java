@@ -2,6 +2,7 @@ package com.edunest.dto.announcement;
 
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,7 +17,7 @@ public class AnnouncementResponse {
     private String audience;
     private List<Integer> classIds;
     private List<String> classNames;
-    private LocalDateTime publishDate;
+    private LocalDate publishDate;
     private String status;
     private String createdBy;
     private String updatedBy;

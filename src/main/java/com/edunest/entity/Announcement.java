@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -40,7 +41,7 @@ public class Announcement {
     private String classIds;
 
     @Column(name = "publish_date", nullable = false)
-    private LocalDateTime publishDate;
+    private LocalDate publishDate;
 
     @Column(name = "status", length = 20)
     @Builder.Default

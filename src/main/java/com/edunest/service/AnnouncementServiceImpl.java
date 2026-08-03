@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,7 +92,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             announcement.setPublishDate(request.getPublishDate());
             announcement.setStatus("SCHEDULED");
         } else {
-            announcement.setPublishDate(LocalDateTime.now());
+            announcement.setPublishDate(LocalDate.now());
             announcement.setStatus("PUBLISHED");
         }
         announcement.setUpdatedBy(loginTeacherId);

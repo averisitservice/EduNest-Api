@@ -46,6 +46,6 @@ public class DashboardSummaryResponse {
         private Integer announcementId;
         private String title;
         private String audience;
-        private LocalDateTime publishDate;
+        private LocalDate publishDate;
     }
 }
