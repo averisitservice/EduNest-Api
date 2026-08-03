@@ -14,10 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AnnouncementServiceImpl implements AnnouncementService {
@@ -41,20 +42,22 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
         List<AnnouncementResponse> announcementResponses = new ArrayList<>();
         for (Announcement announcement : announcements) {
-            String className = null;
-            if (announcement.getClassId() != null) {
-                ClassMaster classMaster = classMasterRepository.findById(announcement.getClassId()).orElse(null);
-                className = classMaster != null ? classMaster.getClassName() : null;
-            }
+            List<Integer> classIds = parseClassIds(announcement.getClassIds());
+            List<String> classNames = classIds.isEmpty()
+                    ? new ArrayList<>()
+                    : classMasterRepository.findAllById(classIds).stream()
+                            .map(ClassMaster::getClassName)
+                            .collect(Collectors.toList());
 
             AnnouncementResponse response = new AnnouncementResponse();
             response.setAnnouncementId(announcement.getAnnouncementId());
             response.setTitle(announcement.getTitle());
             response.setMessage(announcement.getMessage());
             response.setAudience(announcement.getAudience());
-            response.setClassId(announcement.getClassId());
-            response.setClassName(className);
+            response.setClassIds(classIds);
+            response.setClassNames(classNames);
             response.setPublishDate(announcement.getPublishDate());
+            response.setStatus(announcement.getStatus());
             response.setCreatedBy(commonHelper.teacherName(announcement.getCreatedBy()));
             response.setUpdatedBy(commonHelper.teacherName(announcement.getUpdatedBy()));
             response.setUpdatedDate(announcement.getUpdatedDate());
@@ -83,8 +86,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setTitle(request.getTitle());
         announcement.setMessage(request.getMessage());
         announcement.setAudience(request.getAudience() != null ? request.getAudience() : Constant.All);
-        announcement.setClassId(request.getClassId());
-        announcement.setPublishDate(request.getPublishDate() != null ? request.getPublishDate() : LocalDate.now());
+        announcement.setClassIds(joinClassIds(request.getClassIds()));
+        if ("SCHEDULED".equalsIgnoreCase(request.getPublishMode()) && request.getPublishDate() != null) {
+            announcement.setPublishDate(request.getPublishDate());
+            announcement.setStatus("SCHEDULED");
+        } else {
+            announcement.setPublishDate(LocalDateTime.now());
+            announcement.setStatus("PUBLISHED");
+        }
         announcement.setUpdatedBy(loginTeacherId);
         announcement.setUpdatedDate(LocalDateTime.now());
         announcementRepository.save(announcement);
@@ -98,5 +107,23 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setIsActive(false);
         announcementRepository.save(announcement);
         return true;
+    }
+
+    private List<Integer> parseClassIds(String classIds) {
+        if (classIds == null || classIds.isBlank()) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(classIds.split(","))
+                .map(String::trim)
+                .filter(id -> !id.isEmpty())
+                .map(Integer::valueOf)
+                .collect(Collectors.toList());
+    }
+
+    private String joinClassIds(List<Integer> classIds) {
+        if (classIds == null || classIds.isEmpty()) {
+            return null;
+        }
+        return classIds.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
 }

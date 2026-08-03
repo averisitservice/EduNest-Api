@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -36,11 +35,16 @@ public class Announcement {
     @Column(name = "audience", nullable = false, length = 20)
     private String audience;
 
-    @Column(name = "class_id")
-    private Integer classId;
+    // Comma-separated class IDs, e.g. "1,2,3" (empty/null means whole school)
+    @Column(name = "class_ids", length = 500)
+    private String classIds;
 
     @Column(name = "publish_date", nullable = false)
-    private LocalDate publishDate;
+    private LocalDateTime publishDate;
+
+    @Column(name = "status", length = 20)
+    @Builder.Default
+    private String status = "PUBLISHED";
 
     @Column(name = "is_active")
     @Builder.Default

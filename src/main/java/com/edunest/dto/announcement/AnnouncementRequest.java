@@ -2,7 +2,8 @@ package com.edunest.dto.announcement;
 
 import lombok.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -13,6 +14,7 @@ public class AnnouncementRequest {
     private String title;
     private String message;
     private String audience;
-    private Integer classId;
-    private LocalDate publishDate;
+    private List<Integer> classIds;
+    private String publishMode;
+    private LocalDateTime publishDate;
 }
