@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Component
@@ -20,7 +20,7 @@ public class AnnouncementScheduler {
     @Transactional
     public void publishScheduledAnnouncements() {
         List<Announcement> due = announcementRepository
-                .findByStatusAndPublishDateLessThanEqualAndIsActiveTrue("SCHEDULED", LocalDateTime.now());
+                .findByStatusAndPublishDateLessThanEqualAndIsActiveTrue("SCHEDULED", LocalDate.now());
 
         for (Announcement announcement : due) {
             announcement.setStatus("PUBLISHED");

@@ -4,7 +4,7 @@ import com.edunest.entity.Announcement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -13,5 +13,5 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Inte
     List<Announcement> findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
             Integer tenantId, Integer academicYearId);
 
-    List<Announcement> findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(String status, LocalDateTime now);
+    List<Announcement> findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(String status, LocalDate today);
 }
