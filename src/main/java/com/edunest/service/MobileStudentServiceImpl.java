@@ -486,6 +486,59 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return value != null && !value.isBlank();
     }
 
+    @Override
+    public StudentAttendanceResponse getAttendance(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+
+        LocalDate resolvedToDate = toDate != null ? toDate : LocalDate.now();
+        LocalDate resolvedFromDate = fromDate != null ? fromDate : resolvedToDate.minusDays(6);
+
+        List<Attendance> attendanceList = attendanceRepository
+                .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(
+                        tenantId, studentId, currentYear.getAcademicYearId(), resolvedFromDate, resolvedToDate);
+
+        List<StudentAttendanceItem> records = new ArrayList<>();
+        long presentDays = 0;
+        long absentDays = 0;
+        long lateDays = 0;
+
+        for (Attendance attendance : attendanceList) {
+            StudentAttendanceItem item = new StudentAttendanceItem();
+            item.setAttendanceDate(attendance.getAttendanceDate());
+            item.setDay(attendance.getAttendanceDate().getDayOfWeek().toString());
+
+            switch (attendance.getStatus()) {
+                case "P" -> {
+                    item.setStatus("PRESENT");
+                    presentDays++;
+                }
+                case "A" -> {
+                    item.setStatus("ABSENT");
+                    absentDays++;
+                }
+                case "L" -> {
+                    item.setStatus("LATE");
+                    lateDays++;
+                }
+                default -> item.setStatus("NOT_MARKED");
+            }
+
+            records.add(item);
+        }
+
+        StudentAttendanceResponse response = new StudentAttendanceResponse();
+        response.setFromDate(resolvedFromDate);
+        response.setToDate(resolvedToDate);
+        response.setPresentDays(presentDays);
+        response.setAbsentDays(absentDays);
+        response.setLateDays(lateDays);
+        response.setTotalDays(attendanceList.size());
+        response.setPercent(percent(presentDays + lateDays, attendanceList.size()));
+        response.setRecords(records);
+
+        return response;
+    }
+
     private String buildStudentName(Student student) {
         StringBuilder name = new StringBuilder();
         if (student.getFirstName() != null) name.append(student.getFirstName());

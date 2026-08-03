@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.dto.mobile.StudentAttendanceResponse;
 import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
 import com.edunest.dto.mobile.StudentHomeResponse;
@@ -29,4 +30,6 @@ public interface MobileStudentService {
     StudentHomeworkDetailResponse getHomeworkDetail(Integer studentId, Integer tenantId, Integer homeworkId);
 
     StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId);
+
+    StudentAttendanceResponse getAttendance(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate);
 }
