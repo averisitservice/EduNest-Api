@@ -6,9 +6,11 @@ import com.edunest.dto.attendance.AttendanceSaveRequest;
 import com.edunest.dto.attendance.AttendanceSummaryResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Attendance;
+import com.edunest.entity.Leave;
 import com.edunest.entity.StudentClass;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AttendanceRepository;
+import com.edunest.repository.LeaveRepository;
 import com.edunest.repository.StudentClassRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Autowired
     StudentClassRepository studentClassRepository;
+
+    @Autowired
+    LeaveRepository leaveRepository;
 
     @Autowired
     CommonHelper commonHelper;
@@ -49,15 +54,34 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
         }
 
+        Map<Integer, Leave> approvedLeaves = new HashMap<>();
+        if (!studentIds.isEmpty()) {
+            List<Leave> leaves = leaveRepository.findByTenantIdAndLeaveDateAndStudentIdInAndStatus(
+                    tenantId, date, studentIds, "APPROVED");
+            for (Leave leave : leaves) {
+                approvedLeaves.put(leave.getStudentId(), leave);
+            }
+        }
+
         List<AttendanceRosterResponse.StudentRow> rows = new ArrayList<>();
         for (StudentClass studentClass : studentClasses) {
             Attendance attendance = existing.get(studentClass.getStudentId());
+            Leave leave = approvedLeaves.get(studentClass.getStudentId());
+
             AttendanceRosterResponse.StudentRow row = new AttendanceRosterResponse.StudentRow();
             row.setStudentId(studentClass.getStudentId());
             row.setStudentName(commonHelper.studentName(studentClass.getStudentId()));
             row.setRollNo(studentClass.getRollNo());
-            row.setStatus(attendance != null ? attendance.getStatus() : null);
-            row.setRemarks(attendance != null ? attendance.getRemarks() : null);
+
+            if (attendance != null) {
+                row.setStatus(attendance.getStatus());
+                row.setRemarks(attendance.getRemarks());
+            } else if (leave != null) {
+                row.setStatus(Constant.LEAVE);
+                row.setRemarks("On approved leave: " + leave.getReason());
+            }
+
+            row.setOnLeave(leave != null);
             rows.add(row);
         }
 
@@ -128,12 +152,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 
             long present = records.stream().filter(a -> Constant.PRESENT.equals(a.getStatus())).count();
             long absent = records.stream().filter(a -> Constant.ABSENT.equals(a.getStatus())).count();
-            long late = records.stream().filter(a -> Constant.LATE.equals(a.getStatus())).count();
+            long leave = records.stream().filter(a -> Constant.LEAVE.equals(a.getStatus())).count();
             long halfDay = records.stream().filter(a -> Constant.HALFDAY.equals(a.getStatus())).count();
             long total = records.size();
 
-            // Present + Late + Half-day (counted as half) contribute to attendance.
-            double attended = present + late + (halfDay * 0.5);
+            // Present + Half-day (counted as half) contribute to attendance. Leave counts as an absence.
+            double attended = present + (halfDay * 0.5);
             double percentage = total > 0 ? Math.round((attended / total) * 1000.0) / 10.0 : 0.0;
 
             AttendanceSummaryResponse summary = new AttendanceSummaryResponse();
@@ -142,7 +166,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             summary.setRollNo(studentClass.getRollNo());
             summary.setPresentCount(present);
             summary.setAbsentCount(absent);
-            summary.setLateCount(late);
+            summary.setLateCount(leave);
             summary.setHalfDayCount(halfDay);
             summary.setTotalMarked(total);
             summary.setPresentPercentage(percentage);

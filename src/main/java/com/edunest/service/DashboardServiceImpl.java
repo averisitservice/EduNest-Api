@@ -62,14 +62,14 @@ public class DashboardServiceImpl implements DashboardService {
                 .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, Constant.PRESENT);
         long absent = attendanceRepository
                 .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, Constant.ABSENT);
-        long late = attendanceRepository
-                .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, Constant.LATE);
+        long leave = attendanceRepository
+                .countByTenantIdAndAcademicYearIdAndAttendanceDateAndStatus(tenantId, yearId, today, Constant.LEAVE);
         long marked = attendanceRepository
                 .countByTenantIdAndAcademicYearIdAndAttendanceDate(tenantId, yearId, today);
 
-        double percent = marked > 0 ? Math.round(((present + late) * 10000.0 / marked)) / 100.0 : 0.0;
+        double percent = marked > 0 ? Math.round((present * 10000.0 / marked)) / 100.0 : 0.0;
 
-        return new AttendanceToday(today, present, absent, late, marked, percent);
+        return new AttendanceToday(today, present, absent, leave, marked, percent);
     }
 
     private BigDecimal feeCollectedThisMonth(Integer tenantId, Integer yearId) {

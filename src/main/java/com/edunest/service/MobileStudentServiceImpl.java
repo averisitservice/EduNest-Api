@@ -36,6 +36,9 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     AttendanceRepository attendanceRepository;
 
     @Autowired
+    LeaveRepository leaveRepository;
+
+    @Autowired
     WorkingDayRepository workingDayRepository;
 
     @Autowired
@@ -352,16 +355,14 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setPresentDays(monthPresent);
         response.setAbsentDays(monthAbsent);
         response.setLateDays(monthLate);
-        response.setThisMonthPercent(percent(monthPresent + monthLate, monthTotal));
+        response.setThisMonthPercent(percent(monthPresent, monthTotal));
 
         long yearPresent = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, "P");
-        long yearLate = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, "L");
         long yearTotal = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearId(tenantId, studentId, yearId);
 
-        response.setAveragePercent(percent(yearPresent + yearLate, yearTotal));
+        response.setAveragePercent(percent(yearPresent, yearTotal));
 
         return response;
     }
@@ -372,7 +373,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 .map(attendance -> switch (attendance.getStatus()) {
                     case "P" -> "PRESENT";
                     case "A" -> "ABSENT";
-                    case "L" -> "LATE";
+                    case "L" -> "LEAVE";
                     default -> "NOT_MARKED";
                 })
                 .orElse("NOT_MARKED");
@@ -497,6 +498,12 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(
                         tenantId, studentId, currentYear.getAcademicYearId(), resolvedFromDate, resolvedToDate);
 
+        Set<LocalDate> approvedLeaveDates = new HashSet<>();
+        for (Leave leave : leaveRepository.findByTenantIdAndStudentIdAndLeaveDateBetweenAndStatus(
+                tenantId, studentId, resolvedFromDate, resolvedToDate, "APPROVED")) {
+            approvedLeaveDates.add(leave.getLeaveDate());
+        }
+
         List<StudentAttendanceItem> records = new ArrayList<>();
         long presentDays = 0;
         long absentDays = 0;
@@ -507,17 +514,19 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             item.setAttendanceDate(attendance.getAttendanceDate());
             item.setDay(attendance.getAttendanceDate().getDayOfWeek().toString());
 
+            boolean onApprovedLeave = approvedLeaveDates.contains(attendance.getAttendanceDate());
+
             switch (attendance.getStatus()) {
                 case "P" -> {
                     item.setStatus("PRESENT");
                     presentDays++;
                 }
                 case "A" -> {
-                    item.setStatus("ABSENT");
+                    item.setStatus(onApprovedLeave ? "LEAVE" : "ABSENT");
                     absentDays++;
                 }
                 case "L" -> {
-                    item.setStatus("LATE");
+                    item.setStatus("LEAVE");
                     lateDays++;
                 }
                 default -> item.setStatus("NOT_MARKED");
@@ -533,7 +542,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setAbsentDays(absentDays);
         response.setLateDays(lateDays);
         response.setTotalDays(attendanceList.size());
-        response.setPercent(percent(presentDays + lateDays, attendanceList.size()));
+        response.setPercent(percent(presentDays, attendanceList.size()));
         response.setRecords(records);
 
         return response;

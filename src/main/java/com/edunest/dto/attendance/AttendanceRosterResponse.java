@@ -23,5 +23,6 @@ public class AttendanceRosterResponse {
         private String rollNo;
         private String status;
         private String remarks;
+        private boolean onLeave;
     }
 }
