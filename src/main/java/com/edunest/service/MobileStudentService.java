@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.dto.mobile.DeviceTokenRequest;
 import com.edunest.dto.mobile.StudentAttendanceResponse;
 import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
@@ -32,4 +33,8 @@ public interface MobileStudentService {
     StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId);
 
     StudentAttendanceResponse getAttendance(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate);
+
+    void registerDeviceToken(Integer studentId, Integer tenantId, DeviceTokenRequest request);
+
+    void unregisterDeviceToken(Integer studentId, Integer tenantId, String fcmToken);
 }

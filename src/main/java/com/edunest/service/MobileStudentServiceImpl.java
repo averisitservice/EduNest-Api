@@ -7,6 +7,7 @@ import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -37,6 +38,9 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Autowired
     LeaveRepository leaveRepository;
+
+    @Autowired
+    DeviceTokenRepository deviceTokenRepository;
 
     @Autowired
     WorkingDayRepository workingDayRepository;
@@ -546,6 +550,31 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setRecords(records);
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public void registerDeviceToken(Integer studentId, Integer tenantId, DeviceTokenRequest request) {
+        if (request.getFcmToken() == null || request.getFcmToken().isBlank()) {
+            throw new CustomException("fcmToken", "FCM token is required");
+        }
+
+        DeviceToken deviceToken = deviceTokenRepository.findByFcmToken(request.getFcmToken())
+                .orElseGet(DeviceToken::new);
+
+        deviceToken.setTenantId(tenantId);
+        deviceToken.setStudentId(studentId);
+        deviceToken.setFcmToken(request.getFcmToken());
+        deviceToken.setPlatform(request.getPlatform());
+        deviceTokenRepository.save(deviceToken);
+    }
+
+    @Override
+    @Transactional
+    public void unregisterDeviceToken(Integer studentId, Integer tenantId, String fcmToken) {
+        deviceTokenRepository.findByFcmToken(fcmToken)
+                .filter(token -> token.getStudentId().equals(studentId) && token.getTenantId().equals(tenantId))
+                .ifPresent(token -> deviceTokenRepository.deleteByFcmToken(fcmToken));
     }
 
     private String buildStudentName(Student student) {

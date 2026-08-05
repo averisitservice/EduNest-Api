@@ -24,6 +24,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -46,6 +47,9 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Autowired
     CommonHelper commonHelper;
+
+    @Autowired
+    PushNotificationService pushNotificationService;
 
     @Override
     public List<LeaveResponse> getLeaveList(Integer tenantId, Integer studentId) {
@@ -149,10 +153,19 @@ public class LeaveServiceImpl implements LeaveService {
             throw new CustomException("status", "This leave request has already been actioned");
         }
 
-        leave.setStatus(status.toUpperCase());
+        String resolvedStatus = status.toUpperCase();
+        leave.setStatus(resolvedStatus);
         leave.setUpdatedBy(teacherId);
         leave.setUpdatedDate(LocalDateTime.now());
         leaveRepository.save(leave);
+
+        String title = "APPROVED".equals(resolvedStatus) ? "Leave Approved" : "Leave Rejected";
+        String body = "APPROVED".equals(resolvedStatus)
+                ? "Your leave request for " + leave.getLeaveDate() + " has been approved."
+                : "Your leave request for " + leave.getLeaveDate() + " has been rejected.";
+        pushNotificationService.sendToStudent(tenantId, leave.getStudentId(), title, body,
+                Map.of("type", "LEAVE", "leaveId", String.valueOf(leave.getLeaveId())));
+
         return true;
     }
 
