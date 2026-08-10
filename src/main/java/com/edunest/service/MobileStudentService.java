@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.dto.mobile.StudentAttendanceResponse;
 import com.edunest.dto.mobile.StudentDetailResponse;
 import com.edunest.dto.mobile.StudentExamsResponse;
@@ -8,6 +9,7 @@ import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
 import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
+import com.edunest.dto.mobile.StudentResultsResponse;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 
 import java.time.LocalDate;
@@ -32,4 +34,8 @@ public interface MobileStudentService {
     StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId);
 
     StudentAttendanceResponse getAttendance(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate);
+
+    StudentResultsResponse getResults(Integer studentId, Integer tenantId);
+
+    ReportCardResponse getResultDetail(Integer studentId, Integer tenantId, Integer examId);
 }

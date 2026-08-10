@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.dto.mobile.*;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
@@ -8,6 +9,7 @@ import com.edunest.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -52,6 +54,12 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Autowired
     ExamScheduleRepository examScheduleRepository;
+
+    @Autowired
+    ExamMarkRepository examMarkRepository;
+
+    @Autowired
+    ExamService examService;
 
     @Autowired
     HomeworkRepository homeworkRepository;
@@ -553,5 +561,92 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         if (student.getFirstName() != null) name.append(student.getFirstName());
         if (student.getLastName() != null) name.append(" ").append(student.getLastName());
         return name.toString().trim();
+    }
+
+    @Override
+    public StudentResultsResponse getResults(Integer studentId, Integer tenantId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        List<Exam> exams = examRepository
+                .findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
+                        tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
+
+        List<StudentResultsResponse.ExamResultItem> examItems = new ArrayList<>();
+        Map<Integer, StudentResultsResponse.SubjectResult> subjectTotals = new LinkedHashMap<>();
+        BigDecimal overallObtained = BigDecimal.ZERO;
+        int overallMax = 0;
+
+        for (Exam exam : exams) {
+            List<ExamMark> marks = examMarkRepository
+                    .findByTenantIdAndExamIdAndStudentId(tenantId, exam.getExamId(), studentId);
+            if (marks.isEmpty()) {
+                continue;
+            }
+
+            ReportCardResponse reportCard = examService.getReportCard(tenantId, exam.getExamId(), studentId);
+
+            StudentResultsResponse.ExamResultItem examItem = new StudentResultsResponse.ExamResultItem();
+            examItem.setExamId(exam.getExamId());
+            examItem.setExamName(reportCard.getExamName());
+            examItem.setExamDate(exam.getExamDate());
+            examItem.setObtained(reportCard.getTotalObtained());
+            examItem.setMax(reportCard.getTotalMax());
+            examItem.setPercentage(reportCard.getPercentage());
+            examItem.setGrade(reportCard.getOverallGrade());
+            examItem.setResult(reportCard.getResult());
+            examItems.add(examItem);
+
+            overallObtained = overallObtained.add(reportCard.getTotalObtained());
+            overallMax += reportCard.getTotalMax();
+
+            for (ReportCardResponse.SubjectMark subjectMark : reportCard.getSubjects()) {
+                StudentResultsResponse.SubjectResult subjectResult = subjectTotals.computeIfAbsent(
+                        subjectMark.getSubjectId(), id -> {
+                            StudentResultsResponse.SubjectResult sr = new StudentResultsResponse.SubjectResult();
+                            sr.setSubjectId(subjectMark.getSubjectId());
+                            sr.setSubjectName(subjectMark.getSubjectName());
+                            sr.setObtained(BigDecimal.ZERO);
+                            sr.setMax(0);
+                            return sr;
+                        });
+                subjectResult.setObtained(subjectResult.getObtained()
+                        .add(subjectMark.getMarksObtained() != null ? subjectMark.getMarksObtained() : BigDecimal.ZERO));
+                subjectResult.setMax(subjectResult.getMax() + reportCard.getMaxMarksPerSubject());
+            }
+        }
+
+        for (StudentResultsResponse.SubjectResult subjectResult : subjectTotals.values()) {
+            subjectResult.setPercentage(percentageOf(subjectResult.getObtained(), subjectResult.getMax()));
+        }
+
+        StudentResultsResponse response = new StudentResultsResponse();
+        response.setOverallObtained(overallObtained);
+        response.setOverallMax(overallMax);
+        response.setOverallPercentage(percentageOf(overallObtained, overallMax));
+        response.setSubjects(new ArrayList<>(subjectTotals.values()));
+        response.setExams(examItems);
+        return response;
+    }
+
+    private double percentageOf(BigDecimal obtained, int max) {
+        if (max <= 0) {
+            return 0.0;
+        }
+        return Math.round(obtained.doubleValue() / max * 10000.0) / 100.0;
+    }
+
+    @Override
+    public ReportCardResponse getResultDetail(Integer studentId, Integer tenantId, Integer examId) {
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new CustomException("examId", "Exam not found"));
+
+        if (!exam.getTenantId().equals(tenantId) || !exam.getClassId().equals(studentClass.getClassId())) {
+            throw new CustomException("examId", "Exam not found");
+        }
+
+        return examService.getReportCard(tenantId, examId, studentId);
     }
 }
