@@ -22,4 +22,10 @@ public interface StudentClassRepository extends JpaRepository<StudentClass, Inte
     List<StudentClass> findRoster(
             @Param("classId") Integer classId, @Param("sectionId") Integer sectionId,
             @Param("academicYearId") Integer academicYearId, @Param("tenantId") Integer tenantId);
+
+    @Query("SELECT DISTINCT sc.studentId FROM StudentClass sc WHERE sc.tenantId = :tenantId "
+            + "AND sc.academicYearId = :academicYearId AND sc.isActive = true AND sc.classId IN :classIds")
+    List<Integer> findStudentIdsByClassIds(
+            @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
+            @Param("classIds") List<Integer> classIds);
 }

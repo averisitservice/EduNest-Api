@@ -55,6 +55,9 @@ dependencies {
 	implementation platform('software.amazon.awssdk:bom:2.29.52')
 	implementation 'software.amazon.awssdk:s3'
 
+	// Firebase (push notifications)
+	implementation 'com.google.firebase:firebase-admin:9.4.1'
+
 }
 
 tasks.named('test') {

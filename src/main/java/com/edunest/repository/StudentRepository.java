@@ -60,4 +60,7 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
             """, nativeQuery = true)
     String findLastAdmissionNo(@Param("tenantId") Integer tenantId,
                                @Param("year") String year);
+
+    @Query("SELECT s.studentId FROM Student s WHERE s.tenantId = :tenantId AND s.isActive = true")
+    List<Integer> findActiveStudentIds(@Param("tenantId") Integer tenantId);
 }

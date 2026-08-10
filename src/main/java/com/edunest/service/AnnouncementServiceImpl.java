@@ -10,6 +10,8 @@ import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AnnouncementRepository;
 import com.edunest.repository.ClassMasterRepository;
+import com.edunest.repository.StudentClassRepository;
+import com.edunest.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +20,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +33,15 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Autowired
     ClassMasterRepository classMasterRepository;
+
+    @Autowired
+    StudentRepository studentRepository;
+
+    @Autowired
+    StudentClassRepository studentClassRepository;
+
+    @Autowired
+    FcmPushService fcmPushService;
 
     @Autowired
     CommonHelper commonHelper;
@@ -88,17 +101,46 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setMessage(request.getMessage());
         announcement.setAudience(request.getAudience() != null ? request.getAudience() : Constant.All);
         announcement.setClassIds(joinClassIds(request.getClassIds()));
-        if ("SCHEDULED".equalsIgnoreCase(request.getPublishMode()) && request.getPublishDate() != null) {
-            announcement.setPublishDate(request.getPublishDate());
-            announcement.setStatus("SCHEDULED");
-        } else {
+        boolean publishNow = !("SCHEDULED".equalsIgnoreCase(request.getPublishMode()) && request.getPublishDate() != null);
+        if (publishNow) {
             announcement.setPublishDate(LocalDate.now());
             announcement.setStatus("PUBLISHED");
+        } else {
+            announcement.setPublishDate(request.getPublishDate());
+            announcement.setStatus("SCHEDULED");
         }
         announcement.setUpdatedBy(loginTeacherId);
         announcement.setUpdatedDate(LocalDateTime.now());
         announcementRepository.save(announcement);
+
+        if (publishNow) {
+            sendAnnouncementPush(announcement);
+        }
         return true;
+    }
+
+    @Override
+    public void sendAnnouncementPush(Announcement announcement) {
+        List<Integer> studentIds = resolveAudience(announcement);
+        if (studentIds.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "NOTIFICATION");
+        data.put("announcementId", String.valueOf(announcement.getAnnouncementId()));
+
+        fcmPushService.sendToStudents(
+                announcement.getTenantId(), studentIds, announcement.getTitle(), announcement.getMessage(), data);
+    }
+
+    private List<Integer> resolveAudience(Announcement announcement) {
+        if (Constant.All.equalsIgnoreCase(announcement.getAudience())
+                || announcement.getClassIds() == null || announcement.getClassIds().isBlank()) {
+            return studentRepository.findActiveStudentIds(announcement.getTenantId());
+        }
+        return studentClassRepository.findStudentIdsByClassIds(
+                announcement.getTenantId(), announcement.getAcademicYearId(), parseClassIds(announcement.getClassIds()));
     }
 
     @Override
