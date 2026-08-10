@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.configuration.FirebaseConfig;
 import com.edunest.repository.StudentDeviceTokenRepository;
 import com.google.firebase.messaging.BatchResponse;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -29,9 +30,16 @@ public class FcmPushServiceImpl implements FcmPushService {
     @Autowired
     StudentDeviceTokenRepository studentDeviceTokenRepository;
 
+    @Autowired
+    FirebaseConfig firebaseConfig;
+
     @Override
     public void sendToStudents(Integer tenantId, List<Integer> studentIds, String title, String body,
                                 Map<String, String> data) {
+        if (!firebaseConfig.isEnabled()) {
+            log.debug("Push notification skipped (Firebase disabled): studentIds={}, title={}", studentIds, title);
+            return;
+        }
         if (studentIds == null || studentIds.isEmpty()) {
             return;
         }
