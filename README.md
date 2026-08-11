@@ -12,6 +12,7 @@ Spring Boot REST API powering EduNest — a multi-tenant school/institute manage
 - **JJWT 0.12.6** — JWT issuing/parsing
 - **Razorpay Java SDK** — payment order creation/verification (`RazorpayConfiguration`, exposed via `MobileFeeController`)
 - **Cloudinary Java SDK** / **AWS SDK v2 (S3)** — file storage for homework/note attachments, switched via the `is-live` property (`CloudinaryConfiguration`, `AwsConfiguration`, unified behind `FileStorageService`)
+- **Firebase Admin SDK** — push notifications to the student mobile app (`FirebaseConfig`, `FcmPushService`), disabled gracefully when no credentials file is configured
 - **Lombok** — boilerplate reduction
 - **Gradle** — build tool
 
@@ -22,12 +23,12 @@ src/main/java/com/edunest/
 ├── EdunestApplication.java     # Spring Boot entry point
 ├── common/                     # Shared response wrapper (ResponseObject)
 ├── configuration/              # JWT filter/helper, Spring Security config, third-party client config
-│                                #   (Razorpay, Cloudinary, AWS S3 — each holds its client @Bean plus
-│                                #   the business/CRUD methods directly, no separate service interface)
+│                                #   (Razorpay, Cloudinary, AWS S3, Firebase — each holds its client @Bean
+│                                #   plus the business/CRUD methods directly, no separate service interface)
 ├── constant/                   # App-wide constants
 ├── controller/                 # REST controllers (auth, student, teacher, class, timetable, lookup,
 │                                #   announcement, attendance, dashboard, event, exam, fee, homework,
-│                                #   mobile auth/student/school)
+│                                #   fcm-token, mobile auth/student/school)
 ├── dto/                        # Request/response DTOs, grouped by feature
 ├── entity/                     # JPA entities
 ├── error/                      # Custom exception + global exception handler
@@ -51,6 +52,7 @@ The app is multi-tenant: most authenticated endpoints derive a `tenantId` (and o
 - (Optional) Razorpay `key_id` / `key_secret` if you plan to wire up `RazorpayConfiguration`
 - (Optional) Cloudinary credentials (`cloud-name` / `api-key` / `api-secret`) for file uploads when `is-live=false`
 - (Optional) AWS S3 credentials + bucket for file uploads when `is-live=true`
+- (Optional) Firebase service account JSON on the classpath if you need push notifications to work
 
 ## Configuration
 
@@ -70,6 +72,7 @@ Runtime config lives in `src/main/resources/application.properties`. Key propert
 | `is-live` | File storage switch: `true` uploads attachments to AWS S3, `false` uploads to Cloudinary |
 | `cloudinary.cloud-name` / `cloudinary.api-key` / `cloudinary.api-secret` | Cloudinary credentials used by `CloudinaryConfiguration` |
 | `aws.access-key` / `aws.secret-key` / `aws.region` / `aws.s3.bucket-name` | AWS S3 credentials used by `AwsConfiguration` |
+| `firebase.credentials-file` | Classpath path to the Firebase service account JSON used by `FirebaseConfig`; if unset, push notifications are silently disabled (`FirebaseConfig.isEnabled()` returns `false`) |
 
 > **Security note:** `application.properties` currently contains real credentials and is tracked by git (not in `.gitignore`). Move these to environment variables or a local, git-ignored properties file before pushing/sharing the repo.
 
@@ -172,9 +175,15 @@ All responses are wrapped in a common `ResponseObject<T>` (`{ success, data, ...
 
 `MobileFeeController` (`/api/student/fee`) handles the mobile fee-payment flow: `GET /detail` (pending/paid summary), `POST /create-order` (creates a Razorpay order for the pending or a partial amount), `POST /verify-payment` (verifies the Razorpay signature and records the payment). Business logic for order creation/verification lives in `FeeService`, which delegates the Razorpay-specific parts to `RazorpayConfiguration`.
 
+### Push notifications (`/api/student/fcm-token`)
+
+`FcmTokenController` lets the mobile app register/unregister the current device for push notifications: `POST /api/student/fcm-token` (upsert the device's FCM token, keyed by token so re-registering the same device just re-points it to whichever student is logged in) and `DELETE /api/student/fcm-token?fcmToken=...` (remove a token, e.g. on logout). Both derive `studentId`/`tenantId` from the JWT.
+
+Notifications themselves aren't a separate controller — they're triggered by other actions. `AnnouncementServiceImpl.sendAnnouncementPush()` resolves the target students (whole tenant or specific classes) and calls `FcmPushService.sendToStudents(...)`, which loads that tenant's registered device tokens (`StudentDeviceTokenRepository`), batches them (500 tokens per Firebase multicast call), and sends via `FirebaseMessaging`. If `firebase.credentials-file` isn't configured, `FirebaseConfig.isEnabled()` is `false` and sends are skipped (logged, not thrown). Tokens that Firebase reports as unregistered/invalid are deleted automatically after a send.
+
 ## Domain Model (key entities)
 
-`Tenant`, `Role`, `Teacher`, `Student`, `ClassMaster`, `ClassSection`, `ClassSubject`, `ClassFee`, `Subject`, `TeacherClass`, `TeacherSubject`, `StudentClass`, `AcademicYear`, `EmploymentType`, `WorkingDay`, `TimeSlot`, `Timetable`, `Announcement`, `Attendance`, `Event`, `Exam`, `ExamMark`, `ExamSchedule`, `Homework`, `Note`, `FeePayment`, `RazorpayOrder`, `RazorpayTransaction`, `PaymentWebhookLog`.
+`Tenant`, `Role`, `Teacher`, `Student`, `ClassMaster`, `ClassSection`, `ClassSubject`, `ClassFee`, `Subject`, `TeacherClass`, `TeacherSubject`, `StudentClass`, `AcademicYear`, `EmploymentType`, `WorkingDay`, `TimeSlot`, `Timetable`, `Announcement`, `Attendance`, `Event`, `Exam`, `ExamMark`, `ExamSchedule`, `Homework`, `Note`, `FeePayment`, `RazorpayOrder`, `RazorpayTransaction`, `PaymentWebhookLog`, `StudentDeviceToken` (one row per registered mobile device, keyed by FCM token, used for push notification delivery).
 
 ## Error Handling
 
@@ -201,6 +210,7 @@ These conventions apply to all new and edited code in this repository.
   for (ClassSection cs : classSections) { ... }
   ```
   The one exception is a short-lived stream/lambda parameter used only inline (e.g. `.filter(a -> a.getStatus().equals("P"))`) where the surrounding context makes the type obvious.
+- **Service implementations should stay simple and beginner-friendly: prefer plain `for`/`if` loops over streams.** Avoid `.stream()`/`.collect()` chains, `Map.computeIfAbsent`/`merge`, `Consumer`/`Function`-style helper parameters, and arrow-`switch` expressions in `service/*Impl.java` classes — write out the loop or `if/else` instead, even if it's a few more lines. Idiomatic one-liners like `.orElseThrow(() -> ...)`, `.orElse(...)`, and `Comparator.comparing(...)` used only for `.sort()` are fine to keep, since rewriting those as manual loops adds complexity rather than removing it.
 - **DTO naming depends on whether the shape is one-way or shared.** If a DTO is only ever sent to the server, name it `XxxRequest`; if it's only ever sent back, name it `XxxResponse`. If the same class is used as *both* the save-request body and the get-by-id response (a common shortcut when create/read share a shape), name it `XxxDTO` instead — `XxxRequest` returned from a GET endpoint reads backwards. Example: `Student` save/get both use `StudentDTO`, not `StudentRequest`.
 
 ### Layout & conventions
