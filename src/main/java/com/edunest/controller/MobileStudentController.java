@@ -1,5 +1,6 @@
 package com.edunest.controller;
 
+import com.edunest.common.PagedResponse;
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.exam.ReportCardResponse;
@@ -11,6 +12,7 @@ import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
 import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
+import com.edunest.dto.mobile.StudentNotificationItem;
 import com.edunest.dto.mobile.StudentResultsResponse;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 import com.edunest.service.MobileStudentService;
@@ -19,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -187,6 +190,38 @@ public class MobileStudentController {
         ResponseObject<ReportCardResponse> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(mobileStudentService.getResultDetail(studentId, tenantId, examId));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/notifications")
+    public ResponseEntity<ResponseObject<PagedResponse<StudentNotificationItem>>> getNotifications(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<PagedResponse<StudentNotificationItem>> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.getNotifications(studentId, tenantId, page, size));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/notifications/{notificationId}/read")
+    public ResponseEntity<ResponseObject<Boolean>> markNotificationAsRead(
+            HttpServletRequest request, @PathVariable Integer notificationId) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<Boolean> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.markNotificationAsRead(studentId, tenantId, notificationId));
 
         return ResponseEntity.ok(response);
     }

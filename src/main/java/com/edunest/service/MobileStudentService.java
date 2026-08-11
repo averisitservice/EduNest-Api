@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.common.PagedResponse;
 import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.dto.mobile.StudentAttendanceResponse;
 import com.edunest.dto.mobile.StudentDetailResponse;
@@ -9,6 +10,7 @@ import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
 import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
+import com.edunest.dto.mobile.StudentNotificationItem;
 import com.edunest.dto.mobile.StudentResultsResponse;
 import com.edunest.dto.mobile.StudentTimetableResponse;
 
@@ -38,4 +40,8 @@ public interface MobileStudentService {
     StudentResultsResponse getResults(Integer studentId, Integer tenantId);
 
     ReportCardResponse getResultDetail(Integer studentId, Integer tenantId, Integer examId);
+
+    PagedResponse<StudentNotificationItem> getNotifications(Integer studentId, Integer tenantId, int page, int size);
+
+    boolean markNotificationAsRead(Integer studentId, Integer tenantId, Integer notificationId);
 }

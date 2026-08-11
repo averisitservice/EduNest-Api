@@ -19,9 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class AnnouncementServiceImpl implements AnnouncementService {
@@ -39,7 +37,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     StudentClassRepository studentClassRepository;
 
     @Autowired
-    FcmPushService fcmPushService;
+    StudentNotificationService studentNotificationService;
 
     @Autowired
     CommonHelper commonHelper;
@@ -125,12 +123,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             return;
         }
 
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "NOTIFICATION");
-        data.put("announcementId", String.valueOf(announcement.getAnnouncementId()));
-
-        fcmPushService.sendToStudents(
-                announcement.getTenantId(), studentIds, announcement.getTitle(), announcement.getMessage(), data);
+        studentNotificationService.notify(announcement.getTenantId(), studentIds, "ANNOUNCEMENT",
+                announcement.getAnnouncementId(), announcement.getTitle(), announcement.getMessage());
     }
 
     private List<Integer> resolveAudience(Announcement announcement) {

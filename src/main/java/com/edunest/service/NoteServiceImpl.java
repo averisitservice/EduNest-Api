@@ -15,7 +15,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +36,7 @@ public class NoteServiceImpl implements NoteService {
     StudentClassRepository studentClassRepository;
 
     @Autowired
-    FcmPushService fcmPushService;
+    StudentNotificationService studentNotificationService;
 
     @Override
     public List<NoteResponse> getNoteList(Integer tenantId, Integer classId, Integer sectionId) {
@@ -114,13 +113,8 @@ public class NoteServiceImpl implements NoteService {
         }
 
         String subjectName = commonHelper.subjectName(note.getSubjectId());
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "NOTIFICATION");
-        data.put("noteId", String.valueOf(note.getNoteId()));
-
-        fcmPushService.sendToStudents(
-                note.getTenantId(), studentIds, "New Note: " + note.getTitle(),
-                subjectName != null ? subjectName : note.getTitle(), data);
+        studentNotificationService.notify(note.getTenantId(), studentIds, "NOTE", note.getNoteId(),
+                "New Note: " + note.getTitle(), subjectName != null ? subjectName : note.getTitle());
     }
 
     @Override

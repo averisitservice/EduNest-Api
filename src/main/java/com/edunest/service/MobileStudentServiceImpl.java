@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.common.PagedResponse;
 import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.dto.mobile.*;
 import com.edunest.entity.*;
@@ -60,6 +61,9 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Autowired
     ExamService examService;
+
+    @Autowired
+    StudentNotificationService studentNotificationService;
 
     @Autowired
     HomeworkRepository homeworkRepository;
@@ -663,5 +667,15 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         }
 
         return examService.getReportCard(tenantId, examId, studentId);
+    }
+
+    @Override
+    public PagedResponse<StudentNotificationItem> getNotifications(Integer studentId, Integer tenantId, int page, int size) {
+        return studentNotificationService.getNotifications(tenantId, studentId, page, size);
+    }
+
+    @Override
+    public boolean markNotificationAsRead(Integer studentId, Integer tenantId, Integer notificationId) {
+        return studentNotificationService.markAsRead(tenantId, studentId, notificationId);
     }
 }

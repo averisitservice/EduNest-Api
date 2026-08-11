@@ -44,7 +44,7 @@ public class ExamServiceImpl implements ExamService {
     CommonHelper commonHelper;
 
     @Autowired
-    FcmPushService fcmPushService;
+    StudentNotificationService studentNotificationService;
 
     private List<Subject> classSubjects(Integer classId, Integer tenantId) {
         List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
@@ -172,13 +172,8 @@ public class ExamServiceImpl implements ExamService {
             return;
         }
 
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "NOTIFICATION");
-        data.put("examId", String.valueOf(exam.getExamId()));
-
-        fcmPushService.sendToStudents(
-                exam.getTenantId(), studentIds, "New Exam Scheduled: " + exam.getExamName(),
-                "Exam scheduled on " + exam.getExamDate() + ".", data);
+        studentNotificationService.notify(exam.getTenantId(), studentIds, "EXAM_SCHEDULED", exam.getExamId(),
+                "New Exam Scheduled: " + exam.getExamName(), "Exam scheduled on " + exam.getExamDate() + ".");
     }
 
     private LocalDate resolveExamStartDate(ExamRequest request) {
@@ -348,13 +343,8 @@ public class ExamServiceImpl implements ExamService {
             return;
         }
 
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "NOTIFICATION");
-        data.put("examId", String.valueOf(exam.getExamId()));
-
-        fcmPushService.sendToStudents(
-                exam.getTenantId(), studentIds, "Result Published: " + exam.getExamName(),
-                "Your marks for " + exam.getExamName() + " have been published.", data);
+        studentNotificationService.notify(exam.getTenantId(), studentIds, "RESULT_PUBLISHED", exam.getExamId(),
+                "Result Published: " + exam.getExamName(), "Your marks for " + exam.getExamName() + " have been published.");
     }
 
     @Override

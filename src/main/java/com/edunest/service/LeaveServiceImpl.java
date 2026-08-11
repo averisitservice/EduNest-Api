@@ -23,9 +23,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -50,7 +48,7 @@ public class LeaveServiceImpl implements LeaveService {
     CommonHelper commonHelper;
 
     @Autowired
-    FcmPushService fcmPushService;
+    StudentNotificationService studentNotificationService;
 
     @Override
     public List<LeaveResponse> getLeaveList(Integer tenantId, Integer studentId) {
@@ -167,11 +165,8 @@ public class LeaveServiceImpl implements LeaveService {
         String title = "APPROVED".equals(leave.getStatus()) ? "Leave Request Approved" : "Leave Request Rejected";
         String body = "Your leave request for " + leave.getLeaveDate() + " has been " + leave.getStatus().toLowerCase() + ".";
 
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "NOTIFICATION");
-        data.put("leaveId", String.valueOf(leave.getLeaveId()));
-
-        fcmPushService.sendToStudents(leave.getTenantId(), List.of(leave.getStudentId()), title, body, data);
+        studentNotificationService.notify(leave.getTenantId(), List.of(leave.getStudentId()), "LEAVE_STATUS",
+                leave.getLeaveId(), title, body);
     }
 
     private String buildDisplayClass(Integer classId, Integer sectionId) {

@@ -15,7 +15,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +36,7 @@ public class HomeworkServiceImpl implements HomeworkService {
     StudentClassRepository studentClassRepository;
 
     @Autowired
-    FcmPushService fcmPushService;
+    StudentNotificationService studentNotificationService;
 
     @Override
     public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId) {
@@ -116,13 +115,8 @@ public class HomeworkServiceImpl implements HomeworkService {
         }
 
         String subjectName = commonHelper.subjectName(homework.getSubjectId());
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "NOTIFICATION");
-        data.put("homeworkId", String.valueOf(homework.getHomeworkId()));
-
-        fcmPushService.sendToStudents(
-                homework.getTenantId(), studentIds, "New Homework: " + homework.getTitle(),
-                subjectName != null ? subjectName : homework.getTitle(), data);
+        studentNotificationService.notify(homework.getTenantId(), studentIds, "HOMEWORK", homework.getHomeworkId(),
+                "New Homework: " + homework.getTitle(), subjectName != null ? subjectName : homework.getTitle());
     }
 
     @Override
