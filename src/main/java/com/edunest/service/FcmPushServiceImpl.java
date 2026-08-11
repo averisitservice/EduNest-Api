@@ -94,6 +94,8 @@ public class FcmPushServiceImpl implements FcmPushService {
                 deadTokens.add(tokens.get(i));
             }
         }
-        deadTokens.forEach(studentDeviceTokenRepository::deleteByFcmToken);
+        for (String deadToken : deadTokens) {
+            studentDeviceTokenRepository.deleteByFcmToken(deadToken);
+        }
     }
 }

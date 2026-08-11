@@ -19,11 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class AnnouncementServiceImpl implements AnnouncementService {
@@ -57,11 +55,12 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         List<AnnouncementResponse> announcementResponses = new ArrayList<>();
         for (Announcement announcement : announcements) {
             List<Integer> classIds = parseClassIds(announcement.getClassIds());
-            List<String> classNames = classIds.isEmpty()
-                    ? new ArrayList<>()
-                    : classMasterRepository.findAllById(classIds).stream()
-                            .map(ClassMaster::getClassName)
-                            .collect(Collectors.toList());
+            List<String> classNames = new ArrayList<>();
+            if (!classIds.isEmpty()) {
+                for (ClassMaster classMaster : classMasterRepository.findAllById(classIds)) {
+                    classNames.add(classMaster.getClassName());
+                }
+            }
 
             AnnouncementResponse response = new AnnouncementResponse();
             response.setAnnouncementId(announcement.getAnnouncementId());
@@ -153,20 +152,30 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     }
 
     private List<Integer> parseClassIds(String classIds) {
+        List<Integer> result = new ArrayList<>();
         if (classIds == null || classIds.isBlank()) {
-            return new ArrayList<>();
+            return result;
         }
-        return Arrays.stream(classIds.split(","))
-                .map(String::trim)
-                .filter(id -> !id.isEmpty())
-                .map(Integer::valueOf)
-                .collect(Collectors.toList());
+        for (String id : classIds.split(",")) {
+            String trimmedId = id.trim();
+            if (!trimmedId.isEmpty()) {
+                result.add(Integer.valueOf(trimmedId));
+            }
+        }
+        return result;
     }
 
     private String joinClassIds(List<Integer> classIds) {
         if (classIds == null || classIds.isEmpty()) {
             return null;
         }
-        return classIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        StringBuilder result = new StringBuilder();
+        for (Integer classId : classIds) {
+            if (result.length() > 0) {
+                result.append(",");
+            }
+            result.append(classId);
+        }
+        return result.toString();
     }
 }

@@ -376,15 +376,23 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     }
 
     private String resolveTodayStatus(Integer tenantId, Integer studentId, Integer yearId, LocalDate today) {
-        return attendanceRepository
+        Attendance attendance = attendanceRepository
                 .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDate(tenantId, studentId, yearId, today)
-                .map(attendance -> switch (attendance.getStatus()) {
-                    case "P" -> "PRESENT";
-                    case "A" -> "ABSENT";
-                    case "L" -> "LEAVE";
-                    default -> "NOT_MARKED";
-                })
-                .orElse("NOT_MARKED");
+                .orElse(null);
+
+        if (attendance == null) {
+            return "NOT_MARKED";
+        }
+
+        if ("P".equals(attendance.getStatus())) {
+            return "PRESENT";
+        } else if ("A".equals(attendance.getStatus())) {
+            return "ABSENT";
+        } else if ("L".equals(attendance.getStatus())) {
+            return "LEAVE";
+        } else {
+            return "NOT_MARKED";
+        }
     }
 
     private double percent(long attended, long total) {
@@ -524,20 +532,17 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
             boolean onApprovedLeave = approvedLeaveDates.contains(attendance.getAttendanceDate());
 
-            switch (attendance.getStatus()) {
-                case "P" -> {
-                    item.setStatus("PRESENT");
-                    presentDays++;
-                }
-                case "A" -> {
-                    item.setStatus(onApprovedLeave ? "LEAVE" : "ABSENT");
-                    absentDays++;
-                }
-                case "L" -> {
-                    item.setStatus("LEAVE");
-                    lateDays++;
-                }
-                default -> item.setStatus("NOT_MARKED");
+            if ("P".equals(attendance.getStatus())) {
+                item.setStatus("PRESENT");
+                presentDays++;
+            } else if ("A".equals(attendance.getStatus())) {
+                item.setStatus(onApprovedLeave ? "LEAVE" : "ABSENT");
+                absentDays++;
+            } else if ("L".equals(attendance.getStatus())) {
+                item.setStatus("LEAVE");
+                lateDays++;
+            } else {
+                item.setStatus("NOT_MARKED");
             }
 
             records.add(item);
@@ -573,7 +578,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                         tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
 
         List<StudentResultsResponse.ExamResultItem> examItems = new ArrayList<>();
-        Map<Integer, StudentResultsResponse.SubjectResult> subjectTotals = new LinkedHashMap<>();
+        List<StudentResultsResponse.SubjectResult> subjectResults = new ArrayList<>();
         BigDecimal overallObtained = BigDecimal.ZERO;
         int overallMax = 0;
 
@@ -601,22 +606,23 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             overallMax += reportCard.getTotalMax();
 
             for (ReportCardResponse.SubjectMark subjectMark : reportCard.getSubjects()) {
-                StudentResultsResponse.SubjectResult subjectResult = subjectTotals.computeIfAbsent(
-                        subjectMark.getSubjectId(), id -> {
-                            StudentResultsResponse.SubjectResult sr = new StudentResultsResponse.SubjectResult();
-                            sr.setSubjectId(subjectMark.getSubjectId());
-                            sr.setSubjectName(subjectMark.getSubjectName());
-                            sr.setObtained(BigDecimal.ZERO);
-                            sr.setMax(0);
-                            return sr;
-                        });
-                subjectResult.setObtained(subjectResult.getObtained()
-                        .add(subjectMark.getMarksObtained() != null ? subjectMark.getMarksObtained() : BigDecimal.ZERO));
+                StudentResultsResponse.SubjectResult subjectResult = findSubjectResult(subjectResults, subjectMark.getSubjectId());
+                if (subjectResult == null) {
+                    subjectResult = new StudentResultsResponse.SubjectResult();
+                    subjectResult.setSubjectId(subjectMark.getSubjectId());
+                    subjectResult.setSubjectName(subjectMark.getSubjectName());
+                    subjectResult.setObtained(BigDecimal.ZERO);
+                    subjectResult.setMax(0);
+                    subjectResults.add(subjectResult);
+                }
+
+                BigDecimal marksObtained = subjectMark.getMarksObtained() != null ? subjectMark.getMarksObtained() : BigDecimal.ZERO;
+                subjectResult.setObtained(subjectResult.getObtained().add(marksObtained));
                 subjectResult.setMax(subjectResult.getMax() + reportCard.getMaxMarksPerSubject());
             }
         }
 
-        for (StudentResultsResponse.SubjectResult subjectResult : subjectTotals.values()) {
+        for (StudentResultsResponse.SubjectResult subjectResult : subjectResults) {
             subjectResult.setPercentage(percentageOf(subjectResult.getObtained(), subjectResult.getMax()));
         }
 
@@ -624,9 +630,18 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setOverallObtained(overallObtained);
         response.setOverallMax(overallMax);
         response.setOverallPercentage(percentageOf(overallObtained, overallMax));
-        response.setSubjects(new ArrayList<>(subjectTotals.values()));
+        response.setSubjects(subjectResults);
         response.setExams(examItems);
         return response;
+    }
+
+    private StudentResultsResponse.SubjectResult findSubjectResult(List<StudentResultsResponse.SubjectResult> subjectResults, Integer subjectId) {
+        for (StudentResultsResponse.SubjectResult subjectResult : subjectResults) {
+            if (subjectResult.getSubjectId().equals(subjectId)) {
+                return subjectResult;
+            }
+        }
+        return null;
     }
 
     private double percentageOf(BigDecimal obtained, int max) {

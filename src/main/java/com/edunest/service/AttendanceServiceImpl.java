@@ -142,7 +142,12 @@ public class AttendanceServiceImpl implements AttendanceService {
             List<Attendance> attendances = attendanceRepository.findByTenantIdAndAcademicYearIdAndAttendanceDateBetweenAndStudentIdIn(
                     tenantId, currentYear.getAcademicYearId(), fromDate, toDate, studentIds);
             for (Attendance a : attendances) {
-                byStudent.computeIfAbsent(a.getStudentId(), k -> new ArrayList<>()).add(a);
+                List<Attendance> studentAttendances = byStudent.get(a.getStudentId());
+                if (studentAttendances == null) {
+                    studentAttendances = new ArrayList<>();
+                    byStudent.put(a.getStudentId(), studentAttendances);
+                }
+                studentAttendances.add(a);
             }
         }
 
@@ -150,10 +155,21 @@ public class AttendanceServiceImpl implements AttendanceService {
         for (StudentClass studentClass : studentClasses) {
             List<Attendance> records = byStudent.getOrDefault(studentClass.getStudentId(), new ArrayList<>());
 
-            long present = records.stream().filter(a -> Constant.PRESENT.equals(a.getStatus())).count();
-            long absent = records.stream().filter(a -> Constant.ABSENT.equals(a.getStatus())).count();
-            long leave = records.stream().filter(a -> Constant.LEAVE.equals(a.getStatus())).count();
-            long halfDay = records.stream().filter(a -> Constant.HALFDAY.equals(a.getStatus())).count();
+            long present = 0;
+            long absent = 0;
+            long leave = 0;
+            long halfDay = 0;
+            for (Attendance record : records) {
+                if (Constant.PRESENT.equals(record.getStatus())) {
+                    present++;
+                } else if (Constant.ABSENT.equals(record.getStatus())) {
+                    absent++;
+                } else if (Constant.LEAVE.equals(record.getStatus())) {
+                    leave++;
+                } else if (Constant.HALFDAY.equals(record.getStatus())) {
+                    halfDay++;
+                }
+            }
             long total = records.size();
 
             // Present + Half-day (counted as half) contribute to attendance. Leave counts as an absence.

@@ -68,13 +68,13 @@ public class StudentServiceImpl implements StudentService {
     }
 
     private String mapSortProperty(String sortBy) {
-        if (sortBy == null) return "updatedDate";
-        return switch (sortBy) {
-            case "studentName" -> "firstName";
-            case "mobileNo" -> "mobileNo";
-            case "updatedDate" -> "updatedDate";
-            default -> "updatedDate";
-        };
+        if ("studentName".equals(sortBy)) {
+            return "firstName";
+        } else if ("mobileNo".equals(sortBy)) {
+            return "mobileNo";
+        } else {
+            return "updatedDate";
+        }
     }
 
     private StudentListResponse toResponse(Student student, Integer tenantId) {

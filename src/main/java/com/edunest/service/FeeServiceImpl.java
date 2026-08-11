@@ -70,7 +70,11 @@ public class FeeServiceImpl implements FeeService {
             List<FeePayment> payments = feePaymentRepository.findByTenantIdAndAcademicYearIdAndStudentIdIn(
                     tenantId, currentYear.getAcademicYearId(), studentIds);
             for (FeePayment feePayment : payments) {
-                paidByStudent.merge(feePayment.getStudentId(), feePayment.getAmount(), BigDecimal::add);
+                BigDecimal existingAmount = paidByStudent.get(feePayment.getStudentId());
+                if (existingAmount == null) {
+                    existingAmount = BigDecimal.ZERO;
+                }
+                paidByStudent.put(feePayment.getStudentId(), existingAmount.add(feePayment.getAmount()));
             }
         }
 

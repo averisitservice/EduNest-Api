@@ -15,7 +15,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Consumer;
 
 @Service
 public class ExamServiceImpl implements ExamService {
@@ -86,7 +85,10 @@ public class ExamServiceImpl implements ExamService {
             examSummaryResponse.setExamName(exam.getExamName());
             examSummaryResponse.setExamDate(exam.getExamDate());
             List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
-            applyDateRange(schedule, examSummaryResponse::setStartDate, examSummaryResponse::setEndDate);
+            if (!schedule.isEmpty()) {
+                examSummaryResponse.setStartDate(schedule.get(0).getExamDate());
+                examSummaryResponse.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
+            }
             examSummaryResponse.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
             examSummaryResponse.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
             examSummaryResponse.setUpdatedDate(exam.getUpdatedDate());
@@ -116,7 +118,10 @@ public class ExamServiceImpl implements ExamService {
         examListResponse.setExamDate(exam.getExamDate());
         List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
         examListResponse.setSubjects(schedule);
-        applyDateRange(schedule, examListResponse::setStartDate, examListResponse::setEndDate);
+        if (!schedule.isEmpty()) {
+            examListResponse.setStartDate(schedule.get(0).getExamDate());
+            examListResponse.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
+        }
         examListResponse.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
         examListResponse.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
         examListResponse.setUpdatedDate(exam.getUpdatedDate());
@@ -183,14 +188,6 @@ public class ExamServiceImpl implements ExamService {
         }
     }
 
-    private void applyDateRange(List<ExamScheduleResponse> schedule, Consumer<LocalDate> setStartDate, Consumer<LocalDate> setEndDate) {
-        if (schedule == null || schedule.isEmpty()) {
-            return;
-        }
-        setStartDate.accept(schedule.getFirst().getExamDate());
-        setEndDate.accept(schedule.getLast().getExamDate());
-    }
-
     private List<ExamScheduleResponse> buildScheduleResponse(Integer examId, Integer tenantId) {
         List<ExamSchedule> rows = examScheduleRepository
                 .findByExamIdAndTenantIdOrderByExamDateAscExamScheduleIdAsc(examId, tenantId);
@@ -240,7 +237,12 @@ public class ExamServiceImpl implements ExamService {
         if (!studentIds.isEmpty()) {
             List<ExamMark> marks = examMarkRepository.findByTenantIdAndExamIdAndStudentIdIn(tenantId, examId, studentIds);
             for (ExamMark examMark : marks) {
-                marksMap.computeIfAbsent(examMark.getStudentId(), k -> new HashMap<>()).put(examMark.getSubjectId(), examMark.getMarksObtained());
+                Map<Integer, BigDecimal> studentMarks = marksMap.get(examMark.getStudentId());
+                if (studentMarks == null) {
+                    studentMarks = new HashMap<>();
+                    marksMap.put(examMark.getStudentId(), studentMarks);
+                }
+                studentMarks.put(examMark.getSubjectId(), examMark.getMarksObtained());
             }
         }
 
