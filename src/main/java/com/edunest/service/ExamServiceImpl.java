@@ -43,6 +43,9 @@ public class ExamServiceImpl implements ExamService {
     @Autowired
     CommonHelper commonHelper;
 
+    @Autowired
+    FcmPushService fcmPushService;
+
     private List<Subject> classSubjects(Integer classId, Integer tenantId) {
         List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
         List<Subject> subjects = new ArrayList<>();
@@ -132,8 +135,9 @@ public class ExamServiceImpl implements ExamService {
     @Transactional
     public boolean saveExam(Integer tenantId, Integer loginTeacherId, ExamRequest request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+        boolean isNew = request.getExamId() == null;
         Exam exam;
-        if (request.getExamId() != null) {
+        if (!isNew) {
             exam = examRepository.findById(request.getExamId())
                     .orElseThrow(() -> new CustomException("examId", "Exam not found"));
         } else {
@@ -154,7 +158,27 @@ public class ExamServiceImpl implements ExamService {
         examRepository.save(exam);
 
         saveSchedule(tenantId, exam.getExamId(), request.getSubjects());
+
+        if (isNew) {
+            sendExamScheduledPush(exam);
+        }
         return true;
+    }
+
+    private void sendExamScheduledPush(Exam exam) {
+        List<Integer> studentIds = studentClassRepository.findStudentIdsByClassAndSection(
+                exam.getTenantId(), exam.getAcademicYearId(), exam.getClassId(), null);
+        if (studentIds.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "NOTIFICATION");
+        data.put("examId", String.valueOf(exam.getExamId()));
+
+        fcmPushService.sendToStudents(
+                exam.getTenantId(), studentIds, "New Exam Scheduled: " + exam.getExamName(),
+                "Exam scheduled on " + exam.getExamDate() + ".", data);
     }
 
     private LocalDate resolveExamStartDate(ExamRequest request) {
@@ -288,6 +312,7 @@ public class ExamServiceImpl implements ExamService {
         }
 
         BigDecimal maxMarks = BigDecimal.valueOf(exam.getMaxMarks());
+        Set<Integer> affectedStudentIds = new LinkedHashSet<>();
         for (ExamMarksSaveRequest.MarkItem item : request.getRecords()) {
             if (item.getStudentId() == null || item.getSubjectId() == null) {
                 continue;
@@ -308,8 +333,28 @@ public class ExamServiceImpl implements ExamService {
             mark.setAcademicYearId(exam.getAcademicYearId());
             mark.setMarksObtained(item.getMarksObtained());
             examMarkRepository.save(mark);
+
+            if (item.getMarksObtained() != null) {
+                affectedStudentIds.add(item.getStudentId());
+            }
         }
+
+        sendResultPublishedPush(exam, new ArrayList<>(affectedStudentIds));
         return true;
+    }
+
+    private void sendResultPublishedPush(Exam exam, List<Integer> studentIds) {
+        if (studentIds.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "NOTIFICATION");
+        data.put("examId", String.valueOf(exam.getExamId()));
+
+        fcmPushService.sendToStudents(
+                exam.getTenantId(), studentIds, "Result Published: " + exam.getExamName(),
+                "Your marks for " + exam.getExamName() + " have been published.", data);
     }
 
     @Override

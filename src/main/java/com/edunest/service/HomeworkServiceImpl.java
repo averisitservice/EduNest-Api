@@ -7,6 +7,7 @@ import com.edunest.entity.Homework;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.HomeworkRepository;
+import com.edunest.repository.StudentClassRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +32,12 @@ public class HomeworkServiceImpl implements HomeworkService {
 
     @Autowired
     FileStorageService fileStorageService;
+
+    @Autowired
+    StudentClassRepository studentClassRepository;
+
+    @Autowired
+    FcmPushService fcmPushService;
 
     @Override
     public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId) {
@@ -62,8 +70,10 @@ public class HomeworkServiceImpl implements HomeworkService {
     public boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request, MultipartFile file) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
+        boolean isNew = request.getHomeworkId() == null;
+
         Homework homework;
-        if (request.getHomeworkId() != null) {
+        if (!isNew) {
             homework = homeworkRepository.findById(request.getHomeworkId())
                     .orElseThrow(() -> new CustomException("homeworkId", "Item not found"));
         } else {
@@ -91,7 +101,28 @@ public class HomeworkServiceImpl implements HomeworkService {
         homework.setUpdatedBy(loginTeacherId);
         homework.setUpdatedDate(LocalDateTime.now());
         homeworkRepository.save(homework);
+
+        if (isNew) {
+            sendHomeworkPush(homework);
+        }
         return true;
+    }
+
+    private void sendHomeworkPush(Homework homework) {
+        List<Integer> studentIds = studentClassRepository.findStudentIdsByClassAndSection(
+                homework.getTenantId(), homework.getAcademicYearId(), homework.getClassId(), homework.getSectionId());
+        if (studentIds.isEmpty()) {
+            return;
+        }
+
+        String subjectName = commonHelper.subjectName(homework.getSubjectId());
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "NOTIFICATION");
+        data.put("homeworkId", String.valueOf(homework.getHomeworkId()));
+
+        fcmPushService.sendToStudents(
+                homework.getTenantId(), studentIds, "New Homework: " + homework.getTitle(),
+                subjectName != null ? subjectName : homework.getTitle(), data);
     }
 
     @Override

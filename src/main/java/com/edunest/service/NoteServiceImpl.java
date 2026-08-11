@@ -7,6 +7,7 @@ import com.edunest.entity.Note;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.NoteRepository;
+import com.edunest.repository.StudentClassRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +32,12 @@ public class NoteServiceImpl implements NoteService {
 
     @Autowired
     FileStorageService fileStorageService;
+
+    @Autowired
+    StudentClassRepository studentClassRepository;
+
+    @Autowired
+    FcmPushService fcmPushService;
 
     @Override
     public List<NoteResponse> getNoteList(Integer tenantId, Integer classId, Integer sectionId) {
@@ -61,8 +69,10 @@ public class NoteServiceImpl implements NoteService {
     public boolean saveNote(Integer tenantId, Integer loginTeacherId, NoteRequest request, MultipartFile file) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
+        boolean isNew = request.getNoteId() == null;
+
         Note note;
-        if (request.getNoteId() != null) {
+        if (!isNew) {
             note = noteRepository.findById(request.getNoteId())
                     .orElseThrow(() -> new CustomException("noteId", "Item not found"));
         } else {
@@ -89,7 +99,28 @@ public class NoteServiceImpl implements NoteService {
         note.setUpdatedBy(loginTeacherId);
         note.setUpdatedDate(LocalDateTime.now());
         noteRepository.save(note);
+
+        if (isNew) {
+            sendNotePush(note);
+        }
         return true;
+    }
+
+    private void sendNotePush(Note note) {
+        List<Integer> studentIds = studentClassRepository.findStudentIdsByClassAndSection(
+                note.getTenantId(), note.getAcademicYearId(), note.getClassId(), note.getSectionId());
+        if (studentIds.isEmpty()) {
+            return;
+        }
+
+        String subjectName = commonHelper.subjectName(note.getSubjectId());
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "NOTIFICATION");
+        data.put("noteId", String.valueOf(note.getNoteId()));
+
+        fcmPushService.sendToStudents(
+                note.getTenantId(), studentIds, "New Note: " + note.getTitle(),
+                subjectName != null ? subjectName : note.getTitle(), data);
     }
 
     @Override
