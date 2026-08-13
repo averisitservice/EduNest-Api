@@ -13,7 +13,6 @@
     --sage: #e9f0e4;
     --sage-line: #cddac4;
     --rule: #cfd8c9;
-    --seal: #3b4a91;
   }
 
   * { box-sizing: border-box; }
@@ -150,55 +149,6 @@
     border-top: 2px solid var(--forest);
   }
 
-  .pay-info {
-    margin: 22px 32px 0;
-    border: 1px solid var(--rule);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .pay-info-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--sage);
-    color: var(--forest-deep);
-    font-family: Verdana, Geneva, sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.5px;
-    padding: 9px 14px;
-  }
-
-  .pay-info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px 32px;
-    padding: 14px 16px;
-    font-family: Verdana, Geneva, sans-serif;
-    font-size: 13.5px;
-  }
-
-  .pay-row {
-    display: grid;
-    grid-template-columns: 110px 14px 1fr;
-  }
-
-  .pay-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--sage);
-    border-top: 1px solid var(--rule);
-    padding: 10px 16px;
-    font-family: Verdana, Geneva, sans-serif;
-    font-weight: 700;
-    color: var(--forest-deep);
-    font-size: 14.5px;
-  }
-
-  .pay-total .amount { font-variant-numeric: tabular-nums; font-size: 17px; }
-
   .words {
     margin: 18px 32px 0;
     display: flex;
@@ -285,23 +235,23 @@
       <path d="M78 78 C82 62 78 50 70 42" fill="none" stroke="#1b5e34" stroke-width="2"/>
     </svg>
     <div class="school-block">
-      <h1 class="school-name">GREEN VALLEY PUBLIC SCHOOL</h1>
-      <p class="school-address">Plot No. 21, Knowledge Park, Ahmedabad, Gujarat - 380015</p>
-      <p class="school-contact">Phone: 079-12345678 &nbsp;|&nbsp; Email: info@gvps.edu.in &nbsp;|&nbsp; www.gvps.edu.in</p>
+      <h1 class="school-name">{{schoolName}}</h1>
+      <p class="school-address">{{schoolAddress}}</p>
+      <p class="school-contact">{{schoolContact}}</p>
     </div>
   </div>
 
   <div class="banner">FEE RECEIPT</div>
 
   <div class="meta">
-    <div class="meta-row"><span class="meta-label">Receipt No</span><span class="meta-sep">:</span><span class="meta-value">FR-2026-001258</span></div>
-    <div class="meta-row"><span class="meta-label">Date</span><span class="meta-sep">:</span><span class="meta-value">30/07/2026</span></div>
-    <div class="meta-row"><span class="meta-label">Admission No</span><span class="meta-sep">:</span><span class="meta-value">ADM20260145</span></div>
-    <div class="meta-row"><span class="meta-label">Session</span><span class="meta-sep">:</span><span class="meta-value">2026-2027</span></div>
-    <div class="meta-row"><span class="meta-label">Student Name</span><span class="meta-sep">:</span><span class="meta-value">Aarav Patel</span></div>
-    <div class="meta-row"><span class="meta-label">Class</span><span class="meta-sep">:</span><span class="meta-value">Grade 8 - A</span></div>
-    <div class="meta-row"><span class="meta-label">Installment</span><span class="meta-sep">:</span><span class="meta-value">Quarter 1 (Apr-Jun)</span></div>
-    <div class="meta-row"><span class="meta-label">Counter No</span><span class="meta-sep">:</span><span class="meta-value">COUNTER-03</span></div>
+    <div class="meta-row"><span class="meta-label">Receipt No</span><span class="meta-sep">:</span><span class="meta-value">{{receiptNo}}</span></div>
+    <div class="meta-row"><span class="meta-label">Date</span><span class="meta-sep">:</span><span class="meta-value">{{paymentDateFormatted}}</span></div>
+    <div class="meta-row"><span class="meta-label">Admission No</span><span class="meta-sep">:</span><span class="meta-value">{{admissionNo}}</span></div>
+    <div class="meta-row"><span class="meta-label">Session</span><span class="meta-sep">:</span><span class="meta-value">{{sessionYear}}</span></div>
+    <div class="meta-row"><span class="meta-label">Student Name</span><span class="meta-sep">:</span><span class="meta-value">{{studentName}}</span></div>
+    <div class="meta-row"><span class="meta-label">Class</span><span class="meta-sep">:</span><span class="meta-value">{{displayClass}}</span></div>
+    <div class="meta-row"><span class="meta-label">Remarks</span><span class="meta-sep">:</span><span class="meta-value">{{remarks}}</span></div>
+    <div class="meta-row"><span class="meta-label">Collected By</span><span class="meta-sep">:</span><span class="meta-value">{{collectedBy}}</span></div>
   </div>
 
   <div class="items">
@@ -316,38 +266,20 @@
         </tr>
       </thead>
       <tbody>
-        <tr><td>1</td><td>Admission Fee</td><td>15,000</td><td>0</td><td>15,000</td></tr>
-        <tr><td>2</td><td>Tuition Fee</td><td>24,000</td><td>2,000</td><td>22,000</td></tr>
-        <tr><td>3</td><td>Computer Lab Fee</td><td>3,500</td><td>0</td><td>3,500</td></tr>
-        <tr><td>4</td><td>Library Fee</td><td>1,200</td><td>0</td><td>1,200</td></tr>
-        <tr><td>5</td><td>Transport Fee</td><td>9,000</td><td>500</td><td>8,500</td></tr>
-        <tr><td>6</td><td>Activity Fee</td><td>2,500</td><td>0</td><td>2,500</td></tr>
+        <tr><td>1</td><td>Fee Payment</td><td>{{amount}}</td><td>0</td><td>{{amount}}</td></tr>
       </tbody>
       <tfoot>
-        <tr><td colspan="2" style="text-align:center;">Total</td><td>55,200</td><td>2,500</td><td>52,700</td></tr>
+        <tr><td colspan="2" style="text-align:center;">Total</td><td>{{amount}}</td><td>0</td><td>{{amount}}</td></tr>
       </tfoot>
     </table>
-  </div>
-
-  <div class="pay-info">
-    <div class="pay-info-title">&#128179; PAYMENT INFORMATION</div>
-    <div class="pay-info-grid">
-      <div class="pay-row"><span class="meta-label">Pay Mode</span><span class="meta-sep">:</span><span class="meta-value">UPI</span></div>
-      <div class="pay-row"><span class="meta-label">Payment Date</span><span class="meta-sep">:</span><span class="meta-value">30/07/2026</span></div>
-      <div class="pay-row"><span class="meta-label">Bank</span><span class="meta-sep">:</span><span class="meta-value">State Bank of India</span></div>
-      <div class="pay-row"><span class="meta-label">Reference No.</span><span class="meta-sep">:</span><span class="meta-value">REF874563</span></div>
-      <div class="pay-row"><span class="meta-label">Transaction No.</span><span class="meta-sep">:</span><span class="meta-value">UPI8745632910</span></div>
-      <div class="pay-row"><span class="meta-label">Branch</span><span class="meta-sep">:</span><span class="meta-value">Gota, Ahmedabad</span></div>
-    </div>
-    <div class="pay-total"><span>Total Amount Paid (&#8377;)</span><span class="amount">52,700</span></div>
   </div>
 
   <div class="words">
     <div>
       <div class="words-label">AMOUNT IN WORDS:</div>
-      <div class="words-value">Fifty Two Thousand Seven Hundred Rupees Only</div>
+      <div class="words-value">{{amountWords}}</div>
     </div>
-    <div class="words-box">&#8377; 52,700.00</div>
+    <div class="words-box">&#8377; {{amount}}</div>
   </div>
 
   <div class="footer">

@@ -3,6 +3,7 @@ package com.edunest.service;
 import com.edunest.configuration.RazorpayConfiguration;
 import com.edunest.dto.fee.FeePaymentRequest;
 import com.edunest.dto.fee.FeePaymentResponse;
+import com.edunest.dto.fee.FeeReceiptDetails;
 import com.edunest.dto.fee.FeeStatusResponse;
 import com.edunest.dto.fee.StudentFeeDetailResponse;
 import com.edunest.dto.mobile.FeeOrderResponse;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -49,6 +51,12 @@ public class FeeServiceImpl implements FeeService {
 
     @Autowired
     RazorpayConfiguration razorpayService;
+
+    @Autowired
+    TenantRepository tenantRepository;
+
+    @Autowired
+    EmailService emailService;
 
     @Override
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {
@@ -125,6 +133,7 @@ public class FeeServiceImpl implements FeeService {
         payment.setCollectedBy(collectedBy);
         feePaymentRepository.save(payment);
 
+        sendFeeReceiptEmail(payment, studentClass);
         return receiptNo;
     }
 
@@ -148,11 +157,64 @@ public class FeeServiceImpl implements FeeService {
         payment.setReceiptNo(nextReceiptNo(tenantId, currentYear));
         payment.setRemarks("Razorpay payment ID: " + razorpayPaymentId);
         feePaymentRepository.save(payment);
+
+        sendFeeReceiptEmail(payment, studentClass);
     }
 
     private String nextReceiptNo(Integer tenantId, AcademicYear currentYear) {
         long count = feePaymentRepository.countByTenantIdAndAcademicYearId(tenantId, currentYear.getAcademicYearId());
         return "RC-" + currentYear.getYearName() + "-" + String.format("%05d", count + 1);
+    }
+
+    private void sendFeeReceiptEmail(FeePayment payment, StudentClass studentClass) {
+        Student student = studentRepository.findById(payment.getStudentId()).orElse(null);
+        if (student == null) {
+            return;
+        }
+
+        String toEmail = (student.getParentEmail() != null && !student.getParentEmail().isBlank())
+                ? student.getParentEmail() : student.getEmail();
+        if (toEmail == null || toEmail.isBlank()) {
+            return;
+        }
+
+        Tenant tenant = tenantRepository.findById(payment.getTenantId()).orElse(null);
+        AcademicYear currentYear = commonHelper.getCurrentYear(payment.getTenantId());
+
+        String collectedByName = "Online Payment";
+        if (payment.getCollectedBy() != null) {
+            Teacher teacher = teacherRepository.findById(payment.getCollectedBy()).orElse(null);
+            collectedByName = teacher != null ? teacher.getFirstName() + " " + teacher.getLastName() : "-";
+        }
+
+        FeeReceiptDetails details = FeeReceiptDetails.builder()
+                .schoolName(tenant != null ? tenant.getTenantName() : "")
+                .schoolAddress(buildSchoolAddress(tenant))
+                .schoolContact(tenant != null ? "Phone: " + tenant.getContactPhone() + " | Email: " + tenant.getContactEmail() : "")
+                .receiptNo(payment.getReceiptNo())
+                .paymentDateFormatted(payment.getPaymentDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                .admissionNo(student.getAdmissionNo())
+                .sessionYear(currentYear.getYearName())
+                .studentName(student.getFirstName() + " " + student.getLastName())
+                .displayClass(buildDisplayClass(studentClass))
+                .remarks(payment.getRemarks())
+                .collectedBy(collectedByName)
+                .amount(payment.getAmount())
+                .build();
+
+        emailService.sendFeeReceiptEmail(toEmail, details);
+    }
+
+    private String buildSchoolAddress(Tenant tenant) {
+        if (tenant == null) {
+            return "";
+        }
+        List<String> parts = new ArrayList<>();
+        if (tenant.getAddressLine1() != null && !tenant.getAddressLine1().isBlank()) parts.add(tenant.getAddressLine1());
+        if (tenant.getAddressLine2() != null && !tenant.getAddressLine2().isBlank()) parts.add(tenant.getAddressLine2());
+        if (tenant.getCity() != null && !tenant.getCity().isBlank()) parts.add(tenant.getCity());
+        if (tenant.getState() != null && !tenant.getState().isBlank()) parts.add(tenant.getState() + " - " + tenant.getPostalCode());
+        return String.join(", ", parts);
     }
 
     @Override
