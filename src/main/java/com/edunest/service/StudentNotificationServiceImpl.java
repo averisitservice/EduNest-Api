@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,16 +34,29 @@ public class StudentNotificationServiceImpl implements StudentNotificationServic
             return;
         }
 
+        Map<Integer, StudentNotification> existingByStudentId = new HashMap<>();
+        if (referenceId != null) {
+            for (StudentNotification existing : studentNotificationRepository
+                    .findByTenantIdAndTypeAndReferenceIdAndStudentIdIn(tenantId, type, referenceId, studentIds)) {
+                existingByStudentId.put(existing.getStudentId(), existing);
+            }
+        }
+
+        LocalDateTime now = LocalDateTime.now();
         List<StudentNotification> notifications = new ArrayList<>();
         for (Integer studentId : studentIds) {
-            StudentNotification notification = new StudentNotification();
-            notification.setTenantId(tenantId);
-            notification.setStudentId(studentId);
-            notification.setType(type);
-            notification.setReferenceId(referenceId);
+            StudentNotification notification = existingByStudentId.get(studentId);
+            if (notification == null) {
+                notification = new StudentNotification();
+                notification.setTenantId(tenantId);
+                notification.setStudentId(studentId);
+                notification.setType(type);
+                notification.setReferenceId(referenceId);
+            }
             notification.setTitle(title);
             notification.setBody(body);
             notification.setIsRead(false);
+            notification.setUpdatedDate(now);
             notifications.add(notification);
         }
         studentNotificationRepository.saveAll(notifications);
@@ -61,7 +75,7 @@ public class StudentNotificationServiceImpl implements StudentNotificationServic
     public PagedResponse<StudentNotificationItem> getNotifications(Integer tenantId, Integer studentId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<StudentNotification> notificationPage = studentNotificationRepository
-                .findByTenantIdAndStudentIdOrderByCreatedDateDescStudentNotificationIdDesc(tenantId, studentId, pageable);
+                .findByTenantIdAndStudentIdOrderByUpdatedDateDescStudentNotificationIdDesc(tenantId, studentId, pageable);
 
         List<StudentNotificationItem> items = new ArrayList<>();
         for (StudentNotification notification : notificationPage.getContent()) {

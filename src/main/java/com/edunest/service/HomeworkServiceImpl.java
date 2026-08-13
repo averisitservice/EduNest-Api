@@ -101,13 +101,11 @@ public class HomeworkServiceImpl implements HomeworkService {
         homework.setUpdatedDate(LocalDateTime.now());
         homeworkRepository.save(homework);
 
-        if (isNew) {
-            sendHomeworkPush(homework);
-        }
+        sendHomeworkPush(homework, isNew);
         return true;
     }
 
-    private void sendHomeworkPush(Homework homework) {
+    private void sendHomeworkPush(Homework homework, boolean isNew) {
         List<Integer> studentIds = studentClassRepository.findStudentIdsByClassAndSection(
                 homework.getTenantId(), homework.getAcademicYearId(), homework.getClassId(), homework.getSectionId());
         if (studentIds.isEmpty()) {
@@ -115,8 +113,9 @@ public class HomeworkServiceImpl implements HomeworkService {
         }
 
         String subjectName = commonHelper.subjectName(homework.getSubjectId());
+        String title = (isNew ? "New Homework: " : "Homework Updated: ") + homework.getTitle();
         studentNotificationService.notify(homework.getTenantId(), studentIds, "HOMEWORK", homework.getHomeworkId(),
-                "New Homework: " + homework.getTitle(), subjectName != null ? subjectName : homework.getTitle());
+                title, subjectName != null ? subjectName : homework.getTitle());
     }
 
     @Override

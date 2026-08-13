@@ -159,21 +159,20 @@ public class ExamServiceImpl implements ExamService {
 
         saveSchedule(tenantId, exam.getExamId(), request.getSubjects());
 
-        if (isNew) {
-            sendExamScheduledPush(exam);
-        }
+        sendExamScheduledPush(exam, isNew);
         return true;
     }
 
-    private void sendExamScheduledPush(Exam exam) {
+    private void sendExamScheduledPush(Exam exam, boolean isNew) {
         List<Integer> studentIds = studentClassRepository.findStudentIdsByClassAndSection(
                 exam.getTenantId(), exam.getAcademicYearId(), exam.getClassId(), null);
         if (studentIds.isEmpty()) {
             return;
         }
 
+        String title = (isNew ? "New Exam Scheduled: " : "Exam Updated: ") + exam.getExamName();
         studentNotificationService.notify(exam.getTenantId(), studentIds, "EXAM_SCHEDULED", exam.getExamId(),
-                "New Exam Scheduled: " + exam.getExamName(), "Exam scheduled on " + exam.getExamDate() + ".");
+                title, "Exam scheduled on " + exam.getExamDate() + ".");
     }
 
     private LocalDate resolveExamStartDate(ExamRequest request) {

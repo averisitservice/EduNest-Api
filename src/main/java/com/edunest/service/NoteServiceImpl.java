@@ -99,13 +99,11 @@ public class NoteServiceImpl implements NoteService {
         note.setUpdatedDate(LocalDateTime.now());
         noteRepository.save(note);
 
-        if (isNew) {
-            sendNotePush(note);
-        }
+        sendNotePush(note, isNew);
         return true;
     }
 
-    private void sendNotePush(Note note) {
+    private void sendNotePush(Note note, boolean isNew) {
         List<Integer> studentIds = studentClassRepository.findStudentIdsByClassAndSection(
                 note.getTenantId(), note.getAcademicYearId(), note.getClassId(), note.getSectionId());
         if (studentIds.isEmpty()) {
@@ -113,8 +111,9 @@ public class NoteServiceImpl implements NoteService {
         }
 
         String subjectName = commonHelper.subjectName(note.getSubjectId());
+        String title = (isNew ? "New Note: " : "Note Updated: ") + note.getTitle();
         studentNotificationService.notify(note.getTenantId(), studentIds, "NOTE", note.getNoteId(),
-                "New Note: " + note.getTitle(), subjectName != null ? subjectName : note.getTitle());
+                title, subjectName != null ? subjectName : note.getTitle());
     }
 
     @Override
