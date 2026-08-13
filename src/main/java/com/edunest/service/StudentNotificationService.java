@@ -12,4 +12,6 @@ public interface StudentNotificationService {
     PagedResponse<StudentNotificationItem> getNotifications(Integer tenantId, Integer studentId, int page, int size);
 
     boolean markAsRead(Integer tenantId, Integer studentId, Integer notificationId);
+
+    long getUnreadCount(Integer tenantId, Integer studentId);
 }

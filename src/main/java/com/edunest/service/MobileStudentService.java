@@ -10,6 +10,7 @@ import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
 import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
+import com.edunest.dto.mobile.StudentAnnouncementItem;
 import com.edunest.dto.mobile.StudentNotificationItem;
 import com.edunest.dto.mobile.StudentResultsResponse;
 import com.edunest.dto.mobile.StudentTimetableResponse;
@@ -44,4 +45,8 @@ public interface MobileStudentService {
     PagedResponse<StudentNotificationItem> getNotifications(Integer studentId, Integer tenantId, int page, int size);
 
     boolean markNotificationAsRead(Integer studentId, Integer tenantId, Integer notificationId);
+
+    long getUnreadNotificationCount(Integer studentId, Integer tenantId);
+
+    List<StudentAnnouncementItem> getAnnouncements(Integer studentId, Integer tenantId);
 }

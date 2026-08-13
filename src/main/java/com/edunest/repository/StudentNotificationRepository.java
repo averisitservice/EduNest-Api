@@ -11,4 +11,6 @@ public interface StudentNotificationRepository extends JpaRepository<StudentNoti
 
     Page<StudentNotification> findByTenantIdAndStudentIdOrderByCreatedDateDescStudentNotificationIdDesc(
             Integer tenantId, Integer studentId, Pageable pageable);
+
+    long countByTenantIdAndStudentIdAndIsReadFalse(Integer tenantId, Integer studentId);
 }

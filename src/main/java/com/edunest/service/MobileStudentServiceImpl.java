@@ -1,6 +1,7 @@
 package com.edunest.service;
 
 import com.edunest.common.PagedResponse;
+import com.edunest.constant.Constant;
 import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.dto.mobile.*;
 import com.edunest.entity.*;
@@ -64,6 +65,9 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Autowired
     StudentNotificationService studentNotificationService;
+
+    @Autowired
+    AnnouncementRepository announcementRepository;
 
     @Autowired
     HomeworkRepository homeworkRepository;
@@ -677,5 +681,51 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     @Override
     public boolean markNotificationAsRead(Integer studentId, Integer tenantId, Integer notificationId) {
         return studentNotificationService.markAsRead(tenantId, studentId, notificationId);
+    }
+
+    @Override
+    public long getUnreadNotificationCount(Integer studentId, Integer tenantId) {
+        return studentNotificationService.getUnreadCount(tenantId, studentId);
+    }
+
+    @Override
+    public List<StudentAnnouncementItem> getAnnouncements(Integer studentId, Integer tenantId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        List<Announcement> announcements = announcementRepository
+                .findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
+                        tenantId, currentYear.getAcademicYearId());
+
+        List<StudentAnnouncementItem> items = new ArrayList<>();
+        for (Announcement announcement : announcements) {
+            if (!"PUBLISHED".equalsIgnoreCase(announcement.getStatus())) {
+                continue;
+            }
+            if (!isForClass(announcement, studentClass.getClassId())) {
+                continue;
+            }
+
+            StudentAnnouncementItem item = new StudentAnnouncementItem();
+            item.setAnnouncementId(announcement.getAnnouncementId());
+            item.setTitle(announcement.getTitle());
+            item.setMessage(announcement.getMessage());
+            item.setPublishDate(announcement.getPublishDate());
+            items.add(item);
+        }
+        return items;
+    }
+
+    private boolean isForClass(Announcement announcement, Integer classId) {
+        if (Constant.All.equalsIgnoreCase(announcement.getAudience())
+                || announcement.getClassIds() == null || announcement.getClassIds().isBlank()) {
+            return true;
+        }
+        for (String id : announcement.getClassIds().split(",")) {
+            if (id.trim().equals(String.valueOf(classId))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

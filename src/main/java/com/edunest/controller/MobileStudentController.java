@@ -12,6 +12,7 @@ import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
 import com.edunest.dto.mobile.StudentHomeworkItem;
 import com.edunest.dto.mobile.StudentNoteDetailResponse;
 import com.edunest.dto.mobile.StudentNoteItem;
+import com.edunest.dto.mobile.StudentAnnouncementItem;
 import com.edunest.dto.mobile.StudentNotificationItem;
 import com.edunest.dto.mobile.StudentResultsResponse;
 import com.edunest.dto.mobile.StudentTimetableResponse;
@@ -222,6 +223,34 @@ public class MobileStudentController {
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(mobileStudentService.markNotificationAsRead(studentId, tenantId, notificationId));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/notifications/unread-count")
+    public ResponseEntity<ResponseObject<Long>> getUnreadNotificationCount(HttpServletRequest request) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<Long> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.getUnreadNotificationCount(studentId, tenantId));
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/announcements")
+    public ResponseEntity<ResponseObject<List<StudentAnnouncementItem>>> getAnnouncements(HttpServletRequest request) {
+
+        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+        Integer studentId = jwtHelper.extractStudentId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<List<StudentAnnouncementItem>> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(mobileStudentService.getAnnouncements(studentId, tenantId));
 
         return ResponseEntity.ok(response);
     }
