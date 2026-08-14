@@ -200,10 +200,10 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 examItem.setPassMarks(examSchedule.getPassMarks() != null ? examSchedule.getPassMarks() : exam.getPassMarks());
 
                 if (examSchedule.getExamDate() != null && examSchedule.getExamDate().isBefore(LocalDate.now())) {
-                    examItem.setStatus("Completed");
+                    examItem.setStatus(Constant.EXAM_STATUS_COMPLETED);
                     past.add(examItem);
                 } else {
-                    examItem.setStatus("Upcoming");
+                    examItem.setStatus(Constant.EXAM_STATUS_UPCOMING);
                     upcoming.add(examItem);
                 }
             }
@@ -328,13 +328,13 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
         long monthPresent = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
-                        tenantId, studentId, yearId, monthStart, monthEnd, "P");
+                        tenantId, studentId, yearId, monthStart, monthEnd, Constant.PRESENT);
         long monthAbsent = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
-                        tenantId, studentId, yearId, monthStart, monthEnd, "A");
+                        tenantId, studentId, yearId, monthStart, monthEnd, Constant.ABSENT);
         long monthLate = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
-                        tenantId, studentId, yearId, monthStart, monthEnd, "L");
+                        tenantId, studentId, yearId, monthStart, monthEnd, Constant.LEAVE);
         long monthTotal = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetween(
                         tenantId, studentId, yearId, monthStart, monthEnd);
@@ -345,7 +345,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setThisMonthPercent(percent(monthPresent, monthTotal));
 
         long yearPresent = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, "P");
+                .countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, Constant.PRESENT);
         long yearTotal = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearId(tenantId, studentId, yearId);
 
@@ -360,17 +360,17 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 .orElse(null);
 
         if (attendance == null) {
-            return "NOT_MARKED";
+            return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
         }
 
-        if ("P".equals(attendance.getStatus())) {
-            return "PRESENT";
-        } else if ("A".equals(attendance.getStatus())) {
-            return "ABSENT";
-        } else if ("L".equals(attendance.getStatus())) {
-            return "LEAVE";
+        if (Constant.PRESENT.equals(attendance.getStatus())) {
+            return Constant.ATTENDANCE_DISPLAY_PRESENT;
+        } else if (Constant.ABSENT.equals(attendance.getStatus())) {
+            return Constant.ATTENDANCE_DISPLAY_ABSENT;
+        } else if (Constant.LEAVE.equals(attendance.getStatus())) {
+            return Constant.ATTENDANCE_DISPLAY_LEAVE;
         } else {
-            return "NOT_MARKED";
+            return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
         }
     }
 
@@ -463,7 +463,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
         Set<LocalDate> approvedLeaveDates = new HashSet<>();
         for (Leave leave : leaveRepository.findByTenantIdAndStudentIdAndLeaveDateBetweenAndStatus(
-                tenantId, studentId, resolvedFromDate, resolvedToDate, "APPROVED")) {
+                tenantId, studentId, resolvedFromDate, resolvedToDate, Constant.LEAVE_STATUS_APPROVED)) {
             approvedLeaveDates.add(leave.getLeaveDate());
         }
 
@@ -479,17 +479,17 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
             boolean onApprovedLeave = approvedLeaveDates.contains(attendance.getAttendanceDate());
 
-            if ("P".equals(attendance.getStatus())) {
-                item.setStatus("PRESENT");
+            if (Constant.PRESENT.equals(attendance.getStatus())) {
+                item.setStatus(Constant.ATTENDANCE_DISPLAY_PRESENT);
                 presentDays++;
-            } else if ("A".equals(attendance.getStatus())) {
-                item.setStatus(onApprovedLeave ? "LEAVE" : "ABSENT");
+            } else if (Constant.ABSENT.equals(attendance.getStatus())) {
+                item.setStatus(onApprovedLeave ? Constant.ATTENDANCE_DISPLAY_LEAVE : Constant.ATTENDANCE_DISPLAY_ABSENT);
                 absentDays++;
-            } else if ("L".equals(attendance.getStatus())) {
-                item.setStatus("LEAVE");
+            } else if (Constant.LEAVE.equals(attendance.getStatus())) {
+                item.setStatus(Constant.ATTENDANCE_DISPLAY_LEAVE);
                 lateDays++;
             } else {
-                item.setStatus("NOT_MARKED");
+                item.setStatus(Constant.ATTENDANCE_DISPLAY_NOT_MARKED);
             }
 
             records.add(item);
@@ -631,7 +631,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
         List<StudentAnnouncementItem> items = new ArrayList<>();
         for (Announcement announcement : announcements) {
-            if (!"PUBLISHED".equalsIgnoreCase(announcement.getStatus())) {
+            if (!Constant.ANNOUNCEMENT_STATUS_PUBLISHED.equalsIgnoreCase(announcement.getStatus())) {
                 continue;
             }
             if (!isForClass(announcement, studentClass.getClassId())) {

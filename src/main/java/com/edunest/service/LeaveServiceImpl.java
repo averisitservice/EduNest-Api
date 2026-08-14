@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.constant.Constant;
 import com.edunest.dto.leave.LeaveListResponse;
 import com.edunest.dto.leave.LeaveRequest;
 import com.edunest.dto.leave.LeaveResponse;
@@ -79,7 +80,7 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setSectionId(studentClass.getSectionId());
         leave.setLeaveDate(request.getLeaveDate());
         leave.setReason(request.getReason());
-        leave.setStatus("PENDING");
+        leave.setStatus(Constant.LEAVE_STATUS_PENDING);
         leaveRepository.save(leave);
         return true;
     }
@@ -93,7 +94,7 @@ public class LeaveServiceImpl implements LeaveService {
         if (!leave.getTenantId().equals(tenantId) || !leave.getStudentId().equals(studentId)) {
             throw new CustomException("leaveId", "Leave request not found");
         }
-        if (!"PENDING".equals(leave.getStatus())) {
+        if (!Constant.LEAVE_STATUS_PENDING.equals(leave.getStatus())) {
             throw new CustomException("status", "Only pending leave requests can be deleted");
         }
 
@@ -137,7 +138,7 @@ public class LeaveServiceImpl implements LeaveService {
         if (!leave.getTenantId().equals(tenantId)) {
             throw new CustomException("leaveId", "Leave request not found");
         }
-        if (!"PENDING".equals(leave.getStatus())) {
+        if (!Constant.LEAVE_STATUS_PENDING.equals(leave.getStatus())) {
             throw new CustomException("status", "This leave request has already been actioned");
         }
 
@@ -151,11 +152,11 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     private void sendLeaveStatusPush(Leave leave) {
-        String title = "APPROVED".equals(leave.getStatus()) ? "Leave Request Approved" : "Leave Request Rejected";
+        String title = Constant.LEAVE_STATUS_APPROVED.equals(leave.getStatus()) ? "Leave Request Approved" : "Leave Request Rejected";
         String body = "Your leave request for " + leave.getLeaveDate() + " has been " + leave.getStatus().toLowerCase() + ".";
 
-        studentNotificationService.notify(leave.getTenantId(), List.of(leave.getStudentId()), "LEAVE_STATUS",
-                leave.getLeaveId(), title, body);
+        studentNotificationService.notify(leave.getTenantId(), List.of(leave.getStudentId()),
+                Constant.NOTIFICATION_TYPE_LEAVE_STATUS, leave.getLeaveId(), title, body);
     }
 
 }

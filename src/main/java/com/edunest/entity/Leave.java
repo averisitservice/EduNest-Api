@@ -1,5 +1,6 @@
 package com.edunest.entity;
 
+import com.edunest.constant.Constant;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -42,7 +43,7 @@ public class Leave {
     private String reason;
 
     @Column(name = "status", nullable = false, length = 20)
-    private String status = "PENDING";
+    private String status = Constant.LEAVE_STATUS_PENDING;
 
     @CreationTimestamp
     @Column(name = "created_date", updatable = false)

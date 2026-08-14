@@ -1,5 +1,6 @@
 package com.edunest.entity;
 
+import com.edunest.constant.Constant;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -45,7 +46,7 @@ public class Announcement {
 
     @Column(name = "status", length = 20)
     @Builder.Default
-    private String status = "PUBLISHED";
+    private String status = Constant.ANNOUNCEMENT_STATUS_PUBLISHED;
 
     @Column(name = "is_active")
     @Builder.Default

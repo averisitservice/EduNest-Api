@@ -57,7 +57,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         Map<Integer, Leave> approvedLeaves = new HashMap<>();
         if (!studentIds.isEmpty()) {
             List<Leave> leaves = leaveRepository.findByTenantIdAndLeaveDateAndStudentIdInAndStatus(
-                    tenantId, date, studentIds, "APPROVED");
+                    tenantId, date, studentIds, Constant.LEAVE_STATUS_APPROVED);
             for (Leave leave : leaves) {
                 approvedLeaves.put(leave.getStudentId(), leave);
             }

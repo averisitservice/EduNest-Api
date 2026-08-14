@@ -1,5 +1,6 @@
 package com.edunest.configuration;
 
+import com.edunest.constant.Constant;
 import com.edunest.entity.Student;
 import com.edunest.entity.Teacher;
 import com.edunest.helper.CommonHelper;
@@ -81,7 +82,7 @@ public class JwtHelper {
         Map<String, Object> claims = new HashMap<>();
         claims.put("studentId", student.getStudentId());
         claims.put("tenantId", student.getTenantId());
-        claims.put("userType", "STUDENT");
+        claims.put("userType", Constant.USER_TYPE_STUDENT);
 
         return Jwts.builder()
                 .claims(claims)
@@ -100,7 +101,7 @@ public class JwtHelper {
         Map<String, Object> claims = new HashMap<>();
         claims.put("studentId", student.getStudentId());
         claims.put("tenantId", student.getTenantId());
-        claims.put("userType", "STUDENT");
+        claims.put("userType", Constant.USER_TYPE_STUDENT);
 
         return Jwts.builder()
                 .claims(claims)

@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.constant.Constant;
 import com.edunest.dto.exam.*;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
@@ -171,8 +172,8 @@ public class ExamServiceImpl implements ExamService {
         }
 
         String title = (isNew ? "New Exam Scheduled: " : "Exam Updated: ") + exam.getExamName();
-        studentNotificationService.notify(exam.getTenantId(), studentIds, "EXAM_SCHEDULED", exam.getExamId(),
-                title, "Exam scheduled on " + exam.getExamDate() + ".");
+        studentNotificationService.notify(exam.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_EXAM_SCHEDULED,
+                exam.getExamId(), title, "Exam scheduled on " + exam.getExamDate() + ".");
     }
 
     private LocalDate resolveExamStartDate(ExamRequest request) {
@@ -342,8 +343,9 @@ public class ExamServiceImpl implements ExamService {
             return;
         }
 
-        studentNotificationService.notify(exam.getTenantId(), studentIds, "RESULT_PUBLISHED", exam.getExamId(),
-                "Result Published: " + exam.getExamName(), "Your marks for " + exam.getExamName() + " have been published.");
+        studentNotificationService.notify(exam.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_RESULT_PUBLISHED,
+                exam.getExamId(), "Result Published: " + exam.getExamName(),
+                "Your marks for " + exam.getExamName() + " have been published.");
     }
 
     @Override
@@ -406,7 +408,7 @@ public class ExamServiceImpl implements ExamService {
         reportCardResponse.setTotalMax(totalMax);
         reportCardResponse.setPercentage(percentage);
         reportCardResponse.setOverallGrade(gradeFor(percentage));
-        reportCardResponse.setResult(overallPass ? "PASS" : "FAIL");
+        reportCardResponse.setResult(overallPass ? Constant.EXAM_RESULT_PASS : Constant.EXAM_RESULT_FAIL);
         return reportCardResponse;
     }
 }

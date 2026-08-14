@@ -98,13 +98,13 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setMessage(request.getMessage());
         announcement.setAudience(request.getAudience() != null ? request.getAudience() : Constant.All);
         announcement.setClassIds(joinClassIds(request.getClassIds()));
-        boolean publishNow = !("SCHEDULED".equalsIgnoreCase(request.getPublishMode()) && request.getPublishDate() != null);
+        boolean publishNow = !(Constant.ANNOUNCEMENT_STATUS_SCHEDULED.equalsIgnoreCase(request.getPublishMode()) && request.getPublishDate() != null);
         if (publishNow) {
             announcement.setPublishDate(LocalDate.now());
-            announcement.setStatus("PUBLISHED");
+            announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_PUBLISHED);
         } else {
             announcement.setPublishDate(request.getPublishDate());
-            announcement.setStatus("SCHEDULED");
+            announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_SCHEDULED);
         }
         announcement.setUpdatedBy(loginTeacherId);
         announcement.setUpdatedDate(LocalDateTime.now());
@@ -123,8 +123,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             return;
         }
 
-        studentNotificationService.notify(announcement.getTenantId(), studentIds, "ANNOUNCEMENT",
-                announcement.getAnnouncementId(), announcement.getTitle(), announcement.getMessage());
+        studentNotificationService.notify(announcement.getTenantId(), studentIds,
+                Constant.NOTIFICATION_TYPE_ANNOUNCEMENT, announcement.getAnnouncementId(), announcement.getTitle(),
+                announcement.getMessage());
     }
 
     private List<Integer> resolveAudience(Announcement announcement) {

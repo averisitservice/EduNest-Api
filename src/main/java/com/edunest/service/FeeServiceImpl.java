@@ -1,6 +1,7 @@
 package com.edunest.service;
 
 import com.edunest.configuration.RazorpayConfiguration;
+import com.edunest.constant.Constant;
 import com.edunest.dto.fee.FeePaymentRequest;
 import com.edunest.dto.fee.FeePaymentResponse;
 import com.edunest.dto.fee.FeeReceiptDetails;
@@ -121,7 +122,7 @@ public class FeeServiceImpl implements FeeService {
         payment.setAcademicYearId(currentYear.getAcademicYearId());
         payment.setAmount(request.getAmount());
         payment.setPaymentDate(request.getPaymentDate() != null ? request.getPaymentDate() : LocalDate.now());
-        payment.setPaymentMode(request.getPaymentMode() != null ? request.getPaymentMode() : "CASH");
+        payment.setPaymentMode(request.getPaymentMode() != null ? request.getPaymentMode() : Constant.PAYMENT_MODE_CASH);
         payment.setReceiptNo(receiptNo);
         payment.setRemarks(request.getRemarks());
         payment.setCollectedBy(collectedBy);
@@ -147,7 +148,7 @@ public class FeeServiceImpl implements FeeService {
         payment.setAcademicYearId(currentYear.getAcademicYearId());
         payment.setAmount(amount);
         payment.setPaymentDate(LocalDate.now());
-        payment.setPaymentMode("ONLINE");
+        payment.setPaymentMode(Constant.PAYMENT_MODE_ONLINE);
         payment.setReceiptNo(nextReceiptNo(tenantId, currentYear));
         payment.setRemarks("Razorpay payment ID: " + razorpayPaymentId);
         feePaymentRepository.save(payment);
@@ -301,7 +302,7 @@ public class FeeServiceImpl implements FeeService {
 
         VerifyPaymentResponse verifyPaymentResponse = new VerifyPaymentResponse();
         verifyPaymentResponse.setVerified(verified);
-        verifyPaymentResponse.setStatus(verified ? "PAID" : "FAILED");
+        verifyPaymentResponse.setStatus(verified ? Constant.PAYMENT_STATUS_PAID : Constant.PAYMENT_STATUS_FAILED);
         return verifyPaymentResponse;
     }
 

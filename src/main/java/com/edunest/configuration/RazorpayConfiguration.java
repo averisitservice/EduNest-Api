@@ -1,5 +1,6 @@
 package com.edunest.configuration;
 
+import com.edunest.constant.Constant;
 import com.edunest.entity.PaymentWebhookLog;
 import com.edunest.entity.RazorpayOrder;
 import com.edunest.entity.RazorpayTransaction;
@@ -150,7 +151,7 @@ public class RazorpayConfiguration {
         boolean isValid = verifySignature(razorpayOrder.getRazorpayOrderRef(), razorpayPaymentId, razorpaySignature);
 
         recordTransaction(razorpayOrderId, razorpayPaymentId, razorpaySignature,
-                isValid ? "PAID" : "FAILED",
+                isValid ? Constant.PAYMENT_STATUS_PAID : Constant.PAYMENT_STATUS_FAILED,
                 isValid ? null : "Signature verification failed");
 
         return isValid;

@@ -1,5 +1,6 @@
 package com.edunest.configuration;
 
+import com.edunest.constant.Constant;
 import com.edunest.repository.StudentDeviceTokenRepository;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -89,7 +90,7 @@ public class FirebaseConfig {
         if (data != null) {
             payload.putAll(data);
         }
-        payload.putIfAbsent("type", "NOTIFICATION");
+        payload.putIfAbsent("type", Constant.PUSH_TYPE_NOTIFICATION);
         payload.put("title", title);
         payload.put("body", body);
 

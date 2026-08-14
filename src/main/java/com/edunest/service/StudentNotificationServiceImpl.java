@@ -2,6 +2,7 @@ package com.edunest.service;
 
 import com.edunest.common.PagedResponse;
 import com.edunest.configuration.FirebaseConfig;
+import com.edunest.constant.Constant;
 import com.edunest.dto.mobile.StudentNotificationItem;
 import com.edunest.entity.StudentNotification;
 import com.edunest.error.CustomException;
@@ -63,7 +64,7 @@ public class StudentNotificationServiceImpl implements StudentNotificationServic
         studentNotificationRepository.saveAll(notifications);
 
         Map<String, String> data = new HashMap<>();
-        data.put("type", "NOTIFICATION");
+        data.put("type", Constant.PUSH_TYPE_NOTIFICATION);
         data.put("category", type);
         if (referenceId != null) {
             data.put("referenceId", String.valueOf(referenceId));

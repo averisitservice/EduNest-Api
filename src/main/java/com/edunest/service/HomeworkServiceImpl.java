@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.constant.Constant;
 import com.edunest.dto.homework.HomeworkRequest;
 import com.edunest.dto.homework.HomeworkResponse;
 import com.edunest.entity.AcademicYear;
@@ -114,8 +115,8 @@ public class HomeworkServiceImpl implements HomeworkService {
 
         String subjectName = commonHelper.subjectName(homework.getSubjectId());
         String title = (isNew ? "New Homework: " : "Homework Updated: ") + homework.getTitle();
-        studentNotificationService.notify(homework.getTenantId(), studentIds, "HOMEWORK", homework.getHomeworkId(),
-                title, subjectName != null ? subjectName : homework.getTitle());
+        studentNotificationService.notify(homework.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_HOMEWORK,
+                homework.getHomeworkId(), title, subjectName != null ? subjectName : homework.getTitle());
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.constant.Constant;
 import com.edunest.dto.note.NoteRequest;
 import com.edunest.dto.note.NoteResponse;
 import com.edunest.entity.AcademicYear;
@@ -112,8 +113,8 @@ public class NoteServiceImpl implements NoteService {
 
         String subjectName = commonHelper.subjectName(note.getSubjectId());
         String title = (isNew ? "New Note: " : "Note Updated: ") + note.getTitle();
-        studentNotificationService.notify(note.getTenantId(), studentIds, "NOTE", note.getNoteId(),
-                title, subjectName != null ? subjectName : note.getTitle());
+        studentNotificationService.notify(note.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_NOTE,
+                note.getNoteId(), title, subjectName != null ? subjectName : note.getTitle());
     }
 
     @Override

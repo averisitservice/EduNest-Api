@@ -1,5 +1,6 @@
 package com.edunest.scheduler;
 
+import com.edunest.constant.Constant;
 import com.edunest.entity.Announcement;
 import com.edunest.repository.AnnouncementRepository;
 import com.edunest.service.AnnouncementService;
@@ -24,10 +25,11 @@ public class AnnouncementScheduler {
     @Transactional
     public void publishScheduledAnnouncements() {
         List<Announcement> due = announcementRepository
-                .findByStatusAndPublishDateLessThanEqualAndIsActiveTrue("SCHEDULED", LocalDate.now());
+                .findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(
+                        Constant.ANNOUNCEMENT_STATUS_SCHEDULED, LocalDate.now());
 
         for (Announcement announcement : due) {
-            announcement.setStatus("PUBLISHED");
+            announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_PUBLISHED);
             announcementRepository.save(announcement);
             announcementService.sendAnnouncementPush(announcement);
         }
