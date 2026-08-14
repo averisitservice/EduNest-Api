@@ -91,41 +91,15 @@ public class TeacherServiceImpl implements TeacherService {
 
         if (isEdit) {
             teacher = teacherRepository.findById(teacherId).orElseThrow(() -> new CustomException("Teacher", "Teacher not found"));
-            teacher.setRoleId(request.getRoleId());
-            teacher.setFirstName(request.getFirstName());
-            teacher.setLastName(request.getLastName());
-            teacher.setGender(request.getGender());
-            teacher.setDateOfBirth(request.getDateOfBirth());
-            teacher.setMobileNo(request.getMobileNo());
-            teacher.setEmail(request.getEmail());
-            teacher.setQualification(request.getQualification());
-            teacher.setJoiningDate(request.getJoiningDate());
-            teacher.setAddressLine1(request.getAddressLine1());
-            teacher.setCity(request.getCity());
-            teacher.setState(request.getState());
-            teacher.setPostalCode(request.getPostalCode());
-            teacher.setEmploymentTypeId(request.getEmploymentTypeId());
+            BeanUtils.copyProperties(request, teacher, "teacherId", "password");
             teacher.setUpdatedBy(loginTeacherId);
             teacher.setUpdatedDate(LocalDateTime.now());
         } else {
             teacher = new Teacher();
+            BeanUtils.copyProperties(request, teacher, "teacherId", "password");
             teacher.setTenantId(tenantId);
-            teacher.setRoleId(request.getRoleId());
             teacher.setHashkey(CryptoHelper.getHashKey());
             teacher.setPassword(CryptoHelper.encryptPassword(request.getPassword(), CryptoHelper.getHashKey()));
-            teacher.setFirstName(request.getFirstName());
-            teacher.setLastName(request.getLastName());
-            teacher.setGender(request.getGender());
-            teacher.setDateOfBirth(request.getDateOfBirth());
-            teacher.setMobileNo(request.getMobileNo());
-            teacher.setEmail(request.getEmail());
-            teacher.setQualification(request.getQualification());
-            teacher.setJoiningDate(request.getJoiningDate());
-            teacher.setAddressLine1(request.getAddressLine1());
-            teacher.setCity(request.getCity());
-            teacher.setState(request.getState());
-            teacher.setPostalCode(request.getPostalCode());
-            teacher.setEmploymentTypeId(request.getEmploymentTypeId());
             teacher.setIsActive(true);
             teacher.setCreatedBy(loginTeacherId);
             teacher.setUpdatedBy(loginTeacherId);

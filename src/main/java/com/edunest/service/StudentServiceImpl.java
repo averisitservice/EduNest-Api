@@ -11,6 +11,7 @@ import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.ClassSectionRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -100,24 +101,13 @@ public class StudentServiceImpl implements StudentService {
         String updatedByName = commonHelper.teacherNameForId(student.getUpdatedBy());
 
         StudentListResponse studentListResponse = new StudentListResponse();
-        studentListResponse.setStudentId(student.getStudentId());
-        studentListResponse.setAdmissionNo(student.getAdmissionNo());
+        BeanUtils.copyProperties(student, studentListResponse);
         studentListResponse.setStudentName(CommonHelper.studentNameForStudent(student));
-        studentListResponse.setGender(student.getGender());
-        studentListResponse.setDateOfBirth(student.getDateOfBirth());
-        studentListResponse.setMobileNo(student.getMobileNo());
-        studentListResponse.setEmail(student.getEmail());
         studentListResponse.setClassName(className);
         studentListResponse.setSectionName(sectionName);
         studentListResponse.setDisplayClass(displayClass);
         studentListResponse.setRollNo(rollNo);
-        studentListResponse.setIsActive(student.getIsActive());
-        studentListResponse.setLastLogin(student.getLastLogin());
-        studentListResponse.setFatherName(student.getFatherName());
-        studentListResponse.setParentMobile(student.getParentMobile());
-        studentListResponse.setUpdatedDate(student.getUpdatedDate());
         studentListResponse.setUpdatedBy(updatedByName);
-        studentListResponse.setIsHostel(student.getIsHostel());
         return studentListResponse;
     }
 
@@ -128,26 +118,7 @@ public class StudentServiceImpl implements StudentService {
         StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId).orElse(null);
 
         StudentDTO request = new StudentDTO();
-        request.setStudentId(student.getStudentId());
-        request.setFirstName(student.getFirstName());
-        request.setMiddleName(student.getMiddleName());
-        request.setLastName(student.getLastName());
-        request.setGender(student.getGender());
-        request.setDateOfBirth(student.getDateOfBirth());
-        request.setAadharNo(student.getAadharNo());
-        request.setEmail(student.getEmail());
-        request.setMobileNo(student.getMobileNo());
-        request.setAddressLine1(student.getAddressLine1());
-        request.setCity(student.getCity());
-        request.setState(student.getState());
-        request.setPostalCode(student.getPostalCode());
-        request.setFatherName(student.getFatherName());
-        request.setMotherName(student.getMotherName());
-        request.setParentMobile(student.getParentMobile());
-        request.setParentEmail(student.getParentEmail());
-        request.setParentAadhar(student.getParentAadhar());
-
-        request.setIsHostel(student.getIsHostel());
+        BeanUtils.copyProperties(student, request, "password");
 
         if (studentClass != null) {
             request.setSectionId(studentClass.getSectionId());

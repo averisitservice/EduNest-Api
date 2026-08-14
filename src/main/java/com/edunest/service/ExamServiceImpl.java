@@ -83,19 +83,15 @@ public class ExamServiceImpl implements ExamService {
             ClassMaster classMaster = classMasterRepository.findById(exam.getClassId()).orElse(null);
 
             ExamSummaryResponse examSummaryResponse = new ExamSummaryResponse();
-            examSummaryResponse.setExamId(exam.getExamId());
-            examSummaryResponse.setClassId(exam.getClassId());
+            BeanUtils.copyProperties(exam, examSummaryResponse);
             examSummaryResponse.setClassName(classMaster != null ? classMaster.getClassName() : null);
-            examSummaryResponse.setExamName(exam.getExamName());
-            examSummaryResponse.setExamDate(exam.getExamDate());
             List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
             if (!schedule.isEmpty()) {
-                examSummaryResponse.setStartDate(schedule.get(0).getExamDate());
-                examSummaryResponse.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
+                examSummaryResponse.setStartDate(schedule.getFirst().getExamDate());
+                examSummaryResponse.setEndDate(schedule.getLast().getExamDate());
             }
             examSummaryResponse.setCreatedBy(commonHelper.teacherNameForId(exam.getCreatedBy()));
             examSummaryResponse.setUpdatedBy(commonHelper.teacherNameForId(exam.getUpdatedBy()));
-            examSummaryResponse.setUpdatedDate(exam.getUpdatedDate());
             examSummaryResponses.add(examSummaryResponse);
         }
         return examSummaryResponses;
@@ -113,22 +109,16 @@ public class ExamServiceImpl implements ExamService {
         ClassMaster classMaster = classMasterRepository.findById(exam.getClassId()).orElse(null);
 
         ExamListResponse examListResponse = new ExamListResponse();
-        examListResponse.setExamId(exam.getExamId());
-        examListResponse.setClassId(exam.getClassId());
+        BeanUtils.copyProperties(exam, examListResponse);
         examListResponse.setClassName(classMaster != null ? classMaster.getClassName() : null);
-        examListResponse.setExamName(exam.getExamName());
-        examListResponse.setMaxMarks(exam.getMaxMarks());
-        examListResponse.setPassMarks(exam.getPassMarks());
-        examListResponse.setExamDate(exam.getExamDate());
         List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
         examListResponse.setSubjects(schedule);
         if (!schedule.isEmpty()) {
-            examListResponse.setStartDate(schedule.get(0).getExamDate());
-            examListResponse.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
+            examListResponse.setStartDate(schedule.getFirst().getExamDate());
+            examListResponse.setEndDate(schedule.getLast().getExamDate());
         }
         examListResponse.setCreatedBy(commonHelper.teacherNameForId(exam.getCreatedBy()));
         examListResponse.setUpdatedBy(commonHelper.teacherNameForId(exam.getUpdatedBy()));
-        examListResponse.setUpdatedDate(exam.getUpdatedDate());
         return examListResponse;
     }
 

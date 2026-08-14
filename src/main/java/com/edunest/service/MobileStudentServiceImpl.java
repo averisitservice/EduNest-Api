@@ -439,7 +439,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             return null;
         }
 
-        Teacher teacher = teacherRepository.findById(assignments.get(0).getTeacherId()).orElse(null);
+        Teacher teacher = teacherRepository.findById(assignments.getFirst().getTeacherId()).orElse(null);
         if (teacher == null) {
             return null;
         }
