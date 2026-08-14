@@ -88,7 +88,7 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         StudentProfileResponse profile = new StudentProfileResponse();
         profile.setStudentId(student.getStudentId());
         profile.setAdmissionNo(student.getAdmissionNo());
-        profile.setStudentName(commonHelper.studentName(student.getStudentId()));
+        profile.setStudentName(commonHelper.studentNameForId(student.getStudentId()));
         profile.setEmail(student.getEmail());
         profile.setMobileNo(student.getMobileNo());
         profile.setPhotoUrl(student.getPhotoUrl());
@@ -133,7 +133,7 @@ public class MobileAuthServiceImpl implements MobileAuthService {
             studentRepository.save(student);
 
             accounts.add(new StudentResetCredential(
-                    commonHelper.studentName(student.getStudentId()), student.getUsername(), newPassword));
+                    commonHelper.studentNameForId(student.getStudentId()), student.getUsername(), newPassword));
         }
 
         emailService.sendStudentPasswordResetEmail(email, accounts);

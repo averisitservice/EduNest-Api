@@ -47,8 +47,8 @@ public class TeacherServiceImpl implements TeacherService {
             BeanUtils.copyProperties(teacher, response);
 
             response.setEmploymentId(teacher.getEmploymentTypeId());
-            response.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
-            response.setUpdatedBy(commonHelper.teacherName(teacher.getUpdatedBy()));
+            response.setTeacherName(CommonHelper.teacherNameForTeacher(teacher));
+            response.setUpdatedBy(commonHelper.teacherNameForId(teacher.getUpdatedBy()));
 
             responseList.add(response);
         }
@@ -66,7 +66,7 @@ public class TeacherServiceImpl implements TeacherService {
 
             TeacherListResponse response = new TeacherListResponse();
             response.setTeacherId(teacher.getTeacherId());
-            response.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
+            response.setTeacherName(CommonHelper.teacherNameForTeacher(teacher));
             responseList.add(response);
         }
         return responseList;

@@ -69,8 +69,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             response.setClassNames(classNames);
             response.setPublishDate(announcement.getPublishDate());
             response.setStatus(announcement.getStatus());
-            response.setCreatedBy(commonHelper.teacherName(announcement.getCreatedBy()));
-            response.setUpdatedBy(commonHelper.teacherName(announcement.getUpdatedBy()));
+            response.setCreatedBy(commonHelper.teacherNameForId(announcement.getCreatedBy()));
+            response.setUpdatedBy(commonHelper.teacherNameForId(announcement.getUpdatedBy()));
             response.setUpdatedDate(announcement.getUpdatedDate());
             announcementResponses.add(response);
         }

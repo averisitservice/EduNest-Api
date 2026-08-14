@@ -70,7 +70,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
             AttendanceRosterResponse.StudentRow row = new AttendanceRosterResponse.StudentRow();
             row.setStudentId(studentClass.getStudentId());
-            row.setStudentName(commonHelper.studentName(studentClass.getStudentId()));
+            row.setStudentName(commonHelper.studentNameForId(studentClass.getStudentId()));
             row.setRollNo(studentClass.getRollNo());
 
             if (attendance != null) {
@@ -178,7 +178,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
             AttendanceSummaryResponse summary = new AttendanceSummaryResponse();
             summary.setStudentId(studentClass.getStudentId());
-            summary.setStudentName(commonHelper.studentName(studentClass.getStudentId()));
+            summary.setStudentName(commonHelper.studentNameForId(studentClass.getStudentId()));
             summary.setRollNo(studentClass.getRollNo());
             summary.setPresentCount(present);
             summary.setAbsentCount(absent);

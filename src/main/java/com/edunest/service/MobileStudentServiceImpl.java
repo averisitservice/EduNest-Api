@@ -25,12 +25,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     StudentClassRepository studentClassRepository;
 
     @Autowired
-    ClassMasterRepository classMasterRepository;
-
-    @Autowired
-    ClassSectionRepository classSectionRepository;
-
-    @Autowired
     TeacherClassRepository teacherClassRepository;
 
     @Autowired
@@ -142,7 +136,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         studentHomeworkDetailResponse.setDescription(homework.getDescription());
         studentHomeworkDetailResponse.setDueDate(homework.getDueDate());
         studentHomeworkDetailResponse.setAttachmentUrl(homework.getAttachmentUrl());
-        studentHomeworkDetailResponse.setTeacherName(commonHelper.teacherName(homework.getUpdatedBy()));
+        studentHomeworkDetailResponse.setTeacherName(commonHelper.teacherNameForId(homework.getUpdatedBy()));
         studentHomeworkDetailResponse.setUpdatedDate(homework.getUpdatedDate());
         return studentHomeworkDetailResponse;
     }
@@ -165,7 +159,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setTitle(note.getTitle());
         response.setDescription(note.getDescription());
         response.setAttachmentUrl(note.getAttachmentUrl());
-        response.setTeacherName(commonHelper.teacherName(note.getUpdatedBy()));
+        response.setTeacherName(commonHelper.teacherNameForId(note.getUpdatedBy()));
         response.setUpdatedDate(note.getUpdatedDate());
         return response;
     }
@@ -180,9 +174,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     public StudentExamsResponse getExams(Integer studentId, Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        StudentClass studentClass = studentClassRepository
-                .findByStudentIdAndTenantId(studentId, tenantId)
-                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
         List<Exam> exams = examRepository
                 .findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
@@ -229,15 +221,13 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     public StudentTimetableResponse getTimetable(Integer studentId, Integer tenantId, String day) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        StudentClass studentClass = studentClassRepository
-                .findByStudentIdAndTenantId(studentId, tenantId)
-                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
         Integer classId = studentClass.getClassId();
         Integer sectionId = studentClass.getSectionId();
 
         StudentTimetableResponse studentTimetableResponse = new StudentTimetableResponse();
-        studentTimetableResponse.setDisplayClass(buildDisplayClass(studentClass));
+        studentTimetableResponse.setDisplayClass(commonHelper.displayClassForStudentClass(studentClass));
 
         List<WorkingDay> workingDays = workingDayRepository.findByTenantIdAndIsActiveTrueOrderByDayOrder(tenantId);
         List<TimeSlot> slots = timeSlotRepository
@@ -269,7 +259,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                         if (cell != null) {
                             period.setSubjectId(cell.getSubjectId());
                             period.setSubjectName(commonHelper.subjectName(cell.getSubjectId()));
-                            period.setTeacherName(commonHelper.teacherName(cell.getTeacherId()));
+                            period.setTeacherName(commonHelper.teacherNameForId(cell.getTeacherId()));
                         }
                     }
 
@@ -303,17 +293,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return workingDays.isEmpty() ? null : workingDays.getFirst().getDayName();
     }
 
-    private String buildDisplayClass(StudentClass studentClass) {
-        ClassMaster classMaster = classMasterRepository.findById(studentClass.getClassId()).orElse(null);
-        String className = classMaster != null ? classMaster.getClassName() : null;
-        String sectionName = null;
-        if (studentClass.getSectionId() != null) {
-            ClassSection classSection = classSectionRepository.findById(studentClass.getSectionId()).orElse(null);
-            sectionName = classSection != null ? classSection.getSectionName() : null;
-        }
-        return (className != null && sectionName != null) ? className + " - " + sectionName : className;
-    }
-
     @Override
     public StudentHomeResponse getStudentHome(Integer studentId, Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
@@ -329,7 +308,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
         StudentHomeResponse response = new StudentHomeResponse();
         response.setStudentId(student.getStudentId());
-        response.setStudentName(buildStudentName(student));
+        response.setStudentName(CommonHelper.studentNameForStudent(student));
         response.setPhotoUrl(student.getPhotoUrl());
         response.setAcademicYearName(currentYear.getYearName());
 
@@ -337,15 +316,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 .findByStudentIdAndTenantId(studentId, tenantId)
                 .orElse(null);
         if (studentClass != null) {
-            ClassMaster classMaster = classMasterRepository.findById(studentClass.getClassId()).orElse(null);
-            String className = classMaster != null ? classMaster.getClassName() : null;
-            String sectionName = null;
-            if (studentClass.getSectionId() != null) {
-                ClassSection classSection = classSectionRepository.findById(studentClass.getSectionId()).orElse(null);
-                sectionName = classSection != null ? classSection.getSectionName() : null;
-            }
-            response.setDisplayClass(
-                    (className != null && sectionName != null) ? className + " - " + sectionName : className);
+            response.setDisplayClass(commonHelper.displayClassForStudentClass(studentClass));
             response.setRollNo(studentClass.getRollNo());
         }
 
@@ -423,7 +394,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         StudentDetailResponse studentDetailResponse = new StudentDetailResponse();
         studentDetailResponse.setStudentId(student.getStudentId());
         studentDetailResponse.setAdmissionNo(student.getAdmissionNo());
-        studentDetailResponse.setStudentName(buildStudentName(student));
+        studentDetailResponse.setStudentName(CommonHelper.studentNameForStudent(student));
         studentDetailResponse.setPhotoUrl(student.getPhotoUrl());
 
         studentDetailResponse.setDateOfBirth(student.getDateOfBirth());
@@ -438,7 +409,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         studentDetailResponse.setParentEmail(student.getParentEmail());
         studentDetailResponse.setParentAadhar(student.getParentAadhar());
 
-        studentDetailResponse.setAddress(buildFullAddress(student));
+        studentDetailResponse.setAddress(CommonHelper.fullAddressForStudent(student));
 
         applyClassPlacement(studentDetailResponse, student, tenantId);
 
@@ -454,17 +425,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             return;
         }
 
-        ClassMaster classMaster = classMasterRepository.findById(studentClass.getClassId()).orElse(null);
-        String className = classMaster != null ? classMaster.getClassName() : null;
-
-        String sectionName = null;
-        if (studentClass.getSectionId() != null) {
-            ClassSection classSection = classSectionRepository.findById(studentClass.getSectionId()).orElse(null);
-            sectionName = classSection != null ? classSection.getSectionName() : null;
-        }
-
-        response.setDisplayClass(
-                (className != null && sectionName != null) ? className + " - " + sectionName : className);
+        response.setDisplayClass(commonHelper.displayClassForStudentClass(studentClass));
         response.setRollNo(studentClass.getRollNo());
         response.setClassTeacherName(
                 resolveClassTeacher(studentClass.getClassId(), studentClass.getSectionId(), tenantId));
@@ -487,28 +448,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 + (teacher.getLastName() != null ? teacher.getLastName() : "")).trim();
 
         return name.isEmpty() ? teacher.getTeacherName() : name;
-    }
-
-    private String buildFullAddress(Student student) {
-        List<String> parts = new ArrayList<>();
-
-        if (hasText(student.getAddressLine1())) parts.add(student.getAddressLine1().trim());
-        if (hasText(student.getCity())) parts.add(student.getCity().trim());
-        if (hasText(student.getState())) parts.add(student.getState().trim());
-
-        String address = String.join(", ", parts);
-
-        if (hasText(student.getPostalCode())) {
-            address = address.isEmpty()
-                    ? student.getPostalCode().trim()
-                    : address + " - " + student.getPostalCode().trim();
-        }
-
-        return address.isEmpty() ? null : address;
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
     }
 
     @Override
@@ -567,13 +506,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setRecords(records);
 
         return response;
-    }
-
-    private String buildStudentName(Student student) {
-        StringBuilder name = new StringBuilder();
-        if (student.getFirstName() != null) name.append(student.getFirstName());
-        if (student.getLastName() != null) name.append(" ").append(student.getLastName());
-        return name.toString().trim();
     }
 
     @Override

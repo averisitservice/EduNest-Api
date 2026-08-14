@@ -4,15 +4,11 @@ import com.edunest.dto.leave.LeaveListResponse;
 import com.edunest.dto.leave.LeaveRequest;
 import com.edunest.dto.leave.LeaveResponse;
 import com.edunest.entity.AcademicYear;
-import com.edunest.entity.ClassMaster;
-import com.edunest.entity.ClassSection;
 import com.edunest.entity.Leave;
 import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.ClassMasterRepository;
-import com.edunest.repository.ClassSectionRepository;
 import com.edunest.repository.LeaveRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
@@ -24,7 +20,6 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class LeaveServiceImpl implements LeaveService {
@@ -37,12 +32,6 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Autowired
     StudentRepository studentRepository;
-
-    @Autowired
-    ClassMasterRepository classMasterRepository;
-
-    @Autowired
-    ClassSectionRepository classSectionRepository;
 
     @Autowired
     CommonHelper commonHelper;
@@ -125,14 +114,14 @@ public class LeaveServiceImpl implements LeaveService {
             LeaveListResponse response = new LeaveListResponse();
             response.setLeaveId(leave.getLeaveId());
             response.setStudentId(leave.getStudentId());
-            response.setStudentName(student != null ? student.getFirstName() + " " + student.getLastName() : null);
-            response.setDisplayClass(buildDisplayClass(leave.getClassId(), leave.getSectionId()));
+            response.setStudentName(CommonHelper.studentNameForStudent(student));
+            response.setDisplayClass(commonHelper.displayClassForIds(leave.getClassId(), leave.getSectionId()));
             response.setRollNo(studentClass != null ? studentClass.getRollNo() : null);
             response.setLeaveDate(leave.getLeaveDate());
             response.setReason(leave.getReason());
             response.setStatus(leave.getStatus());
             response.setCreatedDate(leave.getCreatedDate());
-            response.setUpdatedBy(commonHelper.teacherName(leave.getUpdatedBy()));
+            response.setUpdatedBy(commonHelper.teacherNameForId(leave.getUpdatedBy()));
             response.setUpdatedDate(leave.getUpdatedDate());
             result.add(response);
         }
@@ -169,15 +158,4 @@ public class LeaveServiceImpl implements LeaveService {
                 leave.getLeaveId(), title, body);
     }
 
-    private String buildDisplayClass(Integer classId, Integer sectionId) {
-        if (classId == null) return null;
-        ClassMaster classMaster = classMasterRepository.findById(classId).orElse(null);
-        String className = classMaster != null ? classMaster.getClassName() : null;
-        String sectionName = null;
-        if (sectionId != null) {
-            ClassSection classSection = classSectionRepository.findById(sectionId).orElse(null);
-            sectionName = classSection != null ? classSection.getSectionName() : null;
-        }
-        return (className != null && sectionName != null) ? className + " - " + sectionName : className;
-    }
 }

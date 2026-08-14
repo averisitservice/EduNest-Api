@@ -110,7 +110,7 @@ public class TimetableServiceImpl implements TimetableService {
             cell.setSubjectId(timetable.getSubjectId());
             cell.setSubjectName(subject != null ? subject.getSubjectName() : null);
             cell.setTeacherId(timetable.getTeacherId());
-            cell.setTeacherName(teacher != null ? teacher.getFirstName() + " " + teacher.getLastName() : null);
+            cell.setTeacherName(CommonHelper.teacherNameForTeacher(teacher));
 
             timetableMap.put(timetable.getTimeSlotId() + "_" + wd.getDayName(), cell);
         }

@@ -92,8 +92,8 @@ public class ExamServiceImpl implements ExamService {
                 examSummaryResponse.setStartDate(schedule.get(0).getExamDate());
                 examSummaryResponse.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
             }
-            examSummaryResponse.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
-            examSummaryResponse.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
+            examSummaryResponse.setCreatedBy(commonHelper.teacherNameForId(exam.getCreatedBy()));
+            examSummaryResponse.setUpdatedBy(commonHelper.teacherNameForId(exam.getUpdatedBy()));
             examSummaryResponse.setUpdatedDate(exam.getUpdatedDate());
             examSummaryResponses.add(examSummaryResponse);
         }
@@ -125,8 +125,8 @@ public class ExamServiceImpl implements ExamService {
             examListResponse.setStartDate(schedule.get(0).getExamDate());
             examListResponse.setEndDate(schedule.get(schedule.size() - 1).getExamDate());
         }
-        examListResponse.setCreatedBy(commonHelper.teacherName(exam.getCreatedBy()));
-        examListResponse.setUpdatedBy(commonHelper.teacherName(exam.getUpdatedBy()));
+        examListResponse.setCreatedBy(commonHelper.teacherNameForId(exam.getCreatedBy()));
+        examListResponse.setUpdatedBy(commonHelper.teacherNameForId(exam.getUpdatedBy()));
         examListResponse.setUpdatedDate(exam.getUpdatedDate());
         return examListResponse;
     }
@@ -268,7 +268,7 @@ public class ExamServiceImpl implements ExamService {
         for (StudentClass studentClass : roster) {
             ExamMarksEntryResponse.StudentRow row = new ExamMarksEntryResponse.StudentRow();
             row.setStudentId(studentClass.getStudentId());
-            row.setStudentName(commonHelper.studentName(studentClass.getStudentId()));
+            row.setStudentName(commonHelper.studentNameForId(studentClass.getStudentId()));
             row.setRollNo(studentClass.getRollNo());
             row.setMarks(marksMap.getOrDefault(studentClass.getStudentId(), new HashMap<>()));
             rows.add(row);
@@ -395,7 +395,7 @@ public class ExamServiceImpl implements ExamService {
 
         ReportCardResponse reportCardResponse = new ReportCardResponse();
         reportCardResponse.setStudentId(studentId);
-        reportCardResponse.setStudentName(commonHelper.studentName(studentId));
+        reportCardResponse.setStudentName(commonHelper.studentNameForId(studentId));
         StudentClass sc = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId).orElse(null);
         reportCardResponse.setRollNo(sc != null ? sc.getRollNo() : null);
         reportCardResponse.setExamName(exam.getExamName());

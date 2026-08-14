@@ -3,6 +3,8 @@ package com.edunest.helper;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.repository.AcademicYearRepository;
+import com.edunest.repository.ClassMasterRepository;
+import com.edunest.repository.ClassSectionRepository;
 import com.edunest.repository.StudentRepository;
 import com.edunest.repository.SubjectRepository;
 import com.edunest.repository.TeacherRepository;
@@ -29,6 +31,12 @@ public class CommonHelper {
     @Autowired
     private SubjectRepository subjectRepository;
 
+    @Autowired
+    private ClassMasterRepository classMasterRepository;
+
+    @Autowired
+    private ClassSectionRepository classSectionRepository;
+
     public AcademicYear getCurrentYear(Integer tenantId) {
         AcademicYear currentYear = academicYearRepository.findByTenantIdAndIsCurrentTrue(tenantId);
         if (currentYear == null) {
@@ -37,7 +45,7 @@ public class CommonHelper {
         return currentYear;
     }
 
-    public String teacherName(Integer teacherId) {
+    public String teacherNameForId(Integer teacherId) {
         if (teacherId == null) {
             return null;
         }
@@ -45,11 +53,19 @@ public class CommonHelper {
         return teacher != null ? teacher.getTeacherName() : null;
     }
 
-    public String studentName(Integer studentId) {
+    public static String teacherNameForTeacher(Teacher teacher) {
+        return teacher != null ? teacher.getFirstName() + " " + teacher.getLastName() : null;
+    }
+
+    public String studentNameForId(Integer studentId) {
         if (studentId == null) {
             return null;
         }
         Student student = studentRepository.findById(studentId).orElse(null);
+        return studentNameForStudent(student);
+    }
+
+    public static String studentNameForStudent(Student student) {
         return student != null ? student.getFirstName() + " " + student.getLastName() : null;
     }
 
@@ -60,20 +76,31 @@ public class CommonHelper {
         return rollNo.trim();
     }
 
-    public static String fullAddress(Tenant tenant) {
+    public static String fullAddressForTenant(Tenant tenant) {
+        return fullAddressForCommon(tenant.getAddressLine1(), tenant.getAddressLine2(), tenant.getCity(),
+                tenant.getState(), tenant.getPostalCode());
+    }
+
+    public static String fullAddressForStudent(Student student) {
+        return fullAddressForCommon(student.getAddressLine1(), null, student.getCity(),
+                student.getState(), student.getPostalCode());
+    }
+
+    private static String fullAddressForCommon(String addressLine1, String addressLine2, String city, String state,
+                                                 String postalCode) {
         List<String> parts = new ArrayList<>();
 
-        if (hasText(tenant.getAddressLine1())) parts.add(tenant.getAddressLine1().trim());
-        if (hasText(tenant.getAddressLine2())) parts.add(tenant.getAddressLine2().trim());
-        if (hasText(tenant.getCity())) parts.add(tenant.getCity().trim());
-        if (hasText(tenant.getState())) parts.add(tenant.getState().trim());
+        if (hasText(addressLine1)) parts.add(addressLine1.trim());
+        if (hasText(addressLine2)) parts.add(addressLine2.trim());
+        if (hasText(city)) parts.add(city.trim());
+        if (hasText(state)) parts.add(state.trim());
 
         String address = String.join(", ", parts);
 
-        if (hasText(tenant.getPostalCode())) {
+        if (hasText(postalCode)) {
             address = address.isEmpty()
-                    ? tenant.getPostalCode().trim()
-                    : address + " - " + tenant.getPostalCode().trim();
+                    ? postalCode.trim()
+                    : address + " - " + postalCode.trim();
         }
 
         return address.isEmpty() ? null : address;
@@ -85,6 +112,25 @@ public class CommonHelper {
                 .filteredBy(Character::isLetterOrDigit)
                 .build();
         return generator.generate(8);
+    }
+
+    public String displayClassForIds(Integer classId, Integer sectionId) {
+        if (classId == null) {
+            return null;
+        }
+        ClassMaster classMaster = classMasterRepository.findById(classId).orElse(null);
+        String className = classMaster != null ? classMaster.getClassName() : null;
+        String sectionName = null;
+        if (sectionId != null) {
+            ClassSection classSection = classSectionRepository.findById(sectionId).orElse(null);
+            sectionName = classSection != null ? classSection.getSectionName() : null;
+        }
+        return (className != null && sectionName != null) ? className + " - " + sectionName : className;
+    }
+
+    public String displayClassForStudentClass(StudentClass studentClass) {
+        return studentClass != null
+                ? displayClassForIds(studentClass.getClassId(), studentClass.getSectionId()) : null;
     }
 
     public String subjectName(Integer subjectId) {

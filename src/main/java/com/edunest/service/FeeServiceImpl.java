@@ -41,12 +41,6 @@ public class FeeServiceImpl implements FeeService {
     TeacherRepository teacherRepository;
 
     @Autowired
-    ClassMasterRepository classMasterRepository;
-
-    @Autowired
-    ClassSectionRepository classSectionRepository;
-
-    @Autowired
     CommonHelper commonHelper;
 
     @Autowired
@@ -97,7 +91,7 @@ public class FeeServiceImpl implements FeeService {
 
             FeeStatusResponse response = new FeeStatusResponse();
             response.setStudentId(studentClass.getStudentId());
-            response.setStudentName(student != null ? student.getFirstName() + " " + student.getLastName() : null);
+            response.setStudentName(CommonHelper.studentNameForStudent(student));
             response.setRollNo(studentClass.getRollNo());
             response.setAnnualFee(studentAnnual);
             response.setPaidAmount(paid);
@@ -184,37 +178,25 @@ public class FeeServiceImpl implements FeeService {
         String collectedByName = "Online Payment";
         if (payment.getCollectedBy() != null) {
             Teacher teacher = teacherRepository.findById(payment.getCollectedBy()).orElse(null);
-            collectedByName = teacher != null ? teacher.getFirstName() + " " + teacher.getLastName() : "-";
+            collectedByName = teacher != null ? CommonHelper.teacherNameForTeacher(teacher) : "-";
         }
 
         FeeReceiptDetails details = FeeReceiptDetails.builder()
                 .schoolName(tenant != null ? tenant.getTenantName() : "")
-                .schoolAddress(buildSchoolAddress(tenant))
+                .schoolAddress(tenant != null ? CommonHelper.fullAddressForTenant(tenant) : "")
                 .schoolContact(tenant != null ? "Phone: " + tenant.getContactPhone() + " | Email: " + tenant.getContactEmail() : "")
                 .receiptNo(payment.getReceiptNo())
                 .paymentDateFormatted(payment.getPaymentDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
                 .admissionNo(student.getAdmissionNo())
                 .sessionYear(currentYear.getYearName())
-                .studentName(student.getFirstName() + " " + student.getLastName())
-                .displayClass(buildDisplayClass(studentClass))
+                .studentName(CommonHelper.studentNameForStudent(student))
+                .displayClass(commonHelper.displayClassForStudentClass(studentClass))
                 .remarks(payment.getRemarks())
                 .collectedBy(collectedByName)
                 .amount(payment.getAmount())
                 .build();
 
         emailService.sendFeeReceiptEmail(toEmail, details);
-    }
-
-    private String buildSchoolAddress(Tenant tenant) {
-        if (tenant == null) {
-            return "";
-        }
-        List<String> parts = new ArrayList<>();
-        if (tenant.getAddressLine1() != null && !tenant.getAddressLine1().isBlank()) parts.add(tenant.getAddressLine1());
-        if (tenant.getAddressLine2() != null && !tenant.getAddressLine2().isBlank()) parts.add(tenant.getAddressLine2());
-        if (tenant.getCity() != null && !tenant.getCity().isBlank()) parts.add(tenant.getCity());
-        if (tenant.getState() != null && !tenant.getState().isBlank()) parts.add(tenant.getState() + " - " + tenant.getPostalCode());
-        return String.join(", ", parts);
     }
 
     @Override
@@ -232,7 +214,7 @@ public class FeeServiceImpl implements FeeService {
             if (payment.getCollectedBy() != null) {
                 Teacher teacher = teacherRepository.findById(payment.getCollectedBy()).orElse(null);
                 if (teacher != null) {
-                    collectedByName = teacher.getFirstName() + " " + teacher.getLastName();
+                    collectedByName = CommonHelper.teacherNameForTeacher(teacher);
                 }
             }
 
@@ -269,8 +251,8 @@ public class FeeServiceImpl implements FeeService {
 
         StudentFeeDetailResponse response = new StudentFeeDetailResponse();
         response.setStudentId(studentId);
-        response.setStudentName(student.getFirstName() + " " + student.getLastName());
-        response.setDisplayClass(buildDisplayClass(studentClass));
+        response.setStudentName(CommonHelper.studentNameForStudent(student));
+        response.setDisplayClass(commonHelper.displayClassForStudentClass(studentClass));
         response.setRollNo(studentClass.getRollNo());
         response.setAcademicYearName(currentYear.getYearName());
         response.setTotalFee(totalFee);
@@ -323,14 +305,4 @@ public class FeeServiceImpl implements FeeService {
         return verifyPaymentResponse;
     }
 
-    private String buildDisplayClass(StudentClass studentClass) {
-        ClassMaster classMaster = classMasterRepository.findById(studentClass.getClassId()).orElse(null);
-        String className = classMaster != null ? classMaster.getClassName() : null;
-        String sectionName = null;
-        if (studentClass.getSectionId() != null) {
-            ClassSection classSection = classSectionRepository.findById(studentClass.getSectionId()).orElse(null);
-            sectionName = classSection != null ? classSection.getSectionName() : null;
-        }
-        return (className != null && sectionName != null) ? className + " - " + sectionName : className;
-    }
 }

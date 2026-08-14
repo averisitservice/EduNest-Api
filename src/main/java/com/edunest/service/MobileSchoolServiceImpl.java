@@ -29,7 +29,7 @@ public class MobileSchoolServiceImpl implements MobileSchoolService {
         response.setContactEmail(tenant.getContactEmail());
         response.setContactPhone(tenant.getContactPhone());
         response.setWebsite(tenant.getDomainName());
-        response.setAddress(CommonHelper.fullAddress(tenant));
+        response.setAddress(CommonHelper.fullAddressForTenant(tenant));
 
         return response;
     }

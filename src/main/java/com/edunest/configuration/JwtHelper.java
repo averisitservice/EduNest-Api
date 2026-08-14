@@ -2,6 +2,7 @@ package com.edunest.configuration;
 
 import com.edunest.entity.Student;
 import com.edunest.entity.Teacher;
+import com.edunest.helper.CommonHelper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -43,7 +44,7 @@ public class JwtHelper {
         claims.put("teacherId", teacher.getTeacherId());
         claims.put("tenantId", teacher.getTenantId());
         claims.put("roleId", teacher.getRoleId());
-        claims.put("teacherName", teacher.getFirstName() + " " + teacher.getLastName());
+        claims.put("teacherName", CommonHelper.teacherNameForTeacher(teacher));
 
         return Jwts.builder()
                 .claims(claims)

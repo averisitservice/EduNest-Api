@@ -1,6 +1,7 @@
 package com.edunest.service;
 
 import com.edunest.common.PagedResponse;
+import com.edunest.configuration.FirebaseConfig;
 import com.edunest.dto.mobile.StudentNotificationItem;
 import com.edunest.entity.StudentNotification;
 import com.edunest.error.CustomException;
@@ -25,7 +26,7 @@ public class StudentNotificationServiceImpl implements StudentNotificationServic
     StudentNotificationRepository studentNotificationRepository;
 
     @Autowired
-    FcmPushService fcmPushService;
+    FirebaseConfig firebaseConfig;
 
     @Override
     @Transactional
@@ -68,7 +69,7 @@ public class StudentNotificationServiceImpl implements StudentNotificationServic
             data.put("referenceId", String.valueOf(referenceId));
         }
 
-        fcmPushService.sendToStudents(tenantId, studentIds, title, body, data);
+        firebaseConfig.sendToStudents(tenantId, studentIds, title, body, data);
     }
 
     @Override

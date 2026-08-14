@@ -56,8 +56,8 @@ public class HomeworkServiceImpl implements HomeworkService {
             homeworkResponse.setDescription(homework.getDescription());
             homeworkResponse.setDueDate(homework.getDueDate());
             homeworkResponse.setAttachmentUrl(homework.getAttachmentUrl());
-            homeworkResponse.setCreatedBy(commonHelper.teacherName(homework.getCreatedBy()));
-            homeworkResponse.setUpdatedBy(commonHelper.teacherName(homework.getUpdatedBy()));
+            homeworkResponse.setCreatedBy(commonHelper.teacherNameForId(homework.getCreatedBy()));
+            homeworkResponse.setUpdatedBy(commonHelper.teacherNameForId(homework.getUpdatedBy()));
             homeworkResponse.setUpdatedDate(homework.getUpdatedDate());
             homeworkResponseList.add(homeworkResponse);
         }

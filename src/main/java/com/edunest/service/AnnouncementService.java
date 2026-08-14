@@ -14,6 +14,5 @@ public interface AnnouncementService {
 
     boolean deleteAnnouncement(Integer tenantId, Integer announcementId);
 
-    /** Sends a push notification to the announcement's audience. Called on publish (immediate or scheduled). */
     void sendAnnouncementPush(Announcement announcement);
 }

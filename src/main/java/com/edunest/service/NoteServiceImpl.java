@@ -55,8 +55,8 @@ public class NoteServiceImpl implements NoteService {
             noteResponse.setTitle(note.getTitle());
             noteResponse.setDescription(note.getDescription());
             noteResponse.setAttachmentUrl(note.getAttachmentUrl());
-            noteResponse.setCreatedBy(commonHelper.teacherName(note.getCreatedBy()));
-            noteResponse.setUpdatedBy(commonHelper.teacherName(note.getUpdatedBy()));
+            noteResponse.setCreatedBy(commonHelper.teacherNameForId(note.getCreatedBy()));
+            noteResponse.setUpdatedBy(commonHelper.teacherNameForId(note.getUpdatedBy()));
             noteResponse.setUpdatedDate(note.getUpdatedDate());
             noteResponses.add(noteResponse);
         }

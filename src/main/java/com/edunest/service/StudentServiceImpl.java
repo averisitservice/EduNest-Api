@@ -97,12 +97,12 @@ public class StudentServiceImpl implements StudentService {
             rollNo = studentClass.getRollNo();
         }
 
-        String updatedByName = commonHelper.teacherName(student.getUpdatedBy());
+        String updatedByName = commonHelper.teacherNameForId(student.getUpdatedBy());
 
         StudentListResponse studentListResponse = new StudentListResponse();
         studentListResponse.setStudentId(student.getStudentId());
         studentListResponse.setAdmissionNo(student.getAdmissionNo());
-        studentListResponse.setStudentName(student.getFirstName() + " " + student.getLastName());
+        studentListResponse.setStudentName(CommonHelper.studentNameForStudent(student));
         studentListResponse.setGender(student.getGender());
         studentListResponse.setDateOfBirth(student.getDateOfBirth());
         studentListResponse.setMobileNo(student.getMobileNo());
