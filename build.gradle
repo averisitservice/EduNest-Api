@@ -30,7 +30,6 @@ dependencies {
 
 	// Database
 	implementation 'org.postgresql:postgresql'
-	runtimeOnly 'com.mysql:mysql-connector-j'
 
 	//lombok
 	compileOnly 'org.projectlombok:lombok:1.18.30'
