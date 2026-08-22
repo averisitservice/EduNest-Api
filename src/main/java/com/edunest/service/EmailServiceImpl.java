@@ -13,6 +13,11 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
+import com.edunest.dto.fee.ByteArrayMultipartFile;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import org.springframework.core.io.ByteArrayResource;
+import java.io.ByteArrayOutputStream;
+import java.util.Map;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
@@ -24,6 +29,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -91,11 +99,12 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendFeeReceiptEmail(String toEmail, FeeReceiptDetails details) {
+    public String sendFeeReceiptEmail(String toEmail, FeeReceiptDetails details) {
         try {
             String amountFormatted = formatIndianCurrency(details.getAmount());
 
-            String html = loadTemplate("feeReceipt.html")
+            // 1. Generate normal email HTML body
+            String emailHtml = loadTemplate("feeReceipt.html")
                     .replace("{{schoolName}}", nullToDash(details.getSchoolName()))
                     .replace("{{schoolAddress}}", nullToDash(details.getSchoolAddress()))
                     .replace("{{schoolContact}}", nullToDash(details.getSchoolContact()))
@@ -110,11 +119,66 @@ public class EmailServiceImpl implements EmailService {
                     .replace("{{amountWords}}", numberToWords(details.getAmount()))
                     .replace("{{amount}}", amountFormatted);
 
-            sendResetEmail(toEmail, "EduNest - Fee Payment Receipt (" + details.getReceiptNo() + ")", html);
-            log.info("Fee receipt email sent to {} for receipt {}", toEmail, details.getReceiptNo());
+            byte[] pdfBytes;
+            try (ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
+                String pdfHtml = adaptHtmlForPdf(emailHtml);
+                PdfRendererBuilder builder = new PdfRendererBuilder();
+                builder.useFastMode();
+                builder.withHtmlContent(pdfHtml, null);
+                builder.toStream(pdfOutputStream);
+                builder.run();
+                pdfBytes = pdfOutputStream.toByteArray();
+            }
+
+            String originalFileName = "Receipt_" + details.getReceiptNo() + ".pdf";
+            ByteArrayMultipartFile multipartFile = new ByteArrayMultipartFile(pdfBytes, originalFileName, "application/pdf");
+            Map<String, Object> uploadResult = fileStorageService.uploadFile(multipartFile, "edunest/receipt");
+            String receiptUrl = String.valueOf(uploadResult.get("secure_url"));
+
+            String attachmentName = "FeeReceipt_" + details.getReceiptNo() + ".pdf";
+            sendEmailWithAttachment(toEmail, "EduNest - Fee Payment Receipt (" + details.getReceiptNo() + ")", emailHtml, attachmentName, pdfBytes);
+            log.info("Fee receipt email sent to {} for receipt {} with PDF attachment. URL: {}", toEmail, details.getReceiptNo(), receiptUrl);
+
+            return receiptUrl;
         } catch (Exception e) {
-            log.error("Failed to send fee receipt email to {}", toEmail, e);
+            log.error("Failed to process fee receipt PDF or send email to {}", toEmail, e);
+            return null;
         }
+    }
+
+    private String adaptHtmlForPdf(String html) {
+        if (html == null) {
+            return null;
+        }
+
+        // 1. Ensure meta charset tag is self-closed (strict XHTML requirement for OpenHTMLtoPDF)
+        html = html.replace("<meta charset=\"UTF-8\">", "<meta charset=\"UTF-8\" />")
+                   .replace("<meta charset=\"UTF-8\" />", "<meta charset=\"UTF-8\" />");
+
+        // 2. Resolve CSS variables for colors
+        html = html.replace("var(--paper)", "#fdfdfb")
+                   .replace("var(--ink)", "#1e2a20")
+                   .replace("var(--ink-soft)", "#4a564c")
+                   .replace("var(--forest)", "#1b5e34")
+                   .replace("var(--forest-deep)", "#0f3d21")
+                   .replace("var(--sage)", "#e9f0e4")
+                   .replace("var(--sage-line)", "#cddac4")
+                   .replace("var(--rule)", "#cfd8c9");
+
+        return html;
+    }
+
+    private void sendEmailWithAttachment(String toEmail, String subject, String html, String attachmentName, byte[] attachmentBytes) throws Exception {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(fromEmail);
+        helper.setTo(toEmail);
+        helper.setSubject(subject);
+        helper.setText(html, true);
+        helper.addAttachment(attachmentName, new ByteArrayResource(attachmentBytes), "application/pdf");
+
+        mailSender.send(message);
     }
 
     private String nullToDash(String value) {

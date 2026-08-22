@@ -10,5 +10,5 @@ public interface EmailService {
 
     void sendStudentPasswordResetEmail(String toEmail, List<StudentResetCredential> accounts);
 
-    void sendFeeReceiptEmail(String toEmail, FeeReceiptDetails details);
+    String sendFeeReceiptEmail(String toEmail, FeeReceiptDetails details);
 }

@@ -197,7 +197,11 @@ public class FeeServiceImpl implements FeeService {
                 .amount(payment.getAmount())
                 .build();
 
-        emailService.sendFeeReceiptEmail(toEmail, details);
+        String receiptUrl = emailService.sendFeeReceiptEmail(toEmail, details);
+        if (receiptUrl != null) {
+            payment.setReceiptUrl(receiptUrl);
+            feePaymentRepository.save(payment);
+        }
     }
 
     @Override

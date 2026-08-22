@@ -57,6 +57,9 @@ public class FeePayment {
     @Column(name = "collected_by")
     private Integer collectedBy;
 
+    @Column(name = "receipt_url", length = 512)
+    private String receiptUrl;
+
     @CreationTimestamp
     @Column(name = "created_date", updatable = false)
     private LocalDateTime createdDate;

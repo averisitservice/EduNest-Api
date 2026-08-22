@@ -17,4 +17,5 @@ public class FeePaymentResponse {
     private String receiptNo;
     private String remarks;
     private String collectedBy;
+    private String receiptUrl;
 }

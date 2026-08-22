@@ -57,6 +57,9 @@ dependencies {
 	// Firebase (push notifications)
 	implementation 'com.google.firebase:firebase-admin:9.4.1'
 
+	// HTML to PDF conversion
+	implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
+	implementation 'com.openhtmltopdf:openhtmltopdf-svg-support:1.0.10'
 }
 
 tasks.named('test') {
