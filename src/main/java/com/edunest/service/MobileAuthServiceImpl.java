@@ -95,17 +95,17 @@ public class MobileAuthServiceImpl implements MobileAuthService {
 
         applyClassPlacement(profile, student);
 
-            TenantResponse tenantResponse = new TenantResponse();
-            tenantResponse.setTenantId(tenant.getTenantId());
-            tenantResponse.setSchoolCode(tenant.getSchoolCode());
-            tenantResponse.setTenantName(tenant.getTenantName());
-            tenantResponse.setSchoolBannerUrl(tenant.getSchoolBannerUrl());
-            tenantResponse.setMobileLogoUrl(tenant.getMobileLogoUrl());
-            tenantResponse.setLogoUrl(tenant.getLogoUrl());
-            tenantResponse.setSingleLogoUrl(tenant.getSingleLogoUrl());
-            tenantResponse.setPrimaryColor(tenant.getPrimaryColor());
-            tenantResponse.setFaviconUrl(tenant.getFaviconUrl());
-            tenantResponse.setIsHostel(tenant.getIsHostel());
+        TenantResponse tenantResponse = new TenantResponse();
+        tenantResponse.setTenantId(tenant.getTenantId());
+        tenantResponse.setSchoolCode(tenant.getSchoolCode());
+        tenantResponse.setTenantName(tenant.getTenantName());
+        tenantResponse.setSchoolBannerUrl(tenant.getSchoolBannerUrl());
+        tenantResponse.setMobileLogoUrl(tenant.getMobileLogoUrl());
+        tenantResponse.setLogoUrl(tenant.getLogoUrl());
+        tenantResponse.setSingleLogoUrl(tenant.getSingleLogoUrl());
+        tenantResponse.setPrimaryColor(tenant.getPrimaryColor());
+        tenantResponse.setFaviconUrl(tenant.getFaviconUrl());
+        tenantResponse.setIsHostel(tenant.getIsHostel());
 
 
         return new StudentLoginResponse(session, refresh, profile, tenantResponse);

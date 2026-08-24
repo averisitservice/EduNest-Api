@@ -12,16 +12,20 @@ import java.util.List;
 @Repository
 public interface LeaveRepository extends JpaRepository<Leave, Integer> {
 
-    @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.studentId = :studentId "
+    @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.academicYearId = :academicYearId "
+            + "AND l.studentId = :studentId "
             + "ORDER BY l.leaveId DESC")
-    List<Leave> findByStudentId(@Param("tenantId") Integer tenantId, @Param("studentId") Integer studentId);
+    List<Leave> findByStudentId(
+            @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
+            @Param("studentId") Integer studentId);
 
-    @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.classId = :classId "
+    @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.academicYearId = :academicYearId "
+            + "AND l.classId = :classId "
             + "AND (:sectionId IS NULL OR l.sectionId = :sectionId) "
             + "ORDER BY l.leaveId DESC")
     List<Leave> findByClassAndSection(
-            @Param("tenantId") Integer tenantId, @Param("classId") Integer classId,
-            @Param("sectionId") Integer sectionId);
+            @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
+            @Param("classId") Integer classId, @Param("sectionId") Integer sectionId);
 
     List<Leave> findByTenantIdAndLeaveDateAndStudentIdInAndStatus(
             Integer tenantId, LocalDate leaveDate, List<Integer> studentIds, String status);

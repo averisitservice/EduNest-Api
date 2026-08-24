@@ -42,7 +42,8 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     public List<LeaveResponse> getLeaveList(Integer tenantId, Integer studentId) {
-        List<Leave> leaves = leaveRepository.findByStudentId(tenantId, studentId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+        List<Leave> leaves = leaveRepository.findByStudentId(tenantId, currentYear.getAcademicYearId(), studentId);
 
         List<LeaveResponse> leaveResponses = new ArrayList<>();
         for (Leave leave : leaves) {
@@ -104,7 +105,8 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     public List<LeaveListResponse> getLeaveListForClass(Integer tenantId, Integer classId, Integer sectionId) {
-        List<Leave> leaves = leaveRepository.findByClassAndSection(tenantId, classId, sectionId);
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+        List<Leave> leaves = leaveRepository.findByClassAndSection(tenantId, currentYear.getAcademicYearId(), classId, sectionId);
 
         List<LeaveListResponse> result = new ArrayList<>();
         for (Leave leave : leaves) {
