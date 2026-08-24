@@ -21,6 +21,9 @@ import java.util.Map;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import com.ibm.icu.text.RuleBasedNumberFormat;
+import org.apache.commons.text.WordUtils;
+import java.util.Locale;
 import java.util.List;
 
 @Slf4j
@@ -103,8 +106,19 @@ public class EmailServiceImpl implements EmailService {
         try {
             String amountFormatted = formatIndianCurrency(details.getAmount());
 
-            // 1. Generate normal email HTML body
-            String emailHtml = loadTemplate("feeReceipt.html")
+            // 1. Generate normal email HTML body from separate template
+            String emailHtml = loadTemplate("feeReceiptEmail.html")
+                    .replace("{{schoolName}}", nullToDash(details.getSchoolName()))
+                    .replace("{{schoolContact}}", nullToDash(details.getSchoolContact()))
+                    .replace("{{receiptNo}}", nullToDash(details.getReceiptNo()))
+                    .replace("{{paymentDateFormatted}}", nullToDash(details.getPaymentDateFormatted()))
+                    .replace("{{studentName}}", nullToDash(details.getStudentName()))
+                    .replace("{{displayClass}}", nullToDash(details.getDisplayClass()))
+                    .replace("{{paymentMode}}", nullToDash(details.getPaymentMode()))
+                    .replace("{{amount}}", amountFormatted);
+
+            // 2. Generate PDF HTML from feeReceipt.html template
+            String pdfTemplateHtml = loadTemplate("feeReceipt.html")
                     .replace("{{schoolName}}", nullToDash(details.getSchoolName()))
                     .replace("{{schoolAddress}}", nullToDash(details.getSchoolAddress()))
                     .replace("{{schoolContact}}", nullToDash(details.getSchoolContact()))
@@ -121,7 +135,7 @@ public class EmailServiceImpl implements EmailService {
 
             byte[] pdfBytes;
             try (ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
-                String pdfHtml = adaptHtmlForPdf(emailHtml);
+                String pdfHtml = adaptHtmlForPdf(pdfTemplateHtml);
                 PdfRendererBuilder builder = new PdfRendererBuilder();
                 builder.useFastMode();
                 builder.withHtmlContent(pdfHtml, null);
@@ -136,7 +150,9 @@ public class EmailServiceImpl implements EmailService {
             String receiptUrl = String.valueOf(uploadResult.get("secure_url"));
 
             String attachmentName = "FeeReceipt_" + details.getReceiptNo() + ".pdf";
-            sendEmailWithAttachment(toEmail, "EduNest - Fee Payment Receipt (" + details.getReceiptNo() + ")", emailHtml, attachmentName, pdfBytes);
+            String studentName = details.getStudentName() != null ? details.getStudentName() : "";
+            String subject = "Fee Payment Receipt – " + studentName;
+            sendEmailWithAttachment(toEmail, subject, emailHtml, attachmentName, pdfBytes);
             log.info("Fee receipt email sent to {} for receipt {} with PDF attachment. URL: {}", toEmail, details.getReceiptNo(), receiptUrl);
 
             return receiptUrl;
@@ -193,56 +209,13 @@ public class EmailServiceImpl implements EmailService {
         return format.format(amount.longValue());
     }
 
-    private static final String[] ONES = {
-            "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
-            "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"
-    };
-
-    private static final String[] TENS = {
-            "", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"
-    };
-
     private String numberToWords(BigDecimal amount) {
         long value = amount != null ? amount.longValue() : 0;
         if (value == 0) {
             return "Zero Rupees Only";
         }
-
-        StringBuilder words = new StringBuilder();
-        long crore = value / 10000000;
-        value %= 10000000;
-        long lakh = value / 100000;
-        value %= 100000;
-        long thousand = value / 1000;
-        value %= 1000;
-        long hundred = value / 100;
-        long remainder = value % 100;
-
-        if (crore > 0) {
-            words.append(twoDigitWords((int) crore)).append(" Crore ");
-        }
-        if (lakh > 0) {
-            words.append(twoDigitWords((int) lakh)).append(" Lakh ");
-        }
-        if (thousand > 0) {
-            words.append(twoDigitWords((int) thousand)).append(" Thousand ");
-        }
-        if (hundred > 0) {
-            words.append(ONES[(int) hundred]).append(" Hundred ");
-        }
-        if (remainder > 0) {
-            words.append(twoDigitWords((int) remainder)).append(" ");
-        }
-
-        return words.toString().trim() + " Rupees Only";
-    }
-
-    private String twoDigitWords(int number) {
-        if (number < 20) {
-            return ONES[number];
-        }
-        int tens = number / 10;
-        int ones = number % 10;
-        return ones > 0 ? TENS[tens] + " " + ONES[ones] : TENS[tens];
+        RuleBasedNumberFormat formatter = new RuleBasedNumberFormat(Locale.ENGLISH, RuleBasedNumberFormat.SPELLOUT);
+        String words = formatter.format(value);
+        return WordUtils.capitalizeFully(words, ' ', '-') + " Rupees Only";
     }
 }

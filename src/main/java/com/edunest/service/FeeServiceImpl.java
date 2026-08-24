@@ -192,6 +192,7 @@ public class FeeServiceImpl implements FeeService {
                 .sessionYear(currentYear.getYearName())
                 .studentName(CommonHelper.studentNameForStudent(student))
                 .displayClass(commonHelper.displayClassForStudentClass(studentClass))
+                .paymentMode(payment.getPaymentMode())
                 .remarks(payment.getRemarks())
                 .collectedBy(collectedByName)
                 .amount(payment.getAmount())

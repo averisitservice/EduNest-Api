@@ -25,6 +25,7 @@ public class FeeReceiptDetails {
     private String sessionYear;
     private String studentName;
     private String displayClass;
+    private String paymentMode;
     private String remarks;
     private String collectedBy;
 
