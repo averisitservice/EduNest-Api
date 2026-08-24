@@ -135,17 +135,17 @@ public class EmailServiceImpl implements EmailService {
 
             byte[] pdfBytes;
             try (ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
-                String pdfHtml = adaptHtmlForPdf(pdfTemplateHtml);
                 PdfRendererBuilder builder = new PdfRendererBuilder();
                 builder.useFastMode();
-                builder.withHtmlContent(pdfHtml, null);
+                builder.withHtmlContent(pdfTemplateHtml, null);
                 builder.toStream(pdfOutputStream);
                 builder.run();
                 pdfBytes = pdfOutputStream.toByteArray();
             }
 
             String originalFileName = "Receipt_" + details.getReceiptNo() + ".pdf";
-            ByteArrayMultipartFile multipartFile = new ByteArrayMultipartFile(pdfBytes, originalFileName, "application/pdf");
+            ByteArrayMultipartFile multipartFile = new ByteArrayMultipartFile(pdfBytes, originalFileName,
+                    "application/pdf");
             Map<String, Object> uploadResult = fileStorageService.uploadFile(multipartFile, "edunest/receipt");
             String receiptUrl = String.valueOf(uploadResult.get("secure_url"));
 
@@ -153,7 +153,8 @@ public class EmailServiceImpl implements EmailService {
             String studentName = details.getStudentName() != null ? details.getStudentName() : "";
             String subject = "Fee Payment Receipt – " + studentName;
             sendEmailWithAttachment(toEmail, subject, emailHtml, attachmentName, pdfBytes);
-            log.info("Fee receipt email sent to {} for receipt {} with PDF attachment. URL: {}", toEmail, details.getReceiptNo(), receiptUrl);
+            log.info("Fee receipt email sent to {} for receipt {} with PDF attachment. URL: {}", toEmail,
+                    details.getReceiptNo(), receiptUrl);
 
             return receiptUrl;
         } catch (Exception e) {
@@ -162,29 +163,8 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    private String adaptHtmlForPdf(String html) {
-        if (html == null) {
-            return null;
-        }
-
-        // 1. Ensure meta charset tag is self-closed (strict XHTML requirement for OpenHTMLtoPDF)
-        html = html.replace("<meta charset=\"UTF-8\">", "<meta charset=\"UTF-8\" />")
-                   .replace("<meta charset=\"UTF-8\" />", "<meta charset=\"UTF-8\" />");
-
-        // 2. Resolve CSS variables for colors
-        html = html.replace("var(--paper)", "#fdfdfb")
-                   .replace("var(--ink)", "#1e2a20")
-                   .replace("var(--ink-soft)", "#4a564c")
-                   .replace("var(--forest)", "#1b5e34")
-                   .replace("var(--forest-deep)", "#0f3d21")
-                   .replace("var(--sage)", "#e9f0e4")
-                   .replace("var(--sage-line)", "#cddac4")
-                   .replace("var(--rule)", "#cfd8c9");
-
-        return html;
-    }
-
-    private void sendEmailWithAttachment(String toEmail, String subject, String html, String attachmentName, byte[] attachmentBytes) throws Exception {
+    private void sendEmailWithAttachment(String toEmail, String subject, String html, String attachmentName,
+            byte[] attachmentBytes) throws Exception {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
