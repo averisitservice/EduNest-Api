@@ -35,4 +35,17 @@ public interface StudentClassRepository extends JpaRepository<StudentClass, Inte
     List<Integer> findStudentIdsByClassAndSection(
             @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
             @Param("classId") Integer classId, @Param("sectionId") Integer sectionId);
+
+    @Query("SELECT COUNT(sc) > 0 FROM StudentClass sc WHERE sc.tenantId = :tenantId "
+            + "AND sc.classId = :classId AND sc.academicYearId = :academicYearId "
+            + "AND ((:sectionId IS NULL AND sc.sectionId IS NULL) OR sc.sectionId = :sectionId) "
+            + "AND LOWER(TRIM(sc.rollNo)) = LOWER(TRIM(:rollNo)) AND sc.isActive = true "
+            + "AND (:studentId = -1 OR sc.studentId != :studentId)")
+    boolean existsByRollNo(
+            @Param("tenantId") Integer tenantId,
+            @Param("classId") Integer classId,
+            @Param("sectionId") Integer sectionId,
+            @Param("academicYearId") Integer academicYearId,
+            @Param("rollNo") String rollNo,
+            @Param("studentId") Integer studentId);
 }

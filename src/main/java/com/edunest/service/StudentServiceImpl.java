@@ -132,6 +132,23 @@ public class StudentServiceImpl implements StudentService {
     @Transactional
     public boolean saveStudent(Integer tenantId, Integer loginTeacherId, StudentDTO request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+
+        // Check for duplicate roll number in the class and section
+        if (request.getClassId() != null && request.getRollNo() != null && !request.getRollNo().isBlank()) {
+            Integer checkStudentId = request.getStudentId() != null ? request.getStudentId() : -1;
+            boolean rollNoExists = studentClassRepository.existsByRollNo(
+                    tenantId,
+                    request.getClassId(),
+                    request.getSectionId(),
+                    currentYear.getAcademicYearId(),
+                    request.getRollNo().trim(),
+                    checkStudentId
+            );
+            if (rollNoExists) {
+                throw new CustomException("rollNo", "Roll number '" + request.getRollNo().trim() + "' already exists in this class/section");
+            }
+        }
+
         boolean isEdit = (request.getStudentId() != null);
         Student student;
 
