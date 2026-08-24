@@ -11,7 +11,7 @@ import java.util.List;
 @Repository
 public interface StudentNotificationRepository extends JpaRepository<StudentNotification, Integer> {
 
-    Page<StudentNotification> findByTenantIdAndStudentIdOrderByUpdatedDateDescStudentNotificationIdDesc(
+    Page<StudentNotification> findByTenantIdAndStudentIdOrderByStudentNotificationIdDesc(
             Integer tenantId, Integer studentId, Pageable pageable);
 
     long countByTenantIdAndStudentIdAndIsReadFalse(Integer tenantId, Integer studentId);

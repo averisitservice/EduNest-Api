@@ -77,7 +77,7 @@ public class StudentNotificationServiceImpl implements StudentNotificationServic
     public PagedResponse<StudentNotificationItem> getNotifications(Integer tenantId, Integer studentId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<StudentNotification> notificationPage = studentNotificationRepository
-                .findByTenantIdAndStudentIdOrderByUpdatedDateDescStudentNotificationIdDesc(tenantId, studentId, pageable);
+                .findByTenantIdAndStudentIdOrderByStudentNotificationIdDesc(tenantId, studentId, pageable);
 
         List<StudentNotificationItem> items = new ArrayList<>();
         for (StudentNotification notification : notificationPage.getContent()) {
