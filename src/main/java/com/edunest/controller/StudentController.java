@@ -75,9 +75,10 @@ public class StudentController {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
+        Integer tenantId = jwtHelper.extractTenantId(token);
         Integer loginTeacherId = jwtHelper.extractTeacherId(token);
 
-        boolean isDeleted = studentService.deleteStudent(studentId, loginTeacherId);
+        boolean isDeleted = studentService.deleteStudent(tenantId, studentId, loginTeacherId);
 
         ResponseObject<String> response = new ResponseObject<>();
         response.setSuccess(true);

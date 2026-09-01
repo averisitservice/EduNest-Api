@@ -121,6 +121,10 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new CustomException("studentId", "Student not found"));
 
+        if (!student.getTenantId().equals(tenantId)) {
+            throw new CustomException("studentId", "Student not found");
+        }
+
         StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId).orElse(null);
 
         StudentDTO request = new StudentDTO();
@@ -162,6 +166,9 @@ public class StudentServiceImpl implements StudentService {
         if (isEdit) {
             student = studentRepository.findById(request.getStudentId())
                     .orElseThrow(() -> new CustomException("studentId", "Student not found"));
+            if (!student.getTenantId().equals(tenantId)) {
+                throw new CustomException("studentId", "Student not found");
+            }
         } else {
             student = new Student();
             student.setTenantId(tenantId);
@@ -233,9 +240,12 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public boolean deleteStudent(Integer studentId, Integer loginTeacherId) {
+    public boolean deleteStudent(Integer tenantId, Integer studentId, Integer loginTeacherId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new CustomException("studentId", "Student not found"));
+        if (!student.getTenantId().equals(tenantId)) {
+            throw new CustomException("studentId", "Student not found");
+        }
         student.setIsActive(false);
         student.setUpdatedBy(loginTeacherId);
         student.setUpdatedDate(LocalDateTime.now());

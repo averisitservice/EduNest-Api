@@ -14,5 +14,5 @@ public interface StudentService {
 
     boolean saveStudent(Integer tenantId, Integer loginTeacherId, StudentDTO request);
 
-    boolean deleteStudent(Integer studentId, Integer loginTeacherId);
+    boolean deleteStudent(Integer tenantId, Integer studentId, Integer loginTeacherId);
 }
