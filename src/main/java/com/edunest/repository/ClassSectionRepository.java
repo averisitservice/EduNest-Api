@@ -9,6 +9,8 @@ import java.util.List;
 @Repository
 public interface ClassSectionRepository extends JpaRepository<ClassSection, Integer> {
     List<ClassSection> findByClassIdAndTenantId(Integer classId, Integer tenantId);
+
+    List<ClassSection> findByTenantIdAndIsActiveTrue(Integer tenantId);
     
     List<ClassSection> findByTenantIdAndClassIdAndIsActiveTrue(Integer tenantId, Integer classId);
 }

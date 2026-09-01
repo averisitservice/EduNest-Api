@@ -61,6 +61,9 @@ dependencies {
 	// HTML to PDF conversion
 	implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
 	implementation 'com.openhtmltopdf:openhtmltopdf-svg-support:1.0.10'
+
+	// Apache POI for Excel (.xlsx) processing
+	implementation 'org.apache.poi:poi-ooxml:5.4.0'
 }
 
 tasks.named('test') {
