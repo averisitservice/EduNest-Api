@@ -102,6 +102,21 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendStudentWelcomeEmail(String toEmail, String studentName, String username, String password) {
+        try {
+            String html = loadTemplate("sendStudentWelcome.html")
+                    .replace("{{studentName}}", studentName != null ? studentName : "Student")
+                    .replace("{{username}}", username != null ? username : "")
+                    .replace("{{password}}", password != null ? password : "");
+
+            sendResetEmail(toEmail, "EduNest - Mobile App Login Credentials", html);
+            log.info("Student login credentials email sent to {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send student login credentials email to {}", toEmail, e);
+        }
+    }
+
+    @Override
     public String sendFeeReceiptEmail(String toEmail, FeeReceiptDetails details) {
         try {
             String amountFormatted = formatIndianCurrency(details.getAmount());

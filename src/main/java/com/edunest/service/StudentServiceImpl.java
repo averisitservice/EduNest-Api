@@ -42,6 +42,9 @@ public class StudentServiceImpl implements StudentService {
     @Autowired
     CommonHelper commonHelper;
 
+    @Autowired
+    EmailService emailService;
+
     @Override
     public PagedResponse<StudentListResponse> getStudentList(
             Integer tenantId, int page, int size, String search,
@@ -53,7 +56,8 @@ public class StudentServiceImpl implements StudentService {
         String sortProperty = mapSortProperty(sortBy);
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortProperty));
 
-        Page<Student> studentPage = studentRepository.searchStudents(tenantId, normalizedSearch, classId, sectionId, pageable);
+        Page<Student> studentPage = studentRepository.searchStudents(tenantId, normalizedSearch, classId, sectionId,
+                pageable);
 
         List<StudentListResponse> content = new ArrayList<>();
         for (Student student : studentPage.getContent()) {
@@ -79,7 +83,8 @@ public class StudentServiceImpl implements StudentService {
     }
 
     private StudentListResponse toResponse(Student student, Integer tenantId) {
-        StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(student.getStudentId(), tenantId).orElse(null);
+        StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(student.getStudentId(), tenantId)
+                .orElse(null);
 
         String className = null;
         String sectionName = null;
@@ -113,7 +118,8 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public StudentDTO getStudentById(Integer studentId, Integer tenantId) {
-        Student student = studentRepository.findById(studentId).orElseThrow(() -> new CustomException("studentId", "Student not found"));
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new CustomException("studentId", "Student not found"));
 
         StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId).orElse(null);
 
@@ -142,30 +148,32 @@ public class StudentServiceImpl implements StudentService {
                     request.getSectionId(),
                     currentYear.getAcademicYearId(),
                     request.getRollNo().trim(),
-                    checkStudentId
-            );
+                    checkStudentId);
             if (rollNoExists) {
-                throw new CustomException("rollNo", "Roll number '" + request.getRollNo().trim() + "' already exists in this class/section");
+                throw new CustomException("rollNo",
+                        "Roll number '" + request.getRollNo().trim() + "' already exists in this class/section");
             }
         }
 
         boolean isEdit = (request.getStudentId() != null);
         Student student;
+        String rawPassword = null;
 
         if (isEdit) {
-            student = studentRepository.findById(request.getStudentId()).orElseThrow(() -> new CustomException("studentId", "Student not found"));
+            student = studentRepository.findById(request.getStudentId())
+                    .orElseThrow(() -> new CustomException("studentId", "Student not found"));
         } else {
             student = new Student();
             student.setTenantId(tenantId);
             student.setAdmissionNo(commonHelper.generateAdmissionNo(tenantId));
             String hashKey = CryptoHelper.getHashKey();
-            String initialPassword = (request.getPassword() != null && !request.getPassword().isBlank())
-                    ? request.getPassword()
+            rawPassword = (request.getPassword() != null && !request.getPassword().isBlank())
+                    ? request.getPassword().trim()
                     : request.getMobileNo();
 
             student.setHashkey(hashKey);
             student.setUsername(CommonHelper.generateUsername(request.getFirstName(), request.getDateOfBirth()));
-            student.setPassword(CryptoHelper.encryptPassword(initialPassword, hashKey));
+            student.setPassword(CryptoHelper.encryptPassword(rawPassword, hashKey));
             student.setIsActive(true);
             student.setCreatedBy(loginTeacherId);
         }
@@ -194,8 +202,19 @@ public class StudentServiceImpl implements StudentService {
         Student savedStudent = studentRepository.save(student);
         Integer savedStudentId = savedStudent.getStudentId();
 
+        if (!isEdit && rawPassword != null && !rawPassword.isBlank()) {
+            String toEmail = (savedStudent.getParentEmail() != null && !savedStudent.getParentEmail().isBlank())
+                    ? savedStudent.getParentEmail()
+                    : savedStudent.getEmail();
+            if (toEmail != null && !toEmail.isBlank()) {
+                String studentName = CommonHelper.studentNameForStudent(savedStudent);
+                emailService.sendStudentWelcomeEmail(toEmail, studentName, savedStudent.getUsername(), rawPassword);
+            }
+        }
+
         if (request.getClassId() != null || request.getSectionId() != null) {
-            StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(savedStudentId, tenantId).orElse(new StudentClass());
+            StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(savedStudentId, tenantId)
+                    .orElse(new StudentClass());
 
             if (studentClass.getStudentClassId() == null) {
                 studentClass.setTenantId(tenantId);
@@ -215,7 +234,8 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public boolean deleteStudent(Integer studentId, Integer loginTeacherId) {
-        Student student = studentRepository.findById(studentId).orElseThrow(() -> new CustomException("studentId", "Student not found"));
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new CustomException("studentId", "Student not found"));
         student.setIsActive(false);
         student.setUpdatedBy(loginTeacherId);
         student.setUpdatedDate(LocalDateTime.now());
