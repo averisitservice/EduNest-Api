@@ -235,7 +235,7 @@ public class ExamServiceImpl implements ExamService {
             subjectItems.add(new ExamMarksEntryResponse.SubjectItem(subject.getSubjectId(), subject.getSubjectName()));
         }
 
-        List<StudentClass> roster = studentClassRepository.findRoster(classId, sectionId, exam.getAcademicYearId(), tenantId);
+        List<StudentClass> roster = studentClassRepository.findStudentClasses(classId, sectionId, exam.getAcademicYearId(), tenantId);
         List<Integer> studentIds = new ArrayList<>();
         for (StudentClass studentClass : roster) {
             studentIds.add(studentClass.getStudentId());

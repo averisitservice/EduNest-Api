@@ -52,10 +52,11 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
         List<AnnouncementResponse> announcementResponses = new ArrayList<>();
         for (Announcement announcement : announcements) {
-            List<Integer> classIds = parseClassIds(announcement.getClassIds());
+            List<Integer> classIds = commonHelper.convertClassIdsStringToList(announcement.getClassIds());
             List<String> classNames = new ArrayList<>();
             if (!classIds.isEmpty()) {
-                for (ClassMaster classMaster : classMasterRepository.findAllById(classIds)) {
+                List<ClassMaster> classMasters = classMasterRepository.findAllById(classIds);
+                for (ClassMaster classMaster : classMasters) {
                     classNames.add(classMaster.getClassName());
                 }
             }
@@ -97,44 +98,25 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setTitle(request.getTitle());
         announcement.setMessage(request.getMessage());
         announcement.setAudience(request.getAudience() != null ? request.getAudience() : Constant.All);
-        announcement.setClassIds(joinClassIds(request.getClassIds()));
-        boolean publishNow = !(Constant.ANNOUNCEMENT_STATUS_SCHEDULED.equalsIgnoreCase(request.getPublishMode()) && request.getPublishDate() != null);
-        if (publishNow) {
-            announcement.setPublishDate(LocalDate.now());
-            announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_PUBLISHED);
-        } else {
+        announcement.setClassIds(convertClassIdsListToString(request.getClassIds()));
+        boolean isScheduled = Constant.ANNOUNCEMENT_STATUS_SCHEDULED.equalsIgnoreCase(request.getPublishMode())
+                && request.getPublishDate() != null;
+
+        if (isScheduled) {
             announcement.setPublishDate(request.getPublishDate());
             announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_SCHEDULED);
+        } else {
+            announcement.setPublishDate(LocalDate.now());
+            announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_PUBLISHED);
         }
         announcement.setUpdatedBy(loginTeacherId);
         announcement.setUpdatedDate(LocalDateTime.now());
         announcementRepository.save(announcement);
 
-        if (publishNow) {
+        if (!isScheduled) {
             sendAnnouncementPush(announcement);
         }
         return true;
-    }
-
-    @Override
-    public void sendAnnouncementPush(Announcement announcement) {
-        List<Integer> studentIds = resolveAudience(announcement);
-        if (studentIds.isEmpty()) {
-            return;
-        }
-
-        studentNotificationService.notify(announcement.getTenantId(), studentIds,
-                Constant.NOTIFICATION_TYPE_ANNOUNCEMENT, announcement.getAnnouncementId(), announcement.getTitle(),
-                announcement.getMessage());
-    }
-
-    private List<Integer> resolveAudience(Announcement announcement) {
-        if (Constant.All.equalsIgnoreCase(announcement.getAudience())
-                || announcement.getClassIds() == null || announcement.getClassIds().isBlank()) {
-            return studentRepository.findActiveStudentIds(announcement.getTenantId());
-        }
-        return studentClassRepository.findStudentIdsByClassIds(
-                announcement.getTenantId(), announcement.getAcademicYearId(), parseClassIds(announcement.getClassIds()));
     }
 
     @Override
@@ -146,27 +128,35 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         return true;
     }
 
-    private List<Integer> parseClassIds(String classIds) {
-        List<Integer> result = new ArrayList<>();
-        if (classIds == null || classIds.isBlank()) {
-            return result;
+    @Override
+    public void sendAnnouncementPush(Announcement announcement) {
+        List<Integer> studentIds = getStudentIds(announcement);
+        if (studentIds.isEmpty()) {
+            return;
         }
-        for (String id : classIds.split(",")) {
-            String trimmedId = id.trim();
-            if (!trimmedId.isEmpty()) {
-                result.add(Integer.valueOf(trimmedId));
-            }
-        }
-        return result;
+
+        studentNotificationService.notify(announcement.getTenantId(), studentIds,
+                Constant.NOTIFICATION_TYPE_ANNOUNCEMENT, announcement.getAnnouncementId(), announcement.getTitle(),
+                announcement.getMessage());
     }
 
-    private String joinClassIds(List<Integer> classIds) {
+    private List<Integer> getStudentIds(Announcement announcement) {
+        if (Constant.All.equalsIgnoreCase(announcement.getAudience())
+                || announcement.getClassIds() == null) {
+            return studentRepository.findActiveStudentIds(announcement.getTenantId());
+        }
+        return studentClassRepository.findStudentIdsByClassIds(
+                announcement.getTenantId(), announcement.getAcademicYearId(),
+                commonHelper.convertClassIdsStringToList(announcement.getClassIds()));
+    }
+
+    private String convertClassIdsListToString(List<Integer> classIds) {
         if (classIds == null || classIds.isEmpty()) {
             return null;
         }
         StringBuilder result = new StringBuilder();
         for (Integer classId : classIds) {
-            if (result.length() > 0) {
+            if (!result.isEmpty()) {
                 result.append(",");
             }
             result.append(classId);

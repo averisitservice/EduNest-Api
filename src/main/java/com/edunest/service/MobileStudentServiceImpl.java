@@ -73,7 +73,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     CommonHelper commonHelper;
 
     @Override
-    public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
+    public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate,
+            LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
@@ -180,7 +181,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 .findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
                         tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
 
-
         List<StudentExamsResponse.ExamItem> upcoming = new ArrayList<>();
         List<StudentExamsResponse.ExamItem> past = new ArrayList<>();
 
@@ -196,8 +196,10 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 examItem.setExamDate(examSchedule.getExamDate());
                 examItem.setStartTime(examSchedule.getStartTime());
                 examItem.setEndTime(examSchedule.getEndTime());
-                examItem.setMaxMarks(examSchedule.getMaxMarks() != null ? examSchedule.getMaxMarks() : exam.getMaxMarks());
-                examItem.setPassMarks(examSchedule.getPassMarks() != null ? examSchedule.getPassMarks() : exam.getPassMarks());
+                examItem.setMaxMarks(
+                        examSchedule.getMaxMarks() != null ? examSchedule.getMaxMarks() : exam.getMaxMarks());
+                examItem.setPassMarks(
+                        examSchedule.getPassMarks() != null ? examSchedule.getPassMarks() : exam.getPassMarks());
 
                 if (examSchedule.getExamDate() != null && examSchedule.getExamDate().isBefore(LocalDate.now())) {
                     examItem.setStatus(Constant.EXAM_STATUS_COMPLETED);
@@ -444,14 +446,13 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             return null;
         }
 
-        String name = ((teacher.getFirstName() != null ? teacher.getFirstName() : "") + " "
-                + (teacher.getLastName() != null ? teacher.getLastName() : "")).trim();
-
+        String name = CommonHelper.teacherNameForTeacher(teacher);
         return name.isEmpty() ? teacher.getTeacherName() : name;
     }
 
     @Override
-    public StudentAttendanceResponse getAttendance(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
+    public StudentAttendanceResponse getAttendance(Integer studentId, Integer tenantId, LocalDate fromDate,
+            LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         LocalDate resolvedToDate = toDate != null ? toDate : LocalDate.now();
@@ -483,7 +484,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 item.setStatus(Constant.ATTENDANCE_DISPLAY_PRESENT);
                 presentDays++;
             } else if (Constant.ABSENT.equals(attendance.getStatus())) {
-                item.setStatus(onApprovedLeave ? Constant.ATTENDANCE_DISPLAY_LEAVE : Constant.ATTENDANCE_DISPLAY_ABSENT);
+                item.setStatus(
+                        onApprovedLeave ? Constant.ATTENDANCE_DISPLAY_LEAVE : Constant.ATTENDANCE_DISPLAY_ABSENT);
                 absentDays++;
             } else if (Constant.LEAVE.equals(attendance.getStatus())) {
                 item.setStatus(Constant.ATTENDANCE_DISPLAY_LEAVE);
@@ -546,7 +548,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             overallMax += reportCard.getTotalMax();
 
             for (ReportCardResponse.SubjectMark subjectMark : reportCard.getSubjects()) {
-                StudentResultsResponse.SubjectResult subjectResult = findSubjectResult(subjectResults, subjectMark.getSubjectId());
+                StudentResultsResponse.SubjectResult subjectResult = findSubjectResult(subjectResults,
+                        subjectMark.getSubjectId());
                 if (subjectResult == null) {
                     subjectResult = new StudentResultsResponse.SubjectResult();
                     subjectResult.setSubjectId(subjectMark.getSubjectId());
@@ -556,7 +559,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                     subjectResults.add(subjectResult);
                 }
 
-                BigDecimal marksObtained = subjectMark.getMarksObtained() != null ? subjectMark.getMarksObtained() : BigDecimal.ZERO;
+                BigDecimal marksObtained = subjectMark.getMarksObtained() != null ? subjectMark.getMarksObtained()
+                        : BigDecimal.ZERO;
                 subjectResult.setObtained(subjectResult.getObtained().add(marksObtained));
                 subjectResult.setMax(subjectResult.getMax() + reportCard.getMaxMarksPerSubject());
             }
@@ -575,7 +579,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return response;
     }
 
-    private StudentResultsResponse.SubjectResult findSubjectResult(List<StudentResultsResponse.SubjectResult> subjectResults, Integer subjectId) {
+    private StudentResultsResponse.SubjectResult findSubjectResult(
+            List<StudentResultsResponse.SubjectResult> subjectResults, Integer subjectId) {
         for (StudentResultsResponse.SubjectResult subjectResult : subjectResults) {
             if (subjectResult.getSubjectId().equals(subjectId)) {
                 return subjectResult;
@@ -606,7 +611,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     }
 
     @Override
-    public PagedResponse<StudentNotificationItem> getNotifications(Integer studentId, Integer tenantId, int page, int size) {
+    public PagedResponse<StudentNotificationItem> getNotifications(Integer studentId, Integer tenantId, int page,
+            int size) {
         return studentNotificationService.getNotifications(tenantId, studentId, page, size);
     }
 
@@ -653,11 +659,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 || announcement.getClassIds() == null || announcement.getClassIds().isBlank()) {
             return true;
         }
-        for (String id : announcement.getClassIds().split(",")) {
-            if (id.trim().equals(String.valueOf(classId))) {
-                return true;
-            }
-        }
-        return false;
+        return commonHelper.convertClassIdsStringToList(announcement.getClassIds()).contains(classId);
     }
 }

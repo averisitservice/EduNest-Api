@@ -19,7 +19,7 @@ public interface StudentClassRepository extends JpaRepository<StudentClass, Inte
     @Query("SELECT sc FROM StudentClass sc WHERE sc.tenantId = :tenantId AND sc.classId = :classId "
             + "AND sc.academicYearId = :academicYearId AND sc.isActive = true "
             + "AND ((:sectionId IS NULL AND sc.sectionId IS NULL) OR sc.sectionId = :sectionId)")
-    List<StudentClass> findRoster(
+    List<StudentClass> findStudentClasses(
             @Param("classId") Integer classId, @Param("sectionId") Integer sectionId,
             @Param("academicYearId") Integer academicYearId, @Param("tenantId") Integer tenantId);
 

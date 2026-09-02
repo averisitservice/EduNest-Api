@@ -43,21 +43,20 @@ public class ClassServiceImpl implements ClassService {
     public List<ClassListResponse> getClassList(Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         List<ClassMaster> classes = classMasterRepository.findByTenantIdAndIsActiveTrue(tenantId);
-        List<ClassListResponse> classListResponses = new ArrayList<>();
 
+        List<ClassListResponse> classListResponses = new ArrayList<>();
         for (ClassMaster classMaster : classes) {
             List<ClassSection> classSections = classSectionRepository.findByClassIdAndTenantId(classMaster.getClassId(), tenantId);
+            List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classMaster.getClassId(), tenantId);
+
             List<String> sectionNames = new ArrayList<>();
             for (ClassSection classSection : classSections) {
                 sectionNames.add(classSection.getSectionName());
             }
-            List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classMaster.getClassId(), tenantId);
+
             List<String> subjectNames = new ArrayList<>();
             for (ClassSubject classSubject : classSubjects) {
-                Subject subject = subjectRepository.findById(classSubject.getSubjectId()).orElse(null);
-                if (subject != null) {
-                    subjectNames.add(subject.getSubjectName());
-                }
+                subjectRepository.findById(classSubject.getSubjectId()).ifPresent(subject -> subjectNames.add(subject.getSubjectName()));
             }
 
             ClassFee classFee = null;
@@ -84,12 +83,13 @@ public class ClassServiceImpl implements ClassService {
         ClassMaster classMaster = classMasterRepository.findById(classId).orElseThrow(() -> new CustomException("Class", "Class not found"));
 
         List<ClassSection> classSections = classSectionRepository.findByClassIdAndTenantId(classId, tenantId);
+        List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
+
         List<String> sectionNames = new ArrayList<>();
         for (ClassSection classSection : classSections) {
             sectionNames.add(classSection.getSectionName());
         }
 
-        List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);
         List<Integer> subjectIds = new ArrayList<>();
         for (ClassSubject classSubject : classSubjects) {
             subjectIds.add(classSubject.getSubjectId());
@@ -199,7 +199,6 @@ public class ClassServiceImpl implements ClassService {
         }
         return true;
     }
-
 
     @Override
     public boolean deleteClass(Integer classId) {

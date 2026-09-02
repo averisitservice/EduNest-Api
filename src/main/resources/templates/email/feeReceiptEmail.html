@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Fee Payment Receipt</title>
 </head>
+
 <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; margin: 0; padding: 20px;">
 
   <p>Dear Parent/Guardian,</p>
 
-  <p>This is to confirm that the fee payment of <strong>₹{{amount}}</strong> for <strong>{{studentName}}</strong> has been successfully received.</p>
+  <p>This is to confirm that the fee payment of <strong>₹{{amount}}</strong> for <strong>{{studentName}}</strong> has
+    been successfully received.</p>
 
   <p><strong>Payment Details:</strong></p>
   <ul style="list-style-type: disc; padding-left: 20px;">
     <li><strong>Student Name:</strong> {{studentName}}</li>
     <li><strong>Class:</strong> {{displayClass}}</li>
-    <li><strong>Receipt No.:</strong> {{receiptNo}}</li>
+    <li><strong>Receipt No:</strong> {{receiptNo}}</li>
     <li><strong>Payment Date:</strong> {{paymentDateFormatted}}</li>
     <li><strong>Payment Mode:</strong> {{paymentMode}}</li>
     <li><strong>Amount Paid:</strong> ₹{{amount}}</li>
@@ -25,8 +28,9 @@
   <p>Thank you.</p>
 
   <p>Regards,<br>
-  <strong>{{schoolName}}</strong><br>
-  {{schoolContact}}</p>
+    <strong>{{schoolName}}</strong>
+  </p>
 
 </body>
+
 </html>

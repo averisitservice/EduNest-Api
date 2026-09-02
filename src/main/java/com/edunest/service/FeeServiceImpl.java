@@ -57,11 +57,15 @@ public class FeeServiceImpl implements FeeService {
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(classId, currentYear.getAcademicYearId(), tenantId);
-        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee() : BigDecimal.ZERO;
-        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee() : BigDecimal.ZERO;
+        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(classId,
+                currentYear.getAcademicYearId(), tenantId);
+        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee()
+                : BigDecimal.ZERO;
+        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee()
+                : BigDecimal.ZERO;
 
-        List<StudentClass> studentClasses = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId,
+                currentYear.getAcademicYearId(), tenantId);
 
         List<Integer> studentIds = new ArrayList<>();
         for (StudentClass studentClass : studentClasses) {
@@ -122,7 +126,8 @@ public class FeeServiceImpl implements FeeService {
         payment.setAcademicYearId(currentYear.getAcademicYearId());
         payment.setAmount(request.getAmount());
         payment.setPaymentDate(request.getPaymentDate() != null ? request.getPaymentDate() : LocalDate.now());
-        payment.setPaymentMode(request.getPaymentMode() != null ? request.getPaymentMode() : Constant.PAYMENT_MODE_CASH);
+        payment.setPaymentMode(
+                request.getPaymentMode() != null ? request.getPaymentMode() : Constant.PAYMENT_MODE_CASH);
         payment.setReceiptNo(receiptNo);
         payment.setRemarks(request.getRemarks());
         payment.setCollectedBy(collectedBy);
@@ -168,7 +173,8 @@ public class FeeServiceImpl implements FeeService {
         }
 
         String toEmail = (student.getParentEmail() != null && !student.getParentEmail().isBlank())
-                ? student.getParentEmail() : student.getEmail();
+                ? student.getParentEmail()
+                : student.getEmail();
         if (toEmail == null || toEmail.isBlank()) {
             return;
         }
@@ -185,13 +191,12 @@ public class FeeServiceImpl implements FeeService {
         FeeReceiptDetails details = FeeReceiptDetails.builder()
                 .schoolName(tenant != null ? tenant.getTenantName() : "")
                 .schoolAddress(tenant != null ? CommonHelper.fullAddressForTenant(tenant) : "")
-                .schoolContact(tenant != null ? "Phone: " + tenant.getContactPhone() + " | Email: " + tenant.getContactEmail() : "")
                 .receiptNo(payment.getReceiptNo())
                 .paymentDateFormatted(payment.getPaymentDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
                 .admissionNo(student.getAdmissionNo())
                 .sessionYear(currentYear.getYearName())
                 .studentName(CommonHelper.studentNameForStudent(student))
-                .displayClass(commonHelper.displayClassForStudentClass(studentClass))
+                .displayClass(formatFeeDisplayClass(studentClass))
                 .paymentMode(payment.getPaymentMode())
                 .remarks(payment.getRemarks())
                 .collectedBy(collectedByName)
@@ -244,8 +249,10 @@ public class FeeServiceImpl implements FeeService {
 
         ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(
                 studentClass.getClassId(), currentYear.getAcademicYearId(), tenantId);
-        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee() : BigDecimal.ZERO;
-        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee() : BigDecimal.ZERO;
+        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee()
+                : BigDecimal.ZERO;
+        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee()
+                : BigDecimal.ZERO;
         boolean isHostel = Boolean.TRUE.equals(student.getIsHostel());
         BigDecimal totalFee = isHostel ? annualFee.add(hostelFee) : annualFee;
 
@@ -258,7 +265,7 @@ public class FeeServiceImpl implements FeeService {
         StudentFeeDetailResponse response = new StudentFeeDetailResponse();
         response.setStudentId(studentId);
         response.setStudentName(CommonHelper.studentNameForStudent(student));
-        response.setDisplayClass(commonHelper.displayClassForStudentClass(studentClass));
+        response.setDisplayClass(formatFeeDisplayClass(studentClass));
         response.setRollNo(studentClass.getRollNo());
         response.setAcademicYearName(currentYear.getYearName());
         response.setTotalFee(totalFee);
@@ -266,6 +273,14 @@ public class FeeServiceImpl implements FeeService {
         response.setPendingAmount(totalFee.subtract(paidAmount));
         response.setPayments(payments);
         return response;
+    }
+
+    private String formatFeeDisplayClass(StudentClass studentClass) {
+        String displayClass = commonHelper.displayClassForStudentClass(studentClass);
+        if (displayClass == null) {
+            return null;
+        }
+        return displayClass.replaceFirst("(?i)^Class\\s*", "").replaceAll("\\s*-\\s*", "-").trim();
     }
 
     @Override
@@ -297,12 +312,15 @@ public class FeeServiceImpl implements FeeService {
 
     @Override
     @Transactional
-    public VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature) {
-        boolean verified = razorpayService.verifyAndRecordPayment(razorpayOrderId, razorpayPaymentId, razorpaySignature);
+    public VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId,
+            String razorpaySignature) {
+        boolean verified = razorpayService.verifyAndRecordPayment(razorpayOrderId, razorpayPaymentId,
+                razorpaySignature);
 
         if (verified) {
             RazorpayOrder razorpayOrder = razorpayService.getOrder(razorpayOrderId);
-            recordOnlinePayment(razorpayOrder.getTenantId(), razorpayOrder.getStudentId(), razorpayOrder.getAmount(), razorpayPaymentId);
+            recordOnlinePayment(razorpayOrder.getTenantId(), razorpayOrder.getStudentId(), razorpayOrder.getAmount(),
+                    razorpayPaymentId);
         }
 
         VerifyPaymentResponse verifyPaymentResponse = new VerifyPaymentResponse();

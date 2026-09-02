@@ -38,7 +38,8 @@ public class AttendanceServiceImpl implements AttendanceService {
     public AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<StudentClass> studentClasses = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId,
+                currentYear.getAcademicYearId(), tenantId);
 
         List<Integer> studentIds = new ArrayList<>();
         for (StudentClass studentClass : studentClasses) {
@@ -47,8 +48,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Map<Integer, Attendance> existing = new HashMap<>();
         if (!studentIds.isEmpty()) {
-            List<Attendance> marked = attendanceRepository.findByTenantIdAndAcademicYearIdAndAttendanceDateAndStudentIdIn(
-                    tenantId, currentYear.getAcademicYearId(), date, studentIds);
+            List<Attendance> marked = attendanceRepository
+                    .findByTenantIdAndAcademicYearIdAndAttendanceDateAndStudentIdIn(
+                            tenantId, currentYear.getAcademicYearId(), date, studentIds);
             for (Attendance attendance : marked) {
                 existing.put(attendance.getStudentId(), attendance);
             }
@@ -127,10 +129,12 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    public List<AttendanceSummaryResponse> getSummary(Integer tenantId, Integer classId, Integer sectionId, LocalDate fromDate, LocalDate toDate) {
+    public List<AttendanceSummaryResponse> getSummary(Integer tenantId, Integer classId, Integer sectionId,
+            LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<StudentClass> studentClasses = studentClassRepository.findRoster(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId,
+                currentYear.getAcademicYearId(), tenantId);
 
         List<Integer> studentIds = new ArrayList<>();
         for (StudentClass studentClass : studentClasses) {
@@ -139,14 +143,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Map<Integer, List<Attendance>> byStudent = new HashMap<>();
         if (!studentIds.isEmpty()) {
-            List<Attendance> attendances = attendanceRepository.findByTenantIdAndAcademicYearIdAndAttendanceDateBetweenAndStudentIdIn(
-                    tenantId, currentYear.getAcademicYearId(), fromDate, toDate, studentIds);
+            List<Attendance> attendances = attendanceRepository
+                    .findByTenantIdAndAcademicYearIdAndAttendanceDateBetweenAndStudentIdIn(
+                            tenantId, currentYear.getAcademicYearId(), fromDate, toDate, studentIds);
             for (Attendance a : attendances) {
-                List<Attendance> studentAttendances = byStudent.get(a.getStudentId());
-                if (studentAttendances == null) {
-                    studentAttendances = new ArrayList<>();
-                    byStudent.put(a.getStudentId(), studentAttendances);
-                }
+                List<Attendance> studentAttendances = byStudent.computeIfAbsent(a.getStudentId(), k -> new ArrayList<>());
                 studentAttendances.add(a);
             }
         }
@@ -172,7 +173,8 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
             long total = records.size();
 
-            // Present + Half-day (counted as half) contribute to attendance. Leave counts as an absence.
+            // Present + Half-day (counted as half) contribute to attendance. Leave counts
+            // as an absence.
             double attended = present + (halfDay * 0.5);
             double percentage = total > 0 ? Math.round((attended / total) * 1000.0) / 10.0 : 0.0;
 

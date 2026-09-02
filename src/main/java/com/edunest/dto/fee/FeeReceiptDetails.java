@@ -17,7 +17,6 @@ public class FeeReceiptDetails {
 
     private String schoolName;
     private String schoolAddress;
-    private String schoolContact;
 
     private String receiptNo;
     private String paymentDateFormatted;

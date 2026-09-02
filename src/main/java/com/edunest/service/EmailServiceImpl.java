@@ -124,7 +124,6 @@ public class EmailServiceImpl implements EmailService {
             // 1. Generate normal email HTML body from separate template
             String emailHtml = loadTemplate("feeReceiptEmail.html")
                     .replace("{{schoolName}}", nullToDash(details.getSchoolName()))
-                    .replace("{{schoolContact}}", nullToDash(details.getSchoolContact()))
                     .replace("{{receiptNo}}", nullToDash(details.getReceiptNo()))
                     .replace("{{paymentDateFormatted}}", nullToDash(details.getPaymentDateFormatted()))
                     .replace("{{studentName}}", nullToDash(details.getStudentName()))
@@ -136,7 +135,6 @@ public class EmailServiceImpl implements EmailService {
             String pdfTemplateHtml = loadTemplate("feeReceipt.html")
                     .replace("{{schoolName}}", nullToDash(details.getSchoolName()))
                     .replace("{{schoolAddress}}", nullToDash(details.getSchoolAddress()))
-                    .replace("{{schoolContact}}", nullToDash(details.getSchoolContact()))
                     .replace("{{receiptNo}}", nullToDash(details.getReceiptNo()))
                     .replace("{{paymentDateFormatted}}", nullToDash(details.getPaymentDateFormatted()))
                     .replace("{{admissionNo}}", nullToDash(details.getAdmissionNo()))

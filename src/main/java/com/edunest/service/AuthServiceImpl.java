@@ -114,9 +114,8 @@ public class AuthServiceImpl implements AuthService {
         teacher.setPassword(CryptoHelper.encryptPassword(newPassword, hashKey));
         teacherRepository.save(teacher);
 
-        String teacherName = (teacher.getFirstName() != null ? teacher.getFirstName() : "") +
-                (teacher.getLastName() != null ? " " + teacher.getLastName() : "");
-        emailService.sendPasswordResetEmail(teacher.getEmail(), teacherName.trim(), newPassword);
+        String teacherName = CommonHelper.teacherNameForTeacher(teacher);
+        emailService.sendPasswordResetEmail(teacher.getEmail(), teacherName, newPassword);
 
     }
 
@@ -142,6 +141,7 @@ public class AuthServiceImpl implements AuthService {
 
     }
 
+    @Override
     public RenewSessionResponse renewSession(RenewSessionRequest request) {
 
         Teacher teacher = teacherRepository.findById(request.getTeacherId())

@@ -107,7 +107,6 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         tenantResponse.setFaviconUrl(tenant.getFaviconUrl());
         tenantResponse.setIsHostel(tenant.getIsHostel());
 
-
         return new StudentLoginResponse(session, refresh, profile, tenantResponse);
     }
 

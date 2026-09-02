@@ -87,13 +87,17 @@ public class CommonHelper {
     }
 
     private static String fullAddressForCommon(String addressLine1, String addressLine2, String city, String state,
-                                                 String postalCode) {
+            String postalCode) {
         List<String> parts = new ArrayList<>();
 
-        if (hasText(addressLine1)) parts.add(addressLine1.trim());
-        if (hasText(addressLine2)) parts.add(addressLine2.trim());
-        if (hasText(city)) parts.add(city.trim());
-        if (hasText(state)) parts.add(state.trim());
+        if (hasText(addressLine1))
+            parts.add(addressLine1.trim());
+        if (hasText(addressLine2))
+            parts.add(addressLine2.trim());
+        if (hasText(city))
+            parts.add(city.trim());
+        if (hasText(state))
+            parts.add(state.trim());
 
         String address = String.join(", ", parts);
 
@@ -130,7 +134,8 @@ public class CommonHelper {
 
     public String displayClassForStudentClass(StudentClass studentClass) {
         return studentClass != null
-                ? displayClassForIds(studentClass.getClassId(), studentClass.getSectionId()) : null;
+                ? displayClassForIds(studentClass.getClassId(), studentClass.getSectionId())
+                : null;
     }
 
     public String subjectName(Integer subjectId) {
@@ -159,5 +164,19 @@ public class CommonHelper {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    public List<Integer> convertClassIdsStringToList(String classIds) {
+        List<Integer> result = new ArrayList<>();
+        if (classIds == null || classIds.isBlank()) {
+            return result;
+        }
+        for (String id : classIds.split(",")) {
+            String trimmedId = id.trim();
+            if (!trimmedId.isEmpty()) {
+                result.add(Integer.valueOf(trimmedId));
+            }
+        }
+        return result;
     }
 }
