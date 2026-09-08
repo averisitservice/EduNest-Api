@@ -155,7 +155,7 @@ public class FeeServiceImpl implements FeeService {
         payment.setPaymentDate(LocalDate.now());
         payment.setPaymentMode(Constant.PAYMENT_MODE_ONLINE);
         payment.setReceiptNo(nextReceiptNo(tenantId, currentYear));
-        payment.setRemarks("Razorpay payment ID: " + razorpayPaymentId);
+        payment.setRemarks(razorpayPaymentId);
         feePaymentRepository.save(payment);
 
         sendFeeReceiptEmail(payment, studentClass);

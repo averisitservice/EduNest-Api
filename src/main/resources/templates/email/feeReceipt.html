@@ -117,22 +117,16 @@
       border: 1px solid #666;
       background-color: #fafafa;
       margin-bottom: 30px;
-    }
-
-    .amount div {
       font-size: 13px;
     }
 
-    .amount-words {
-      margin-top: 5px;
-      font-weight: bold;
-      text-transform: capitalize;
+    .amount-label {
+      font-weight: normal;
     }
 
-    .amount-val {
-      margin-top: 10px;
-      font-size: 15px;
+    .amount-words {
       font-weight: bold;
+      text-transform: capitalize;
     }
 
     .thanks {
@@ -204,9 +198,8 @@
       <thead>
         <tr>
           <th class="center" style="width: 10%;">Sr.No.</th>
-          <th style="width: 45%;">Description</th>
+          <th style="width: 60%;">Description</th>
           <th class="right" style="width: 15%;">Due (Rs.)</th>
-          <th class="right" style="width: 15%;">Concession (Rs.)</th>
           <th class="right" style="width: 15%;">Paid (Rs.)</th>
         </tr>
       </thead>
@@ -216,7 +209,6 @@
           <td class="center">1</td>
           <td>Fee Payment</td>
           <td class="right">{{amount}}</td>
-          <td class="right">0</td>
           <td class="right">{{amount}}</td>
         </tr>
       </tbody>
@@ -225,16 +217,14 @@
         <tr class="total">
           <td colspan="2" class="center">Total</td>
           <td class="right">{{amount}}</td>
-          <td class="right">0</td>
           <td class="right">{{amount}}</td>
         </tr>
       </tfoot>
     </table>
 
     <div class="amount">
-      <div>AMOUNT IN WORDS:</div>
-      <div class="amount-words">{{amountWords}}</div>
-      <div class="amount-val">Rs. {{amount}}</div>
+      <span class="amount-label">AMOUNT IN WORDS: </span>
+      <span class="amount-words">{{amountWords}}</span>
     </div>
 
     <!-- Signatures layout table -->
@@ -253,11 +243,6 @@
         </td>
       </tr>
     </table>
-
-    <div class="thanks">
-      Thank you for your payment!
-    </div>
-
   </div>
 
 </body>
