@@ -7,7 +7,9 @@ import com.edunest.dto.attendance.AttendanceSummaryResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Attendance;
 import com.edunest.entity.Leave;
+import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
+import com.edunest.repository.StudentRepository;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AttendanceRepository;
 import com.edunest.repository.LeaveRepository;
@@ -34,16 +36,22 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Autowired
     CommonHelper commonHelper;
 
+    @Autowired
+    StudentRepository studentRepository;
+
     @Override
-    public AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date) {
+    public AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date, String search) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId,
-                currentYear.getAcademicYearId(), tenantId);
+        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim().toLowerCase() : "";
+
+        List<Object[]> studentData = studentRepository.findStudentsForAttendanceRoster(
+                tenantId, classId, sectionId, normalizedSearch);
 
         List<Integer> studentIds = new ArrayList<>();
-        for (StudentClass studentClass : studentClasses) {
-            studentIds.add(studentClass.getStudentId());
+        for (Object[] pair : studentData) {
+            Student s = (Student) pair[0];
+            studentIds.add(s.getStudentId());
         }
 
         Map<Integer, Attendance> existing = new HashMap<>();
@@ -66,14 +74,17 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         List<AttendanceRosterResponse.StudentRow> rows = new ArrayList<>();
-        for (StudentClass studentClass : studentClasses) {
-            Attendance attendance = existing.get(studentClass.getStudentId());
-            Leave leave = approvedLeaves.get(studentClass.getStudentId());
+        for (Object[] pair : studentData) {
+            Student student = (Student) pair[0];
+            StudentClass studentClass = (StudentClass) pair[1];
+
+            Attendance attendance = existing.get(student.getStudentId());
+            Leave leave = approvedLeaves.get(student.getStudentId());
 
             AttendanceRosterResponse.StudentRow row = new AttendanceRosterResponse.StudentRow();
-            row.setStudentId(studentClass.getStudentId());
-            row.setStudentName(commonHelper.studentNameForId(studentClass.getStudentId()));
-            row.setRollNo(studentClass.getRollNo());
+            row.setStudentId(student.getStudentId());
+            row.setStudentName(CommonHelper.studentNameForStudent(student));
+            row.setRollNo(studentClass != null ? studentClass.getRollNo() : null);
 
             if (attendance != null) {
                 row.setStatus(attendance.getStatus());

@@ -31,7 +31,8 @@ public class AttendanceController {
             HttpServletRequest request,
             @PathVariable Integer classId,
             @RequestParam(required = false) Integer sectionId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) String search) {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
@@ -39,7 +40,7 @@ public class AttendanceController {
 
         ResponseObject<AttendanceRosterResponse> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(attendanceService.getRoster(tenantId, classId, sectionId, date));
+        response.setData(attendanceService.getRoster(tenantId, classId, sectionId, date, search));
         return ResponseEntity.ok(response);
     }
 

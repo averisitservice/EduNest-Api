@@ -14,6 +14,20 @@ import java.util.Optional;
 @Repository
 public interface StudentRepository extends JpaRepository<Student, Integer> {
 
+    @Query("SELECT DISTINCT s, sc FROM Student s "
+            + "JOIN StudentClass sc ON sc.studentId = s.studentId AND sc.tenantId = :tenantId "
+            + "WHERE s.tenantId = :tenantId AND s.isActive = true "
+            + "AND sc.isActive = true "
+            + "AND sc.classId = :classId "
+            + "AND (:sectionId IS NULL OR sc.sectionId = :sectionId) "
+            + "AND (:search = '' "
+            + "  OR LOWER(CONCAT(s.firstName, ' ', s.lastName)) LIKE CONCAT('%', :search, '%') "
+            + "  OR (sc.rollNo IS NOT NULL AND LOWER(sc.rollNo) LIKE CONCAT('%', :search, '%')))")
+    List<Object[]> findStudentsForAttendanceRoster(
+            @Param("tenantId") Integer tenantId,
+            @Param("classId") Integer classId,
+            @Param("sectionId") Integer sectionId,
+            @Param("search") String search);
 
     @Query(value = "SELECT DISTINCT s FROM Student s "
             + "LEFT JOIN StudentClass sc ON sc.studentId = s.studentId AND sc.tenantId = :tenantId "
