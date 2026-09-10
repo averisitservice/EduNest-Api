@@ -18,6 +18,8 @@ import com.edunest.dto.mobile.StudentTimetableResponse;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.edunest.dto.holiday.HolidayResponse;
+
 public interface MobileStudentService {
 
     StudentDetailResponse getStudentDetailsById(Integer studentId, Integer tenantId);
@@ -49,4 +51,6 @@ public interface MobileStudentService {
     long getUnreadNotificationCount(Integer studentId, Integer tenantId);
 
     List<StudentAnnouncementItem> getAnnouncements(Integer studentId, Integer tenantId);
+
+    List<HolidayResponse> getHolidays(Integer tenantId);
 }

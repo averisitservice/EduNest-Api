@@ -23,6 +23,7 @@ public class StudentHomeResponse {
     private long presentDays;
     private long absentDays;
     private long lateDays;
+    private long holidayDays;
     private double thisMonthPercent;
     private double averagePercent;
 }

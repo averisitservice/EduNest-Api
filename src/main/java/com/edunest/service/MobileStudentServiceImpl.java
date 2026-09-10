@@ -3,6 +3,7 @@ package com.edunest.service;
 import com.edunest.common.PagedResponse;
 import com.edunest.constant.Constant;
 import com.edunest.dto.exam.ReportCardResponse;
+import com.edunest.dto.holiday.HolidayResponse;
 import com.edunest.dto.mobile.*;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
@@ -68,6 +69,12 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Autowired
     NoteRepository noteRepository;
+
+    @Autowired
+    HolidayRepository holidayRepository;
+
+    @Autowired
+    HolidayService holidayService;
 
     @Autowired
     CommonHelper commonHelper;
@@ -337,6 +344,9 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         long monthLate = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
                         tenantId, studentId, yearId, monthStart, monthEnd, Constant.LEAVE);
+        long monthHolidays = attendanceRepository
+                .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
+                        tenantId, studentId, yearId, monthStart, monthEnd, Constant.HOLIDAY);
         long monthTotal = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetween(
                         tenantId, studentId, yearId, monthStart, monthEnd);
@@ -344,14 +354,17 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setPresentDays(monthPresent);
         response.setAbsentDays(monthAbsent);
         response.setLateDays(monthLate);
-        response.setThisMonthPercent(percent(monthPresent, monthTotal));
+        response.setHolidayDays(monthHolidays);
+        response.setThisMonthPercent(percent(monthPresent, monthTotal - monthHolidays));
 
         long yearPresent = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, Constant.PRESENT);
         long yearTotal = attendanceRepository
                 .countByTenantIdAndStudentIdAndAcademicYearId(tenantId, studentId, yearId);
+        long yearHolidays = attendanceRepository
+                .countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, Constant.HOLIDAY);
 
-        response.setAveragePercent(percent(yearPresent, yearTotal));
+        response.setAveragePercent(percent(yearPresent, yearTotal - yearHolidays));
 
         return response;
     }
@@ -362,6 +375,11 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 .orElse(null);
 
         if (attendance == null) {
+            List<Holiday> holidays = holidayRepository
+                    .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, today, today);
+            if (!holidays.isEmpty()) {
+                return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
+            }
             return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
         }
 
@@ -371,6 +389,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             return Constant.ATTENDANCE_DISPLAY_ABSENT;
         } else if (Constant.LEAVE.equals(attendance.getStatus())) {
             return Constant.ATTENDANCE_DISPLAY_LEAVE;
+        } else if (Constant.HOLIDAY.equals(attendance.getStatus())) {
+            return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
         } else {
             return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
         }
@@ -472,6 +492,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         long presentDays = 0;
         long absentDays = 0;
         long lateDays = 0;
+        long holidayDays = 0;
 
         for (Attendance attendance : attendanceList) {
             StudentAttendanceItem item = new StudentAttendanceItem();
@@ -490,6 +511,9 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             } else if (Constant.LEAVE.equals(attendance.getStatus())) {
                 item.setStatus(Constant.ATTENDANCE_DISPLAY_LEAVE);
                 lateDays++;
+            } else if (Constant.HOLIDAY.equals(attendance.getStatus())) {
+                item.setStatus(Constant.ATTENDANCE_DISPLAY_HOLIDAY);
+                holidayDays++;
             } else {
                 item.setStatus(Constant.ATTENDANCE_DISPLAY_NOT_MARKED);
             }
@@ -497,17 +521,25 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             records.add(item);
         }
 
+        long netDays = attendanceList.size() - holidayDays;
+
         StudentAttendanceResponse response = new StudentAttendanceResponse();
         response.setFromDate(resolvedFromDate);
         response.setToDate(resolvedToDate);
         response.setPresentDays(presentDays);
         response.setAbsentDays(absentDays);
         response.setLateDays(lateDays);
+        response.setHolidayDays(holidayDays);
         response.setTotalDays(attendanceList.size());
-        response.setPercent(percent(presentDays, attendanceList.size()));
+        response.setPercent(percent(presentDays, netDays));
         response.setRecords(records);
 
         return response;
+    }
+
+    @Override
+    public List<HolidayResponse> getHolidays(Integer tenantId) {
+        return holidayService.getHolidays(tenantId);
     }
 
     @Override

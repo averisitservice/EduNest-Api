@@ -18,6 +18,7 @@ public class StudentAttendanceResponse {
     private long presentDays;
     private long absentDays;
     private long lateDays;
+    private long holidayDays;
     private long totalDays;
     private double percent;
     private List<StudentAttendanceItem> records;
