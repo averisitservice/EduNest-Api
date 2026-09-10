@@ -20,5 +20,6 @@ public class TenantResponse {
     private String primaryColor;
     private String faviconUrl;
     private String principalSignUrl;
+    private String paymentFrequency;
     private Boolean isHostel;
 }

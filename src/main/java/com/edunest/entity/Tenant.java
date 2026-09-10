@@ -51,6 +51,9 @@ public class Tenant {
     @Column(name = "principal_sign_url", length = 255)
     private String principalSignUrl;
 
+    @Column(name = "payment_frequency", length = 50)
+    private String paymentFrequency;
+
     @Column(name = "domain_name", nullable = false, length = 150)
     private String domainName;
 
