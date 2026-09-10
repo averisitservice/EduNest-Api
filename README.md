@@ -239,6 +239,13 @@ All responses are wrapped in a common `ResponseObject<T>` (`{ success, errors, d
 | POST | `/announcement` | Save an announcement — immediate or scheduled (see Scheduled Jobs) |
 | DELETE | `/announcement/{announcementId}` | Delete an announcement |
 
+### Holidays (`/holiday`)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/holiday/list` | List holidays for the tenant and current academic year |
+| POST | `/holiday` | Save or update a school holiday |
+| DELETE | `/holiday/{holidayId}` | Soft-delete a holiday |
+
 ### Leave — teacher review (`/leave`)
 | Method | Path | Description |
 |---|---|---|
