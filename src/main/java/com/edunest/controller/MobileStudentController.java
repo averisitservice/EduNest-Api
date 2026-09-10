@@ -5,29 +5,14 @@ import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.exam.ReportCardResponse;
 import com.edunest.dto.holiday.HolidayResponse;
-import com.edunest.dto.mobile.StudentAttendanceResponse;
-import com.edunest.dto.mobile.StudentDetailResponse;
-import com.edunest.dto.mobile.StudentExamsResponse;
-import com.edunest.dto.mobile.StudentHomeResponse;
-import com.edunest.dto.mobile.StudentHomeworkDetailResponse;
-import com.edunest.dto.mobile.StudentHomeworkItem;
-import com.edunest.dto.mobile.StudentNoteDetailResponse;
-import com.edunest.dto.mobile.StudentNoteItem;
-import com.edunest.dto.mobile.StudentAnnouncementItem;
-import com.edunest.dto.mobile.StudentNotificationItem;
-import com.edunest.dto.mobile.StudentResultsResponse;
-import com.edunest.dto.mobile.StudentTimetableResponse;
+import com.edunest.dto.mobile.*;
+import com.edunest.service.HolidayService;
 import com.edunest.service.MobileStudentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,6 +23,9 @@ public class MobileStudentController {
 
     @Autowired
     MobileStudentService mobileStudentService;
+
+    @Autowired
+    HolidayService holidayService;
 
     @Autowired
     JwtHelper jwtHelper;
@@ -278,7 +266,7 @@ public class MobileStudentController {
 
         ResponseObject<List<HolidayResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(mobileStudentService.getHolidays(tenantId));
+        response.setData(holidayService.getHolidays(tenantId));
 
         return ResponseEntity.ok(response);
     }

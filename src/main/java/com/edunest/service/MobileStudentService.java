@@ -52,5 +52,4 @@ public interface MobileStudentService {
 
     List<StudentAnnouncementItem> getAnnouncements(Integer studentId, Integer tenantId);
 
-    List<HolidayResponse> getHolidays(Integer tenantId);
 }

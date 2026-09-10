@@ -538,11 +538,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     }
 
     @Override
-    public List<HolidayResponse> getHolidays(Integer tenantId) {
-        return holidayService.getHolidays(tenantId);
-    }
-
-    @Override
     public StudentResultsResponse getResults(Integer studentId, Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);

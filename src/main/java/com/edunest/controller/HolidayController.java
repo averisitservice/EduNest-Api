@@ -48,7 +48,7 @@ public class HolidayController {
     }
 
     @DeleteMapping("/{holidayId}")
-    public ResponseEntity<ResponseObject<Boolean>> deleteHoliday(HttpServletRequest request,@PathVariable Integer holidayId) {
+    public ResponseEntity<ResponseObject<Boolean>> deleteHoliday(HttpServletRequest request, @PathVariable Integer holidayId) {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
         Integer tenantId = jwtHelper.extractTenantId(token);
