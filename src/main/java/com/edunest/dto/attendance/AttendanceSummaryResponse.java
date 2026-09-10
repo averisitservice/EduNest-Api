@@ -14,6 +14,7 @@ public class AttendanceSummaryResponse {
     private long absentCount;
     private long lateCount;
     private long halfDayCount;
+    private long holidayCount;
     private long totalMarked;
     private double presentPercentage;
 }

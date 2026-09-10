@@ -9,6 +9,7 @@ public class Constant {
     public static final String ABSENT = "A";
     public static final String LEAVE = "L";
     public static final String HALFDAY = "H";
+    public static final String HOLIDAY = "HOLIDAY";
 
     public static final String LEAVE_STATUS_PENDING = "PENDING";
     public static final String LEAVE_STATUS_APPROVED = "APPROVED";
@@ -19,6 +20,7 @@ public class Constant {
     public static final String ATTENDANCE_DISPLAY_PRESENT = "PRESENT";
     public static final String ATTENDANCE_DISPLAY_ABSENT = "ABSENT";
     public static final String ATTENDANCE_DISPLAY_LEAVE = "LEAVE";
+    public static final String ATTENDANCE_DISPLAY_HOLIDAY = "HOLIDAY";
     public static final String ATTENDANCE_DISPLAY_NOT_MARKED = "NOT_MARKED";
 
     public static final String EXAM_STATUS_COMPLETED = "Completed";

@@ -6,12 +6,14 @@ import com.edunest.dto.attendance.AttendanceSaveRequest;
 import com.edunest.dto.attendance.AttendanceSummaryResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Attendance;
+import com.edunest.entity.Holiday;
 import com.edunest.entity.Leave;
 import com.edunest.entity.Student;
 import com.edunest.entity.StudentClass;
 import com.edunest.repository.StudentRepository;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.AttendanceRepository;
+import com.edunest.repository.HolidayRepository;
 import com.edunest.repository.LeaveRepository;
 import com.edunest.repository.StudentClassRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Autowired
     LeaveRepository leaveRepository;
+
+    @Autowired
+    HolidayRepository holidayRepository;
 
     @Autowired
     CommonHelper commonHelper;
@@ -73,6 +78,10 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
         }
 
+        List<Holiday> holidaysOnDate = holidayRepository
+                .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, date, date);
+        Holiday activeHoliday = holidaysOnDate.isEmpty() ? null : holidaysOnDate.get(0);
+
         List<AttendanceRosterResponse.StudentRow> rows = new ArrayList<>();
         for (Object[] pair : studentData) {
             Student student = (Student) pair[0];
@@ -89,6 +98,9 @@ public class AttendanceServiceImpl implements AttendanceService {
             if (attendance != null) {
                 row.setStatus(attendance.getStatus());
                 row.setRemarks(attendance.getRemarks());
+            } else if (activeHoliday != null) {
+                row.setStatus(Constant.HOLIDAY);
+                row.setRemarks("Holiday: " + activeHoliday.getHolidayName());
             } else if (leave != null) {
                 row.setStatus(Constant.LEAVE);
                 row.setRemarks("On approved leave: " + leave.getReason());
@@ -171,6 +183,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             long absent = 0;
             long leave = 0;
             long halfDay = 0;
+            long holiday = 0;
             for (Attendance record : records) {
                 if (Constant.PRESENT.equals(record.getStatus())) {
                     present++;
@@ -180,14 +193,17 @@ public class AttendanceServiceImpl implements AttendanceService {
                     leave++;
                 } else if (Constant.HALFDAY.equals(record.getStatus())) {
                     halfDay++;
+                } else if (Constant.HOLIDAY.equals(record.getStatus())) {
+                    holiday++;
                 }
             }
             long total = records.size();
+            long netAcademicDays = total - holiday;
 
-            // Present + Half-day (counted as half) contribute to attendance. Leave counts
-            // as an absence.
+            // Present + Half-day (counted as half) contribute to attendance.
+            // Net academic days excludes holidays so percentage is accurate.
             double attended = present + (halfDay * 0.5);
-            double percentage = total > 0 ? Math.round((attended / total) * 1000.0) / 10.0 : 0.0;
+            double percentage = netAcademicDays > 0 ? Math.round((attended / netAcademicDays) * 1000.0) / 10.0 : 0.0;
 
             AttendanceSummaryResponse summary = new AttendanceSummaryResponse();
             summary.setStudentId(studentClass.getStudentId());
@@ -197,6 +213,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             summary.setAbsentCount(absent);
             summary.setLateCount(leave);
             summary.setHalfDayCount(halfDay);
+            summary.setHolidayCount(holiday);
             summary.setTotalMarked(total);
             summary.setPresentPercentage(percentage);
             attendanceSummaryResponses.add(summary);
