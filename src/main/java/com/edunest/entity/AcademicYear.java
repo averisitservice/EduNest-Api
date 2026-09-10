@@ -3,6 +3,8 @@ package com.edunest.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "academic_year", schema = "lookup")
 @Getter
@@ -23,10 +25,22 @@ public class AcademicYear {
     private String yearName;
 
     @Column(name = "start_date", nullable = false)
-    private java.time.LocalDate startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date", nullable = false)
-    private java.time.LocalDate endDate;
+    private LocalDate endDate;
+
+    @Column(name = "semester1_start_date")
+    private LocalDate semester1StartDate;
+
+    @Column(name = "semester1_end_date")
+    private LocalDate semester1EndDate;
+
+    @Column(name = "semester2_start_date")
+    private LocalDate semester2StartDate;
+
+    @Column(name = "semester2_end_date")
+    private LocalDate semester2EndDate;
 
     @Column(name = "is_current")
     private Boolean isCurrent = false;
