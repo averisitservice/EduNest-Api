@@ -48,6 +48,9 @@ public class Tenant {
     @Column(name = "single_logo_url", nullable = false, length = 255)
     private String singleLogoUrl;
 
+    @Column(name = "principal_sign_url", length = 255)
+    private String principalSignUrl;
+
     @Column(name = "domain_name", nullable = false, length = 150)
     private String domainName;
 

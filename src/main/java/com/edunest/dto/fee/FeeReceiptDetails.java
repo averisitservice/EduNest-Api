@@ -27,6 +27,7 @@ public class FeeReceiptDetails {
     private String paymentMode;
     private String remarks;
     private String collectedBy;
+    private String principalSignUrl;
 
     private BigDecimal amount;
 }

@@ -131,6 +131,10 @@ public class EmailServiceImpl implements EmailService {
                     .replace("{{paymentMode}}", nullToDash(details.getPaymentMode()))
                     .replace("{{amount}}", amountFormatted);
 
+            String principalSignTag = (details.getPrincipalSignUrl() != null && !details.getPrincipalSignUrl().isBlank())
+                    ? "<img src=\"" + details.getPrincipalSignUrl() + "\" style=\"max-height: 45px; max-width: 120px; display: block; margin: 0 auto 5px auto;\" alt=\"Authorised Signature\" />"
+                    : "";
+
             // 2. Generate PDF HTML from feeReceipt.html template
             String pdfTemplateHtml = loadTemplate("feeReceipt.html")
                     .replace("{{schoolName}}", nullToDash(details.getSchoolName()))
@@ -143,6 +147,7 @@ public class EmailServiceImpl implements EmailService {
                     .replace("{{displayClass}}", nullToDash(details.getDisplayClass()))
                     .replace("{{remarks}}", nullToDash(details.getRemarks()))
                     .replace("{{collectedBy}}", nullToDash(details.getCollectedBy()))
+                    .replace("{{principalSignTag}}", principalSignTag)
                     .replace("{{amountWords}}", numberToWords(details.getAmount()))
                     .replace("{{amount}}", amountFormatted);
 

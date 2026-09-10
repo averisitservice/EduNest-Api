@@ -200,6 +200,7 @@ public class FeeServiceImpl implements FeeService {
                 .paymentMode(payment.getPaymentMode())
                 .remarks(payment.getRemarks())
                 .collectedBy(collectedByName)
+                .principalSignUrl(tenant != null ? tenant.getPrincipalSignUrl() : null)
                 .amount(payment.getAmount())
                 .build();
 
