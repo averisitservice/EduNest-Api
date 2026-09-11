@@ -135,6 +135,26 @@ public class EmailServiceImpl implements EmailService {
                     ? "<img src=\"" + details.getPrincipalSignUrl() + "\" style=\"max-height: 45px; max-width: 120px; display: block; margin: 0 auto 5px auto;\" alt=\"Authorised Signature\" />"
                     : "";
 
+            BigDecimal overdueCharge = details.getOverdueCharge() != null ? details.getOverdueCharge() : BigDecimal.ZERO;
+            BigDecimal baseAmount = details.getAmount().subtract(overdueCharge);
+            if (baseAmount.compareTo(BigDecimal.ZERO) < 0) {
+                baseAmount = details.getAmount();
+                overdueCharge = BigDecimal.ZERO;
+            }
+
+            String feeRowsHtml;
+            if (overdueCharge.compareTo(BigDecimal.ZERO) > 0) {
+                feeRowsHtml = "<tr><td class=\"center\">1</td><td>Fee Payment</td><td class=\"right\">"
+                        + formatIndianCurrency(baseAmount) + "</td><td class=\"right\">"
+                        + formatIndianCurrency(baseAmount) + "</td></tr>"
+                        + "<tr><td class=\"center\">2</td><td>Overdue Charge (Late Fine)</td><td class=\"right\">"
+                        + formatIndianCurrency(overdueCharge) + "</td><td class=\"right\">"
+                        + formatIndianCurrency(overdueCharge) + "</td></tr>";
+            } else {
+                feeRowsHtml = "<tr><td class=\"center\">1</td><td>Fee Payment</td><td class=\"right\">"
+                        + amountFormatted + "</td><td class=\"right\">" + amountFormatted + "</td></tr>";
+            }
+
             // 2. Generate PDF HTML from feeReceipt.html template
             String pdfTemplateHtml = loadTemplate("feeReceipt.html")
                     .replace("{{schoolName}}", nullToDash(details.getSchoolName()))
@@ -149,6 +169,7 @@ public class EmailServiceImpl implements EmailService {
                     .replace("{{collectedBy}}", nullToDash(details.getCollectedBy()))
                     .replace("{{principalSignTag}}", principalSignTag)
                     .replace("{{amountWords}}", numberToWords(details.getAmount()))
+                    .replace("{{feeRows}}", feeRowsHtml)
                     .replace("{{amount}}", amountFormatted);
 
             byte[] pdfBytes;
