@@ -53,6 +53,9 @@ public class FeeServiceImpl implements FeeService {
     @Autowired
     EmailService emailService;
 
+    @Autowired
+    TenantFeeSettingRepository tenantFeeSettingRepository;
+
     @Override
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
@@ -93,14 +96,16 @@ public class FeeServiceImpl implements FeeService {
             // Hostel students owe the class annual fee plus the class hostel fee.
             BigDecimal studentAnnual = isHostel ? annualFee.add(hostelFee) : annualFee;
             BigDecimal paid = paidByStudent.getOrDefault(studentClass.getStudentId(), BigDecimal.ZERO);
+            BigDecimal overdueCharge = calculateOverdueCharge(tenantId, studentClass.getStudentId(), currentYear, studentAnnual, paid);
 
             FeeStatusResponse response = new FeeStatusResponse();
             response.setStudentId(studentClass.getStudentId());
             response.setStudentName(CommonHelper.studentNameForStudent(student));
             response.setRollNo(studentClass.getRollNo());
             response.setAnnualFee(studentAnnual);
+            response.setOverdueCharge(overdueCharge);
             response.setPaidAmount(paid);
-            response.setDueAmount(studentAnnual.subtract(paid));
+            response.setDueAmount(studentAnnual.add(overdueCharge).subtract(paid));
             result.add(response);
         }
 
@@ -125,6 +130,7 @@ public class FeeServiceImpl implements FeeService {
         payment.setSectionId(studentClass.getSectionId());
         payment.setAcademicYearId(currentYear.getAcademicYearId());
         payment.setAmount(request.getAmount());
+        payment.setOverdueCharge(request.getOverdueCharge() != null ? request.getOverdueCharge() : BigDecimal.ZERO);
         payment.setPaymentDate(request.getPaymentDate() != null ? request.getPaymentDate() : LocalDate.now());
         payment.setPaymentMode(
                 request.getPaymentMode() != null ? request.getPaymentMode() : Constant.PAYMENT_MODE_CASH);
@@ -202,6 +208,7 @@ public class FeeServiceImpl implements FeeService {
                 .collectedBy(collectedByName)
                 .principalSignUrl(tenant != null ? tenant.getPrincipalSignUrl() : null)
                 .amount(payment.getAmount())
+                .overdueCharge(payment.getOverdueCharge() != null ? payment.getOverdueCharge() : BigDecimal.ZERO)
                 .build();
 
         String receiptUrl = emailService.sendFeeReceiptEmail(toEmail, details);
@@ -264,16 +271,82 @@ public class FeeServiceImpl implements FeeService {
         }
 
         StudentFeeDetailResponse response = new StudentFeeDetailResponse();
+        BigDecimal overdueChargeAmount = calculateOverdueCharge(tenantId, studentId, currentYear, totalFee, paidAmount);
+        BigDecimal totalFeeWithOverdue = totalFee.add(overdueChargeAmount);
+
         response.setStudentId(studentId);
         response.setStudentName(CommonHelper.studentNameForStudent(student));
         response.setDisplayClass(formatFeeDisplayClass(studentClass));
         response.setRollNo(studentClass.getRollNo());
         response.setAcademicYearName(currentYear.getYearName());
         response.setTotalFee(totalFee);
+        response.setOverdueChargeAmount(overdueChargeAmount);
+        response.setTotalFeeWithOverdue(totalFeeWithOverdue);
         response.setPaidAmount(paidAmount);
-        response.setPendingAmount(totalFee.subtract(paidAmount));
+        response.setPendingAmount(totalFeeWithOverdue.subtract(paidAmount));
         response.setPayments(payments);
         return response;
+    }
+
+    private BigDecimal calculateOverdueCharge(Integer tenantId, Integer studentId, AcademicYear academicYear, BigDecimal baseFee, BigDecimal paidAmount) {
+        if (baseFee == null || baseFee.compareTo(BigDecimal.ZERO) <= 0 || studentId == null) {
+            return BigDecimal.ZERO;
+        }
+
+       TenantFeeSetting setting = tenantFeeSettingRepository
+                .findByTenantIdAndAcademicYearId(tenantId, academicYear.getAcademicYearId())
+                .orElse(null);
+
+        if (setting == null || setting.getOverdueChargeAmount() == null
+                || setting.getOverdueChargeAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        String frequency = setting.getPaymentFrequency() != null ? setting.getPaymentFrequency().toUpperCase() : "ANNUAL";
+        int intervalMonths = switch (frequency) {
+            case "MONTHLY" -> 1;
+            case "QUARTERLY" -> 3;
+            case "HALF_YEARLY" -> 6;
+            default -> 12;
+        };
+
+        int totalInstallments = 12 / intervalMonths;
+        BigDecimal installmentAmount = baseFee.divide(BigDecimal.valueOf(totalInstallments), 2, java.math.RoundingMode.HALF_UP);
+        int dueDay = setting.getDueDayOfMonth() != null ? setting.getDueDayOfMonth() : 10;
+        int graceDays = setting.getGracePeriodDays() != null ? setting.getGracePeriodDays() : 10;
+        LocalDate today = LocalDate.now();
+
+        LocalDate start = academicYear.getStartDate() != null ? academicYear.getStartDate() : LocalDate.of(today.getYear(), 4, 1);
+        int overdueCount = 0;
+
+        for (int i = 0; i < totalInstallments; i++) {
+            LocalDate cycleStart = start.plusMonths((long) i * intervalMonths);
+            int dayToUse = Math.min(dueDay, cycleStart.lengthOfMonth());
+            LocalDate dueDate = cycleStart.withDayOfMonth(dayToUse);
+            LocalDate overdueCutoff = dueDate.plusDays(graceDays);
+
+            if (today.isAfter(overdueCutoff)) {
+                BigDecimal requiredCumulative = installmentAmount.multiply(BigDecimal.valueOf(i + 1));
+                if (paidAmount.compareTo(requiredCumulative) < 0) {
+                    overdueCount++;
+                }
+            }
+        }
+
+        BigDecimal grossOverdue = setting.getOverdueChargeAmount().multiply(BigDecimal.valueOf(overdueCount));
+
+        List<FeePayment> previousPayments = feePaymentRepository
+                .findByTenantIdAndStudentIdAndAcademicYearIdOrderByPaymentDateDescFeePaymentIdDesc(
+                        tenantId, studentId, academicYear.getAcademicYearId());
+        BigDecimal alreadyPaidOverdue = BigDecimal.ZERO;
+        for (FeePayment p : previousPayments) {
+            if (p.getOverdueCharge() != null) {
+                alreadyPaidOverdue = alreadyPaidOverdue.add(p.getOverdueCharge());
+            }
+        }
+
+        BigDecimal netOverdue = grossOverdue.subtract(alreadyPaidOverdue);
+        return netOverdue.compareTo(BigDecimal.ZERO) > 0 ? netOverdue : BigDecimal.ZERO;
     }
 
     private String formatFeeDisplayClass(StudentClass studentClass) {
