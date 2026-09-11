@@ -302,11 +302,11 @@ public class FeeServiceImpl implements FeeService {
             return BigDecimal.ZERO;
         }
 
-        String frequency = setting.getPaymentFrequency() != null ? setting.getPaymentFrequency().toUpperCase() : "ANNUAL";
+        String frequency = setting.getPaymentFrequency() != null ? setting.getPaymentFrequency().toUpperCase() : Constant.PAYMENT_FREQUENCY_ANNUAL;
         int intervalMonths = switch (frequency) {
-            case "MONTHLY" -> 1;
-            case "QUARTERLY" -> 3;
-            case "HALF_YEARLY" -> 6;
+            case Constant.PAYMENT_FREQUENCY_MONTHLY -> 1;
+            case Constant.PAYMENT_FREQUENCY_QUARTERLY -> 3;
+            case Constant.PAYMENT_FREQUENCY_HALF_YEARLY -> 6;
             default -> 12;
         };
 

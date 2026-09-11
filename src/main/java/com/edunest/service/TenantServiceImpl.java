@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.constant.Constant;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Tenant;
 import com.edunest.entity.TenantFeeSetting;
@@ -32,7 +33,7 @@ public class TenantServiceImpl implements TenantService {
                 .orElseGet(() -> TenantFeeSetting.builder()
                         .tenantId(tenantId)
                         .academicYearId(currentYear.getAcademicYearId())
-                        .paymentFrequency("ANNUAL")
+                        .paymentFrequency(Constant.PAYMENT_FREQUENCY_ANNUAL)
                         .dueDayOfMonth(10)
                         .gracePeriodDays(10)
                         .overdueChargeAmount(BigDecimal.ZERO)
@@ -51,7 +52,7 @@ public class TenantServiceImpl implements TenantService {
                         .academicYearId(currentYear.getAcademicYearId())
                         .build());
 
-        setting.setPaymentFrequency(request.getPaymentFrequency() != null ? request.getPaymentFrequency() : "ANNUAL");
+        setting.setPaymentFrequency(request.getPaymentFrequency() != null ? request.getPaymentFrequency() : Constant.PAYMENT_FREQUENCY_ANNUAL);
         setting.setDueDayOfMonth(request.getDueDayOfMonth() != null ? request.getDueDayOfMonth() : 10);
         setting.setGracePeriodDays(request.getGracePeriodDays() != null ? request.getGracePeriodDays() : 10);
         setting.setOverdueChargeAmount(request.getOverdueChargeAmount() != null ? request.getOverdueChargeAmount() : BigDecimal.ZERO);

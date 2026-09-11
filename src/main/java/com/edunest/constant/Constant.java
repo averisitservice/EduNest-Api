@@ -35,6 +35,11 @@ public class Constant {
     public static final String PAYMENT_STATUS_PAID = "PAID";
     public static final String PAYMENT_STATUS_FAILED = "FAILED";
 
+    public static final String PAYMENT_FREQUENCY_MONTHLY = "MONTHLY";
+    public static final String PAYMENT_FREQUENCY_QUARTERLY = "QUARTERLY";
+    public static final String PAYMENT_FREQUENCY_HALF_YEARLY = "HALF_YEARLY";
+    public static final String PAYMENT_FREQUENCY_ANNUAL = "ANNUAL";
+
     public static final String USER_TYPE_STUDENT = "STUDENT";
 
     public static final String PUSH_TYPE_NOTIFICATION = "NOTIFICATION";
