@@ -41,6 +41,10 @@ public class FeePayment {
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
+    @Column(name = "overdue_charge", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal overdueCharge = BigDecimal.ZERO;
+
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
 
