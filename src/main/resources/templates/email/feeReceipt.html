@@ -8,10 +8,16 @@
   <style>
     @page {
       size: A4 portrait;
-      margin: 15mm;
+      margin: 12mm;
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
     body {
+      height: 100%;
       margin: 0;
       padding: 0;
       font-family: Arial, sans-serif;
@@ -20,83 +26,115 @@
     }
 
     .receipt {
-      border: 1px solid #666;
-      padding: 20px;
+      height: 100%;
+      border: 2px solid #333;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .main-layout {
+      width: 100%;
+      height: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .main-layout-top {
+      vertical-align: top;
+      padding: 0;
+      border: none;
+    }
+
+    .main-layout-bottom {
+      vertical-align: bottom;
+      height: 1px;
+      padding: 0;
+      border: none;
     }
 
     .header {
       text-align: center;
-      padding-bottom: 15px;
+      padding-bottom: 16px;
       border-bottom: 2px solid #000;
-      margin-bottom: 15px;
+      margin-bottom: 22px;
     }
 
     .school-name {
-      margin: 0 0 5px 0;
+      margin: 0 0 6px 0;
       font-size: 24px;
       font-weight: bold;
+      color: #111;
+      letter-spacing: 0.5px;
     }
 
     .school-address,
     .school-contact {
-      margin: 3px 0;
+      margin: 4px 0;
       font-size: 12px;
       color: #555;
     }
 
     .title {
       text-align: center;
-      padding: 8px 0;
+      padding: 10px 0;
       font-weight: bold;
-      font-size: 15px;
-      border-bottom: 1px solid #000;
-      margin-bottom: 15px;
+      font-size: 16px;
+      background-color: #f4f5f7;
+      border: 1px solid #ccc;
+      margin-bottom: 28px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
+      color: #111;
     }
 
     .details-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     .details-table td {
-      padding: 5px 2px;
+      padding: 10px 5px;
       font-size: 13px;
       vertical-align: top;
     }
 
     .details-table td.label {
       font-weight: bold;
-      width: 18%;
+      width: 20%;
+      color: #222;
+      padding-right: 5px;
     }
 
     .details-table td.colon {
-      width: 2%;
+      width: 3%;
       text-align: center;
     }
 
     .details-table td.value {
-      width: 30%;
+      width: 27%;
+      color: #333;
+      padding-left: 8px;
+      padding-right: 12px;
     }
 
     .fees {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     .fees th,
     .fees td {
-      border: 1px solid #666;
-      padding: 8px;
+      border: 1px solid #555;
+      padding: 12px 14px;
       font-size: 13px;
     }
 
     .fees th {
-      background: #f5f5f5;
+      background: #f0f2f5;
       font-weight: bold;
+      color: #111;
     }
 
     .right {
@@ -109,31 +147,46 @@
 
     .total {
       font-weight: bold;
-      background: #f5f5f5;
+      background: #f0f2f5;
     }
 
     .amount {
-      padding: 12px;
-      border: 1px solid #666;
+      padding: 14px 18px;
+      border: 1px solid #555;
       background-color: #fafafa;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
       font-size: 13px;
+      line-height: 1.5;
     }
 
     .amount-label {
-      font-weight: normal;
+      font-weight: bold;
+      color: #222;
+      margin-right: 8px;
     }
 
     .amount-words {
       font-weight: bold;
+      color: #111;
       text-transform: capitalize;
+    }
+
+    .signature-table {
+      width: 100%;
+      margin-top: 25px;
+      border-collapse: collapse;
+      border: none;
+    }
+
+    .signature-table td {
+      border: none;
     }
 
     .thanks {
       text-align: center;
-      margin-top: 30px;
-      font-size: 12px;
-      color: #555;
+      margin-top: 15px;
+      font-size: 11px;
+      color: #666;
       font-style: italic;
     }
   </style>
@@ -142,104 +195,116 @@
 <body>
 
   <div class="receipt">
-
-    <div class="header">
-      <h1 class="school-name">{{schoolName}}</h1>
-      <p class="school-address">{{schoolAddress}}</p>
-    </div>
-
-    <div class="title">
-      FEE RECEIPT
-    </div>
-
-    <table class="details-table">
+    <table class="main-layout">
       <tr>
-        <td class="label">Receipt No</td>
-        <td class="colon">:</td>
-        <td class="value">{{receiptNo}}</td>
+        <td class="main-layout-top">
+          <div class="header">
+            <h1 class="school-name">{{schoolName}}</h1>
+            <p class="school-address">{{schoolAddress}}</p>
+          </div>
 
-        <td class="label">Date</td>
-        <td class="colon">:</td>
-        <td class="value">{{paymentDateFormatted}}</td>
-      </tr>
+          <div class="title">
+            FEE RECEIPT
+          </div>
 
-      <tr>
-        <td class="label">Admission No</td>
-        <td class="colon">:</td>
-        <td class="value">{{admissionNo}}</td>
+          <table class="details-table">
+            <tr>
+              <td class="label">Receipt No</td>
+              <td class="colon">:</td>
+              <td class="value">{{receiptNo}}</td>
 
-        <td class="label">Session</td>
-        <td class="colon">:</td>
-        <td class="value">{{sessionYear}}</td>
-      </tr>
+              <td class="label">Date</td>
+              <td class="colon">:</td>
+              <td class="value">{{paymentDateFormatted}}</td>
+            </tr>
 
-      <tr>
-        <td class="label">Student Name</td>
-        <td class="colon">:</td>
-        <td class="value">{{studentName}}</td>
+            <tr>
+              <td class="label">Admission No</td>
+              <td class="colon">:</td>
+              <td class="value">{{admissionNo}}</td>
 
-        <td class="label">Class</td>
-        <td class="colon">:</td>
-        <td class="value">{{displayClass}}</td>
-      </tr>
+              <td class="label">Session</td>
+              <td class="colon">:</td>
+              <td class="value">{{sessionYear}}</td>
+            </tr>
 
-      <tr>
-        <td class="label">Remarks</td>
-        <td class="colon">:</td>
-        <td class="value">{{remarks}}</td>
+            <tr>
+              <td class="label">Student Name</td>
+              <td class="colon">:</td>
+              <td class="value">{{studentName}}</td>
 
-        <td class="label">Collected By</td>
-        <td class="colon">:</td>
-        <td class="value">{{collectedBy}}</td>
-      </tr>
-    </table>
+              <td class="label">Class</td>
+              <td class="colon">:</td>
+              <td class="value">{{displayClass}}</td>
+            </tr>
 
-    <table class="fees">
-      <thead>
-        <tr>
-          <th class="center" style="width: 10%;">Sr.No.</th>
-          <th style="width: 60%;">Description</th>
-          <th class="right" style="width: 15%;">Due (Rs.)</th>
-          <th class="right" style="width: 15%;">Paid (Rs.)</th>
-        </tr>
-      </thead>
+            <tr>
+              <td class="label">Remarks</td>
+              <td class="colon">:</td>
+              <td class="value">{{remarks}}</td>
 
-      <tbody>
-        <tr>
-          <td class="center">1</td>
-          <td>Fee Payment</td>
-          <td class="right">{{amount}}</td>
-          <td class="right">{{amount}}</td>
-        </tr>
-      </tbody>
+              <td class="label">Collected By</td>
+              <td class="colon">:</td>
+              <td class="value">{{collectedBy}}</td>
+            </tr>
+          </table>
 
-      <tfoot>
-        <tr class="total">
-          <td colspan="2" class="center">Total</td>
-          <td class="right">{{amount}}</td>
-          <td class="right">{{amount}}</td>
-        </tr>
-      </tfoot>
-    </table>
+          <table class="fees">
+            <thead>
+              <tr>
+                <th class="center" style="width: 10%;">Sr.No.</th>
+                <th style="width: 60%;">Description</th>
+                <th class="right" style="width: 15%;">Due (Rs.)</th>
+                <th class="right" style="width: 15%;">Paid (Rs.)</th>
+              </tr>
+            </thead>
 
-    <div class="amount">
-      <span class="amount-label">AMOUNT IN WORDS: </span>
-      <span class="amount-words">{{amountWords}}</span>
-    </div>
+            <tbody>
+              <tr>
+                <td class="center">1</td>
+                <td>Fee Payment</td>
+                <td class="right">{{amount}}</td>
+                <td class="right">{{amount}}</td>
+              </tr>
+            </tbody>
 
-    <!-- Signatures layout table -->
-    <table style="width: 100%; margin-top: 60px; border-collapse: collapse; border: none;">
-      <tr>
-        <td style="width: 40%; text-align: center; border: none; vertical-align: bottom;">
-          <div style="border-top: 1px solid #333; padding-top: 5px; margin: 0 10px; font-size: 13px;">
-            Received By
+            <tfoot>
+              <tr class="total">
+                <td colspan="2" class="center">Total</td>
+                <td class="right">{{amount}}</td>
+                <td class="right">{{amount}}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="amount">
+            <span class="amount-label">AMOUNT IN WORDS: </span>
+            <span class="amount-words">{{amountWords}}</span>
           </div>
         </td>
-        <td style="width: 20%; border: none;">&#160;</td>
-        <td style="width: 40%; text-align: center; border: none; vertical-align: bottom;">
-          {{principalSignTag}}
-          <div style="border-top: 1px solid #333; padding-top: 5px; margin: 0 10px; font-size: 13px;">
-            Authorised Signatory
+      </tr>
+
+      <tr>
+        <td class="main-layout-bottom">
+          <table class="signature-table">
+            <tr>
+              <td style="width: 40%; text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #333; padding-top: 5px; margin: 0 10px; font-size: 13px;">
+                  Received By
+                </div>
+              </td>
+              <td style="width: 20%;">&#160;</td>
+              <td style="width: 40%; text-align: center; vertical-align: bottom;">
+                {{principalSignTag}}
+                <div style="border-top: 1px solid #333; padding-top: 5px; margin: 0 10px; font-size: 13px;">
+                  Authorised Signatory
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <div class="thanks">
+            This is a computer-generated receipt.
           </div>
         </td>
       </tr>
@@ -248,4 +313,4 @@
 
 </body>
 
-</html>
+</html>

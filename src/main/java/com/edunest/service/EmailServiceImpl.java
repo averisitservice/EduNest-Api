@@ -154,7 +154,6 @@ public class EmailServiceImpl implements EmailService {
             byte[] pdfBytes;
             try (ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
                 PdfRendererBuilder builder = new PdfRendererBuilder();
-                builder.useFastMode();
                 builder.withHtmlContent(pdfTemplateHtml, null);
                 builder.toStream(pdfOutputStream);
                 builder.run();
