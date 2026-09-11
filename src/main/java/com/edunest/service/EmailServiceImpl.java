@@ -147,7 +147,7 @@ public class EmailServiceImpl implements EmailService {
                 feeRowsHtml = "<tr><td class=\"center\">1</td><td>Fee Payment</td><td class=\"right\">"
                         + formatIndianCurrency(baseAmount) + "</td><td class=\"right\">"
                         + formatIndianCurrency(baseAmount) + "</td></tr>"
-                        + "<tr><td class=\"center\">2</td><td>Overdue Charge (Late Fine)</td><td class=\"right\">"
+                        + "<tr><td class=\"center\">2</td><td>Overdue Charge</td><td class=\"right\">"
                         + formatIndianCurrency(overdueCharge) + "</td><td class=\"right\">"
                         + formatIndianCurrency(overdueCharge) + "</td></tr>";
             } else {
