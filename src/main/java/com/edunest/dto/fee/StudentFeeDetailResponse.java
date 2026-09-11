@@ -17,6 +17,8 @@ public class StudentFeeDetailResponse {
     private String rollNo;
     private String academicYearName;
     private BigDecimal totalFee;
+    private BigDecimal overdueChargeAmount;
+    private BigDecimal totalFeeWithOverdue;
     private BigDecimal paidAmount;
     private BigDecimal pendingAmount;
     private List<FeePaymentResponse> payments;

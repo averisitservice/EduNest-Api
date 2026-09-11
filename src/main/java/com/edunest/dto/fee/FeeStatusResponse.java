@@ -13,6 +13,7 @@ public class FeeStatusResponse {
     private String studentName;
     private String rollNo;
     private BigDecimal annualFee;
+    private BigDecimal overdueCharge;
     private BigDecimal paidAmount;
     private BigDecimal dueAmount;
 }

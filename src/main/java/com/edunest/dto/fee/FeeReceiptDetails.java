@@ -30,4 +30,5 @@ public class FeeReceiptDetails {
     private String principalSignUrl;
 
     private BigDecimal amount;
+    private BigDecimal overdueCharge;
 }

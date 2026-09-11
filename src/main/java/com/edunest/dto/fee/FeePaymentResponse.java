@@ -12,6 +12,7 @@ import java.time.LocalDate;
 public class FeePaymentResponse {
     private Integer feePaymentId;
     private BigDecimal amount;
+    private BigDecimal overdueCharge;
     private LocalDate paymentDate;
     private String paymentMode;
     private String receiptNo;
