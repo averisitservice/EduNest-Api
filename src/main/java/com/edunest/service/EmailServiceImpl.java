@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.configuration.AwsConfiguration;
 import com.edunest.dto.fee.FeeReceiptDetails;
 import com.edunest.dto.mobile.StudentResetCredential;
 import com.edunest.error.CustomException;
@@ -34,7 +35,7 @@ public class EmailServiceImpl implements EmailService {
     private JavaMailSender mailSender;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private AwsConfiguration awsConfiguration;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -184,7 +185,7 @@ public class EmailServiceImpl implements EmailService {
             String originalFileName = "Receipt_" + details.getReceiptNo() + ".pdf";
             ByteArrayMultipartFile multipartFile = new ByteArrayMultipartFile(pdfBytes, originalFileName,
                     "application/pdf");
-            Map<String, Object> uploadResult = fileStorageService.uploadFile(multipartFile, "edunest/receipt");
+            Map<String, Object> uploadResult = awsConfiguration.uploadFile(multipartFile, "edunest/receipt");
             String receiptUrl = String.valueOf(uploadResult.get("secure_url"));
 
             String attachmentName = "FeeReceipt_" + details.getReceiptNo() + ".pdf";

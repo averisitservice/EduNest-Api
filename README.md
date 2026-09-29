@@ -36,7 +36,7 @@ src/main/java/com/edunest/
 ├── helper/                     # Utility helpers (CommonHelper, CryptoHelper)
 ├── repository/                 # Spring Data JPA repositories
 ├── scheduler/                  # @Scheduled background jobs (announcement publishing, birthday pushes)
-└── service/                    # Service interfaces + implementations (FileStorageService delegates to AWS S3)
+└── service/                    # Service interfaces + implementations
 
 src/main/resources/
 ├── application.properties      # Runtime configuration (contains real secrets — see Security note below)
@@ -226,7 +226,7 @@ All responses are wrapped in a common `ResponseObject<T>` (`{ success, errors, d
 | POST | `/note` | Save a note — `multipart/form-data`, see below |
 | DELETE | `/note/{noteId}` | Delete a note |
 
-`HomeworkController` (`POST /homework`) and `NoteController` (`POST /note`) accept `multipart/form-data`: a `data` part with the JSON request body and an optional `file` part for the attachment. When a file is present, `HomeworkServiceImpl`/`NoteServiceImpl` upload it via `FileStorageService` (AWS S3) and store the resulting URL as `attachmentUrl`.
+`HomeworkController` (`POST /homework`) and `NoteController` (`POST /note`) accept `multipart/form-data`: a `data` part with the JSON request body and an optional `file` part for the attachment. When a file is present, `HomeworkServiceImpl`/`NoteServiceImpl` upload it via `AwsConfiguration` (AWS S3) and store the resulting URL as `attachmentUrl`.
 
 ### Announcements (`/announcement`)
 | Method | Path | Description |

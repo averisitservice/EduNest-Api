@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.configuration.AwsConfiguration;
 import com.edunest.constant.Constant;
 import com.edunest.dto.note.NoteRequest;
 import com.edunest.dto.note.NoteResponse;
@@ -31,7 +32,7 @@ public class NoteServiceImpl implements NoteService {
     CommonHelper commonHelper;
 
     @Autowired
-    FileStorageService fileStorageService;
+    AwsConfiguration awsConfiguration;
 
     @Autowired
     StudentClassRepository studentClassRepository;
@@ -90,7 +91,7 @@ public class NoteServiceImpl implements NoteService {
         note.setDescription(request.getDescription());
 
         if (file != null && !file.isEmpty()) {
-            Map<String, Object> uploadResult = fileStorageService.uploadFile(file, ATTACHMENT_FOLDER);
+            Map<String, Object> uploadResult = awsConfiguration.uploadFile(file, ATTACHMENT_FOLDER);
             note.setAttachmentUrl(String.valueOf(uploadResult.get("secure_url")));
         } else if (request.getNoteId() == null) {
             note.setAttachmentUrl(request.getAttachmentUrl());

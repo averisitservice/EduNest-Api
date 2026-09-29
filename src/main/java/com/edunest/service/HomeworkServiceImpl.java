@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.configuration.AwsConfiguration;
 import com.edunest.constant.Constant;
 import com.edunest.dto.homework.HomeworkRequest;
 import com.edunest.dto.homework.HomeworkResponse;
@@ -31,7 +32,7 @@ public class HomeworkServiceImpl implements HomeworkService {
     CommonHelper commonHelper;
 
     @Autowired
-    FileStorageService fileStorageService;
+    AwsConfiguration awsConfiguration;
 
     @Autowired
     StudentClassRepository studentClassRepository;
@@ -92,7 +93,7 @@ public class HomeworkServiceImpl implements HomeworkService {
         homework.setDueDate(request.getDueDate());
 
         if (file != null && !file.isEmpty()) {
-            Map<String, Object> uploadResult = fileStorageService.uploadFile(file, ATTACHMENT_FOLDER);
+            Map<String, Object> uploadResult = awsConfiguration.uploadFile(file, ATTACHMENT_FOLDER);
             homework.setAttachmentUrl(String.valueOf(uploadResult.get("secure_url")));
         } else if (request.getHomeworkId() == null) {
             homework.setAttachmentUrl(request.getAttachmentUrl());
