@@ -2,24 +2,13 @@ package com.edunest.controller;
 
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
-import com.edunest.dto.auth.ForgotPasswordRequest;
-import com.edunest.dto.auth.LoginRequest;
-import com.edunest.dto.auth.LoginResponse;
-import com.edunest.dto.auth.RenewSessionRequest;
-import com.edunest.dto.auth.RenewSessionResponse;
-import com.edunest.dto.auth.ResetPasswordRequest;
-import com.edunest.dto.auth.SchoolLookupResponse;
+import com.edunest.dto.auth.*;
 import com.edunest.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")

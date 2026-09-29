@@ -2,12 +2,7 @@ package com.edunest.controller;
 
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
-import com.edunest.dto.exam.ExamListResponse;
-import com.edunest.dto.exam.ExamMarksEntryResponse;
-import com.edunest.dto.exam.ExamMarksSaveRequest;
-import com.edunest.dto.exam.ExamRequest;
-import com.edunest.dto.exam.ExamSummaryResponse;
-import com.edunest.dto.exam.ReportCardResponse;
+import com.edunest.dto.exam.*;
 import com.edunest.service.ExamService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
