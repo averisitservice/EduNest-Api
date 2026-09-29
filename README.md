@@ -12,7 +12,7 @@ Spring Boot REST API powering EduNest — a multi-tenant school/institute manage
 | Database | PostgreSQL (`org.postgresql:postgresql`) — MySQL connector (`com.mysql:mysql-connector-j`) is also on the classpath but unused by current config |
 | Auth | Stateless JWT via a custom filter — **JJWT 0.12.6** (`jjwt-api`/`jjwt-impl`/`jjwt-jackson`) |
 | Payments | Razorpay Java SDK 1.4.4 — order creation/verification (`RazorpayConfiguration`, exposed via `MobileFeeController`) |
-| File storage | Cloudinary HTTP5 SDK 2.4.0 **or** AWS SDK v2 S3 2.29.52 — switched via the `is-live` property (`CloudinaryConfiguration`, `AwsConfiguration`) |
+| File storage | AWS SDK v2 S3 2.29.52 (`AwsConfiguration`) |
 | Push notifications | Firebase Admin SDK 9.4.1 (`FirebaseConfig`) — disabled gracefully when no credentials file is configured |
 | Email | Spring Mail (SMTP) |
 | Misc | Lombok (boilerplate), Apache Commons Text 1.12.0 (`CommonHelper.generateRandomPassword`) |
@@ -26,7 +26,7 @@ src/main/java/com/edunest/
 ├── EdunestApplication.java     # Spring Boot entry point
 ├── common/                     # Shared response wrappers (ResponseObject, PagedResponse)
 ├── configuration/              # JWT filter/helper, Spring Security config, third-party client config
-│                                #   (Razorpay, Cloudinary, AWS S3, Firebase — each holds its client @Bean
+│                                #   (Razorpay, AWS S3, Firebase — each holds its client @Bean
 │                                #   plus the business/CRUD methods directly, no separate service interface)
 ├── constant/                   # App-wide constants (Constant.java) — status/type codes, roles
 ├── controller/                 # REST controllers — see API Overview below
@@ -36,8 +36,7 @@ src/main/java/com/edunest/
 ├── helper/                     # Utility helpers (CommonHelper, CryptoHelper)
 ├── repository/                 # Spring Data JPA repositories
 ├── scheduler/                  # @Scheduled background jobs (announcement publishing, birthday pushes)
-└── service/                    # Service interfaces + implementations (FileStorageService switches
-                                 #   between Cloudinary/AWS S3 based on `is-live`)
+└── service/                    # Service interfaces + implementations (FileStorageService delegates to AWS S3)
 
 src/main/resources/
 ├── application.properties      # Runtime configuration (contains real secrets — see Security note below)
@@ -55,8 +54,7 @@ The app is multi-tenant: most authenticated endpoints derive a `tenantId` (and o
 - PostgreSQL instance with a database named `EduNest`
 - (Optional) Gmail account with an app password if you need email sending to work
 - (Optional) Razorpay `key_id` / `key_secret` if you plan to wire up `RazorpayConfiguration`
-- (Optional) Cloudinary credentials (`cloud-name` / `api-key` / `api-secret`) for file uploads when `is-live=false`
-- (Optional) AWS S3 credentials + bucket for file uploads when `is-live=true`
+- AWS S3 credentials + bucket for file uploads
 - (Optional) Firebase service account JSON on the classpath if you need push notifications to work
 
 ## Configuration
@@ -67,7 +65,6 @@ Runtime config lives in `src/main/resources/application.properties`. Key propert
 |---|---|
 | `spring.application.name` | Application name |
 | `server.port` | HTTP port (default `8081`) |
-| `is-live` | File storage switch: `true` uploads attachments to AWS S3, `false` uploads to Cloudinary |
 | `spring.datasource.url` / `username` / `password` | PostgreSQL connection |
 | `spring.jpa.hibernate.ddl-auto` | Schema management (`update` — see note below) |
 | `spring.jpa.database-platform` | Hibernate dialect |
@@ -78,11 +75,10 @@ Runtime config lives in `src/main/resources/application.properties`. Key propert
 | `security.jwt.student-expiration-time` | Student (mobile) access/refresh token TTL (ms) |
 | `APP_KEY` / `APP_IV` | Symmetric AES key/IV used by `CryptoHelper.encrypt`/`decrypt` |
 | `razorpay.key-id` / `razorpay.key-secret` | Razorpay API credentials used by `RazorpayConfiguration` |
-| `cloudinary.cloud-name` / `cloudinary.api-key` / `cloudinary.api-secret` | Cloudinary credentials used by `CloudinaryConfiguration` |
 | `aws.access-key` / `aws.secret-key` / `aws.region` / `aws.s3.bucket-name` | AWS S3 credentials used by `AwsConfiguration` |
 | `firebase.credentials-file` | Classpath path to the Firebase service account JSON used by `FirebaseConfig`; if unset, push notifications are silently disabled (`FirebaseConfig.isEnabled()` returns `false`) |
 
-> **Security note:** `application.properties` currently contains real credentials (DB password, mail app password, JWT secret, Razorpay keys, Cloudinary keys) and is **not** in `.gitignore` — only `src/main/resources/firebase-service-account.json` is gitignored. Move these to environment variables or a local, git-ignored properties file before pushing/sharing the repo.
+> **Security note:** `application.properties` currently contains real credentials (DB password, mail app password, JWT secret, Razorpay keys) and is **not** in `.gitignore` — only `src/main/resources/firebase-service-account.json` is gitignored. Move these to environment variables or a local, git-ignored properties file before pushing/sharing the repo.
 
 ## Running Locally
 
@@ -230,7 +226,7 @@ All responses are wrapped in a common `ResponseObject<T>` (`{ success, errors, d
 | POST | `/note` | Save a note — `multipart/form-data`, see below |
 | DELETE | `/note/{noteId}` | Delete a note |
 
-`HomeworkController` (`POST /homework`) and `NoteController` (`POST /note`) accept `multipart/form-data`: a `data` part with the JSON request body and an optional `file` part for the attachment. When a file is present, `HomeworkServiceImpl`/`NoteServiceImpl` upload it via `FileStorageService` (Cloudinary or AWS S3, per `is-live`) and store the resulting URL as `attachmentUrl`.
+`HomeworkController` (`POST /homework`) and `NoteController` (`POST /note`) accept `multipart/form-data`: a `data` part with the JSON request body and an optional `file` part for the attachment. When a file is present, `HomeworkServiceImpl`/`NoteServiceImpl` upload it via `FileStorageService` (AWS S3) and store the resulting URL as `attachmentUrl`.
 
 ### Announcements (`/announcement`)
 | Method | Path | Description |
@@ -286,7 +282,7 @@ Handles the mobile fee-payment flow: `GET /detail` (pending/paid summary), `POST
 
 `FcmTokenController` lets the mobile app register/unregister the current device for push notifications: `POST /api/student/fcm-token` (upsert the device's FCM token, keyed by token so re-registering the same device just re-points it to whichever student is logged in) and `DELETE /api/student/fcm-token?fcmToken=...` (remove a token, e.g. on logout). Both derive `studentId`/`tenantId` from the JWT.
 
-Push notifications aren't a separate controller — they're triggered by other actions (announcement publish, exam scheduling/results, homework/note creation, leave status changes, birthdays). Each of those calls `StudentNotificationService.notify(...)`, which persists a `StudentNotification` row and then calls `FirebaseConfig.sendToStudents(...)` directly (this used to be a separate `FcmPushService` — that logic now lives on `FirebaseConfig` itself, alongside its client initialization, matching the same "client bean + business methods, no separate service interface" pattern used for Razorpay/Cloudinary/AWS). `sendToStudents` loads the tenant's registered device tokens (`StudentDeviceTokenRepository`), batches them (500 tokens per Firebase multicast call), and sends via `FirebaseMessaging`. If `firebase.credentials-file` isn't configured, `FirebaseConfig.isEnabled()` is `false` and sends are skipped (logged, not thrown). Tokens Firebase reports as unregistered/invalid are deleted automatically after a send.
+Push notifications aren't a separate controller — they're triggered by other actions (announcement publish, exam scheduling/results, homework/note creation, leave status changes, birthdays). Each of those calls `StudentNotificationService.notify(...)`, which persists a `StudentNotification` row and then calls `FirebaseConfig.sendToStudents(...)` directly (this used to be a separate `FcmPushService` — that logic now lives on `FirebaseConfig` itself, alongside its client initialization, matching the same "client bean + business methods, no separate service interface" pattern used for Razorpay/AWS). `sendToStudents` loads the tenant's registered device tokens (`StudentDeviceTokenRepository`), batches them (500 tokens per Firebase multicast call), and sends via `FirebaseMessaging`. If `firebase.credentials-file` isn't configured, `FirebaseConfig.isEnabled()` is `false` and sends are skipped (logged, not thrown). Tokens Firebase reports as unregistered/invalid are deleted automatically after a send.
 
 ## Scheduled Jobs (`scheduler/`)
 

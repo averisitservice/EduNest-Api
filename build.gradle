@@ -48,8 +48,6 @@ dependencies {
 	// Razorpay
 	implementation 'com.razorpay:razorpay-java:1.4.4'
 
-	// Cloudinary
-	implementation 'com.cloudinary:cloudinary-http5:2.4.0'
 
 	// AWS S3
 	implementation platform('software.amazon.awssdk:bom:2.29.52')
