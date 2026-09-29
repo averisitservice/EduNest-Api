@@ -3,7 +3,6 @@ package com.edunest.service;
 import com.edunest.common.PagedResponse;
 import com.edunest.constant.Constant;
 import com.edunest.dto.exam.ReportCardResponse;
-import com.edunest.dto.holiday.HolidayResponse;
 import com.edunest.dto.mobile.*;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
