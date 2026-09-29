@@ -10,29 +10,22 @@ import com.edunest.helper.CommonHelper;
 import com.edunest.helper.CryptoHelper;
 import com.edunest.repository.TeacherRepository;
 import com.edunest.repository.TenantRepository;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    TeacherRepository teacherRepository;
-
-    @Autowired
-    TenantRepository tenantRepository;
-
-    @Autowired
-    JwtHelper jwtHelper;
-
-    @Autowired
-    EmailService emailService;
-
+    private final TeacherRepository teacherRepository;
+    private final TenantRepository tenantRepository;
+    private final JwtHelper jwtHelper;
+    private final EmailService emailService;
 
     @Override
     public SchoolLookupResponse getTenantBySchoolCode(String schoolCode) {
@@ -59,14 +52,15 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
 
-        Teacher teacher = teacherRepository.findByEmail(loginRequest.getEmail()).
-                orElseThrow(() -> new CustomException("Teacher", "Teacher not found"));
+        Teacher teacher = teacherRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new CustomException("Teacher", "Teacher not found"));
 
         if (!teacher.getIsActive()) {
             throw new CustomException("Teacher", "Account is inactive. Please contact admin");
         }
 
-        Tenant tenant = tenantRepository.findById(teacher.getTenantId()).orElseThrow(() -> new CustomException("Teacher", "Tenant not found"));
+        Tenant tenant = tenantRepository.findById(teacher.getTenantId())
+                .orElseThrow(() -> new CustomException("Teacher", "Tenant not found"));
 
         String encryptedPassword = CryptoHelper.encryptPassword(loginRequest.getPassword(), teacher.getHashkey());
         if (!encryptedPassword.equals(teacher.getPassword())) {
@@ -75,7 +69,6 @@ public class AuthServiceImpl implements AuthService {
 
         teacher.setLastLogin(LocalDateTime.now());
         teacherRepository.save(teacher);
-
 
         TenantResponse tenantResponse = new TenantResponse();
         BeanUtils.copyProperties(tenant, tenantResponse);

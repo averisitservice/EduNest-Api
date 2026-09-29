@@ -7,7 +7,7 @@ import com.edunest.dto.mobile.StudentNotificationItem;
 import com.edunest.entity.StudentNotification;
 import com.edunest.error.CustomException;
 import com.edunest.repository.StudentNotificationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,13 +21,11 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@AllArgsConstructor
 public class StudentNotificationServiceImpl implements StudentNotificationService {
 
-    @Autowired
-    StudentNotificationRepository studentNotificationRepository;
-
-    @Autowired
-    FirebaseConfig firebaseConfig;
+    private final StudentNotificationRepository studentNotificationRepository;
+    private final FirebaseConfig firebaseConfig;
 
     @Override
     @Transactional

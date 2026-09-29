@@ -9,7 +9,7 @@ import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.NoteRepository;
 import com.edunest.repository.StudentClassRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,24 +20,16 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@AllArgsConstructor
 public class NoteServiceImpl implements NoteService {
 
     private static final String ATTACHMENT_FOLDER = "edunest/note";
 
-    @Autowired
-    NoteRepository noteRepository;
-
-    @Autowired
-    CommonHelper commonHelper;
-
-    @Autowired
-    FileStorageService fileStorageService;
-
-    @Autowired
-    StudentClassRepository studentClassRepository;
-
-    @Autowired
-    StudentNotificationService studentNotificationService;
+    private final NoteRepository noteRepository;
+    private final CommonHelper commonHelper;
+    private final FileStorageService fileStorageService;
+    private final StudentClassRepository studentClassRepository;
+    private final StudentNotificationService studentNotificationService;
 
     @Override
     public List<NoteResponse> getNoteList(Integer tenantId, Integer classId, Integer sectionId) {

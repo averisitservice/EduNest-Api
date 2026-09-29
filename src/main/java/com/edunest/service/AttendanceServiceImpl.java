@@ -4,19 +4,10 @@ import com.edunest.constant.Constant;
 import com.edunest.dto.attendance.AttendanceRosterResponse;
 import com.edunest.dto.attendance.AttendanceSaveRequest;
 import com.edunest.dto.attendance.AttendanceSummaryResponse;
-import com.edunest.entity.AcademicYear;
-import com.edunest.entity.Attendance;
-import com.edunest.entity.Holiday;
-import com.edunest.entity.Leave;
-import com.edunest.entity.Student;
-import com.edunest.entity.StudentClass;
-import com.edunest.repository.StudentRepository;
+import com.edunest.entity.*;
 import com.edunest.helper.CommonHelper;
-import com.edunest.repository.AttendanceRepository;
-import com.edunest.repository.HolidayRepository;
-import com.edunest.repository.LeaveRepository;
-import com.edunest.repository.StudentClassRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.edunest.repository.*;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,25 +15,15 @@ import java.time.LocalDate;
 import java.util.*;
 
 @Service
+@AllArgsConstructor
 public class AttendanceServiceImpl implements AttendanceService {
 
-    @Autowired
-    AttendanceRepository attendanceRepository;
-
-    @Autowired
-    StudentClassRepository studentClassRepository;
-
-    @Autowired
-    LeaveRepository leaveRepository;
-
-    @Autowired
-    HolidayRepository holidayRepository;
-
-    @Autowired
-    CommonHelper commonHelper;
-
-    @Autowired
-    StudentRepository studentRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final StudentClassRepository studentClassRepository;
+    private final LeaveRepository leaveRepository;
+    private final HolidayRepository holidayRepository;
+    private final StudentRepository studentRepository;
+    private final CommonHelper commonHelper;
 
     @Override
     public AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date, String search) {
@@ -50,8 +31,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         String normalizedSearch = (search != null && !search.isBlank()) ? search.trim().toLowerCase() : "";
 
-        List<Object[]> studentData = studentRepository.findStudentsForAttendanceRoster(
-                tenantId, classId, sectionId, normalizedSearch);
+        List<Object[]> studentData = studentRepository.findStudentsForAttendanceRoster(tenantId, classId, sectionId, normalizedSearch);
 
         List<Integer> studentIds = new ArrayList<>();
         for (Object[] pair : studentData) {
@@ -61,9 +41,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Map<Integer, Attendance> existing = new HashMap<>();
         if (!studentIds.isEmpty()) {
-            List<Attendance> marked = attendanceRepository
-                    .findByTenantIdAndAcademicYearIdAndAttendanceDateAndStudentIdIn(
-                            tenantId, currentYear.getAcademicYearId(), date, studentIds);
+            List<Attendance> marked = attendanceRepository.findByTenantIdAndAcademicYearIdAndAttendanceDateAndStudentIdIn(tenantId, currentYear.getAcademicYearId(), date, studentIds);
             for (Attendance attendance : marked) {
                 existing.put(attendance.getStudentId(), attendance);
             }
@@ -71,15 +49,13 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Map<Integer, Leave> approvedLeaves = new HashMap<>();
         if (!studentIds.isEmpty()) {
-            List<Leave> leaves = leaveRepository.findByTenantIdAndLeaveDateAndStudentIdInAndStatus(
-                    tenantId, date, studentIds, Constant.LEAVE_STATUS_APPROVED);
+            List<Leave> leaves = leaveRepository.findByTenantIdAndLeaveDateAndStudentIdInAndStatus(tenantId, date, studentIds, Constant.LEAVE_STATUS_APPROVED);
             for (Leave leave : leaves) {
                 approvedLeaves.put(leave.getStudentId(), leave);
             }
         }
 
-        List<Holiday> holidaysOnDate = holidayRepository
-                .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, date, date);
+        List<Holiday> holidaysOnDate = holidayRepository.findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, date, date);
         Holiday activeHoliday = holidaysOnDate.isEmpty() ? null : holidaysOnDate.get(0);
 
         List<AttendanceRosterResponse.StudentRow> rows = new ArrayList<>();
@@ -132,10 +108,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 continue;
             }
 
-            Attendance attendance = attendanceRepository
-                    .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDate(
-                            tenantId, item.getStudentId(), currentYear.getAcademicYearId(), request.getAttendanceDate())
-                    .orElse(new Attendance());
+            Attendance attendance = attendanceRepository.findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDate(tenantId, item.getStudentId(), currentYear.getAcademicYearId(), request.getAttendanceDate()).orElse(new Attendance());
 
             attendance.setTenantId(tenantId);
             attendance.setStudentId(item.getStudentId());
@@ -152,12 +125,10 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    public List<AttendanceSummaryResponse> getSummary(Integer tenantId, Integer classId, Integer sectionId,
-            LocalDate fromDate, LocalDate toDate) {
+    public List<AttendanceSummaryResponse> getSummary(Integer tenantId, Integer classId, Integer sectionId, LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId,
-                currentYear.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
 
         List<Integer> studentIds = new ArrayList<>();
         for (StudentClass studentClass : studentClasses) {
@@ -166,9 +137,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Map<Integer, List<Attendance>> byStudent = new HashMap<>();
         if (!studentIds.isEmpty()) {
-            List<Attendance> attendances = attendanceRepository
-                    .findByTenantIdAndAcademicYearIdAndAttendanceDateBetweenAndStudentIdIn(
-                            tenantId, currentYear.getAcademicYearId(), fromDate, toDate, studentIds);
+            List<Attendance> attendances = attendanceRepository.findByTenantIdAndAcademicYearIdAndAttendanceDateBetweenAndStudentIdIn(tenantId, currentYear.getAcademicYearId(), fromDate, toDate, studentIds);
             for (Attendance a : attendances) {
                 List<Attendance> studentAttendances = byStudent.computeIfAbsent(a.getStudentId(), k -> new ArrayList<>());
                 studentAttendances.add(a);

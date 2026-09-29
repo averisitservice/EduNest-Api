@@ -12,7 +12,7 @@ import com.edunest.repository.AnnouncementRepository;
 import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,33 +22,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class AnnouncementServiceImpl implements AnnouncementService {
 
-    @Autowired
-    AnnouncementRepository announcementRepository;
-
-    @Autowired
-    ClassMasterRepository classMasterRepository;
-
-    @Autowired
-    StudentRepository studentRepository;
-
-    @Autowired
-    StudentClassRepository studentClassRepository;
-
-    @Autowired
-    StudentNotificationService studentNotificationService;
-
-    @Autowired
-    CommonHelper commonHelper;
+    private final AnnouncementRepository announcementRepository;
+    private final ClassMasterRepository classMasterRepository;
+    private final StudentRepository studentRepository;
+    private final StudentClassRepository studentClassRepository;
+    private final StudentNotificationService studentNotificationService;
+    private final CommonHelper commonHelper;
 
     @Override
     public List<AnnouncementResponse> getAnnouncements(Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<Announcement> announcements = announcementRepository
-                .findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
-                        tenantId, currentYear.getAcademicYearId());
+        List<Announcement> announcements = announcementRepository.findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(tenantId, currentYear.getAcademicYearId());
 
         List<AnnouncementResponse> announcementResponses = new ArrayList<>();
         for (Announcement announcement : announcements) {
@@ -85,8 +73,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
         Announcement announcement;
         if (request.getAnnouncementId() != null) {
-            announcement = announcementRepository.findById(request.getAnnouncementId())
-                    .orElseThrow(() -> new CustomException("announcementId", "Announcement not found"));
+            announcement = announcementRepository.findById(request.getAnnouncementId()).orElseThrow(() -> new CustomException("announcementId", "Announcement not found"));
         } else {
             announcement = new Announcement();
             announcement.setTenantId(tenantId);
@@ -99,8 +86,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setMessage(request.getMessage());
         announcement.setAudience(request.getAudience() != null ? request.getAudience() : Constant.All);
         announcement.setClassIds(convertClassIdsListToString(request.getClassIds()));
-        boolean isScheduled = Constant.ANNOUNCEMENT_STATUS_SCHEDULED.equalsIgnoreCase(request.getPublishMode())
-                && request.getPublishDate() != null;
+        boolean isScheduled = Constant.ANNOUNCEMENT_STATUS_SCHEDULED.equalsIgnoreCase(request.getPublishMode()) && request.getPublishDate() != null;
 
         if (isScheduled) {
             announcement.setPublishDate(request.getPublishDate());
@@ -121,8 +107,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Override
     public boolean deleteAnnouncement(Integer tenantId, Integer announcementId) {
-        Announcement announcement = announcementRepository.findById(announcementId)
-                .orElseThrow(() -> new CustomException("announcementId", "Announcement not found"));
+        Announcement announcement = announcementRepository.findById(announcementId).orElseThrow(() -> new CustomException("announcementId", "Announcement not found"));
         announcement.setIsActive(false);
         announcementRepository.save(announcement);
         return true;
@@ -135,19 +120,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             return;
         }
 
-        studentNotificationService.notify(announcement.getTenantId(), studentIds,
-                Constant.NOTIFICATION_TYPE_ANNOUNCEMENT, announcement.getAnnouncementId(), announcement.getTitle(),
-                announcement.getMessage());
+        studentNotificationService.notify(announcement.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_ANNOUNCEMENT, announcement.getAnnouncementId(), announcement.getTitle(), announcement.getMessage());
     }
 
     private List<Integer> getStudentIds(Announcement announcement) {
-        if (Constant.All.equalsIgnoreCase(announcement.getAudience())
-                || announcement.getClassIds() == null) {
+        if (Constant.All.equalsIgnoreCase(announcement.getAudience()) || announcement.getClassIds() == null) {
             return studentRepository.findActiveStudentIds(announcement.getTenantId());
         }
-        return studentClassRepository.findStudentIdsByClassIds(
-                announcement.getTenantId(), announcement.getAcademicYearId(),
-                commonHelper.convertClassIdsStringToList(announcement.getClassIds()));
+        return studentClassRepository.findStudentIdsByClassIds(announcement.getTenantId(), announcement.getAcademicYearId(), commonHelper.convertClassIdsStringToList(announcement.getClassIds()));
     }
 
     private String convertClassIdsListToString(List<Integer> classIds) {

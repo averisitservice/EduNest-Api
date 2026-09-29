@@ -7,21 +7,19 @@ import com.edunest.entity.Holiday;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.HolidayRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class HolidayServiceImpl implements HolidayService {
 
-    @Autowired
-    private HolidayRepository holidayRepository;
-
-    @Autowired
-    private CommonHelper commonHelper;
+    private final HolidayRepository holidayRepository;
+    private final CommonHelper commonHelper;
 
     @Override
     public List<HolidayResponse> getHolidays(Integer tenantId) {

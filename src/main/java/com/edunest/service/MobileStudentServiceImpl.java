@@ -3,7 +3,6 @@ package com.edunest.service;
 import com.edunest.common.PagedResponse;
 import com.edunest.constant.Constant;
 import com.edunest.dto.exam.ReportCardResponse;
-import com.edunest.dto.holiday.HolidayResponse;
 import com.edunest.dto.mobile.*;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
@@ -12,7 +11,7 @@ import com.edunest.repository.*;
 
 import jakarta.transaction.Transactional;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -20,67 +19,28 @@ import java.time.LocalDate;
 import java.util.*;
 
 @Service
+@AllArgsConstructor
 public class MobileStudentServiceImpl implements MobileStudentService {
 
-    @Autowired
-    StudentRepository studentRepository;
-
-    @Autowired
-    StudentClassRepository studentClassRepository;
-
-    @Autowired
-    TeacherClassRepository teacherClassRepository;
-
-    @Autowired
-    TeacherRepository teacherRepository;
-
-    @Autowired
-    AttendanceRepository attendanceRepository;
-
-    @Autowired
-    LeaveRepository leaveRepository;
-
-    @Autowired
-    WorkingDayRepository workingDayRepository;
-
-    @Autowired
-    TimeSlotRepository timeSlotRepository;
-
-    @Autowired
-    TimetableRepository timetableRepository;
-
-    @Autowired
-    ExamRepository examRepository;
-
-    @Autowired
-    ExamScheduleRepository examScheduleRepository;
-
-    @Autowired
-    ExamMarkRepository examMarkRepository;
-
-    @Autowired
-    ExamService examService;
-
-    @Autowired
-    StudentNotificationService studentNotificationService;
-
-    @Autowired
-    AnnouncementRepository announcementRepository;
-
-    @Autowired
-    HomeworkRepository homeworkRepository;
-
-    @Autowired
-    NoteRepository noteRepository;
-
-    @Autowired
-    HolidayRepository holidayRepository;
-
-    @Autowired
-    HolidayService holidayService;
-
-    @Autowired
-    CommonHelper commonHelper;
+    private final StudentRepository studentRepository;
+    private final StudentClassRepository studentClassRepository;
+    private final TeacherClassRepository teacherClassRepository;
+    private final TeacherRepository teacherRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final LeaveRepository leaveRepository;
+    private final WorkingDayRepository workingDayRepository;
+    private final TimeSlotRepository timeSlotRepository;
+    private final TimetableRepository timetableRepository;
+    private final ExamRepository examRepository;
+    private final ExamScheduleRepository examScheduleRepository;
+    private final ExamMarkRepository examMarkRepository;
+    private final ExamService examService;
+    private final StudentNotificationService studentNotificationService;
+    private final AnnouncementRepository announcementRepository;
+    private final HomeworkRepository homeworkRepository;
+    private final NoteRepository noteRepository;
+    private final HolidayRepository holidayRepository;
+    private final CommonHelper commonHelper;
 
     @Override
     public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate,

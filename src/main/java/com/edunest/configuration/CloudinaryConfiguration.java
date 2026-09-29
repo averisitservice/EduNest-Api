@@ -39,8 +39,7 @@ public class CloudinaryConfiguration {
                 "cloud_name", cloudName,
                 "api_key", apiKey,
                 "api_secret", apiSecret,
-                "secure", true
-        ));
+                "secure", true));
     }
 
     public Map<String, Object> uploadFile(MultipartFile file, String folder) {
@@ -51,7 +50,8 @@ public class CloudinaryConfiguration {
             }
 
             Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), uploadParams);
-            log.info("Successfully uploaded file to Cloudinary: publicId={}, folder={}", result.get("public_id"), folder);
+            log.info("Successfully uploaded file to Cloudinary: publicId={}, folder={}", result.get("public_id"),
+                    folder);
             return result;
         } catch (Exception e) {
             log.error("Error uploading file to Cloudinary: folder={}, error={}", folder, e.getMessage(), e);

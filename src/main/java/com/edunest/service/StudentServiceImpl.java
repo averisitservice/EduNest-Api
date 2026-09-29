@@ -11,8 +11,8 @@ import com.edunest.repository.ClassMasterRepository;
 import com.edunest.repository.ClassSectionRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,25 +25,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class StudentServiceImpl implements StudentService {
 
-    @Autowired
-    StudentRepository studentRepository;
-
-    @Autowired
-    StudentClassRepository studentClassRepository;
-
-    @Autowired
-    ClassSectionRepository classSectionRepository;
-
-    @Autowired
-    ClassMasterRepository classMasterRepository;
-
-    @Autowired
-    CommonHelper commonHelper;
-
-    @Autowired
-    EmailService emailService;
+    private final StudentRepository studentRepository;
+    private final StudentClassRepository studentClassRepository;
+    private final ClassSectionRepository classSectionRepository;
+    private final ClassMasterRepository classMasterRepository;
+    private final CommonHelper commonHelper;
+    private final EmailService emailService;
 
     @Override
     public PagedResponse<StudentListResponse> getStudentList(

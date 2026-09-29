@@ -14,7 +14,7 @@ import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,37 +24,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
+@AllArgsConstructor
 public class FeeServiceImpl implements FeeService {
 
-    @Autowired
-    FeePaymentRepository feePaymentRepository;
-
-    @Autowired
-    ClassFeeRepository classFeeRepository;
-
-    @Autowired
-    StudentClassRepository studentClassRepository;
-
-    @Autowired
-    StudentRepository studentRepository;
-
-    @Autowired
-    TeacherRepository teacherRepository;
-
-    @Autowired
-    CommonHelper commonHelper;
-
-    @Autowired
-    RazorpayConfiguration razorpayService;
-
-    @Autowired
-    TenantRepository tenantRepository;
-
-    @Autowired
-    EmailService emailService;
-
-    @Autowired
-    TenantFeeSettingRepository tenantFeeSettingRepository;
+    private final FeePaymentRepository feePaymentRepository;
+    private final ClassFeeRepository classFeeRepository;
+    private final StudentClassRepository studentClassRepository;
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
+    private final CommonHelper commonHelper;
+    private final RazorpayConfiguration razorpayService;
+    private final TenantRepository tenantRepository;
+    private final EmailService emailService;
+    private final TenantFeeSettingRepository tenantFeeSettingRepository;
 
     @Override
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {

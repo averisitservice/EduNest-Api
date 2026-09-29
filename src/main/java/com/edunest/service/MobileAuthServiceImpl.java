@@ -21,8 +21,8 @@ import com.edunest.repository.ClassSectionRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
 import com.edunest.repository.TenantRepository;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,31 +32,17 @@ import java.util.List;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class MobileAuthServiceImpl implements MobileAuthService {
 
-    @Autowired
-    StudentRepository studentRepository;
-
-    @Autowired
-    TenantRepository tenantRepository;
-
-    @Autowired
-    StudentClassRepository studentClassRepository;
-
-    @Autowired
-    ClassMasterRepository classMasterRepository;
-
-    @Autowired
-    ClassSectionRepository classSectionRepository;
-
-    @Autowired
-    JwtHelper jwtHelper;
-
-    @Autowired
-    EmailService emailService;
-
-    @Autowired
-    CommonHelper commonHelper;
+    private final StudentRepository studentRepository;
+    private final TenantRepository tenantRepository;
+    private final StudentClassRepository studentClassRepository;
+    private final ClassMasterRepository classMasterRepository;
+    private final ClassSectionRepository classSectionRepository;
+    private final JwtHelper jwtHelper;
+    private final EmailService emailService;
+    private final CommonHelper commonHelper;
 
     @Override
     @Transactional

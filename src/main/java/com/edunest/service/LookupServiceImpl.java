@@ -4,29 +4,21 @@ import com.edunest.constant.Constant;
 import com.edunest.dto.classes.ClassSectionResponse;
 import com.edunest.entity.*;
 import com.edunest.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class LookupServiceImpl implements LookupService {
 
-    @Autowired
-    RoleRepository roleRepository;
-
-    @Autowired
-    EmploymentTypeRepository employmentTypeRepository;
-
-    @Autowired
-    SubjectRepository subjectRepository;
-
-    @Autowired
-    ClassMasterRepository classMasterRepository;
-
-    @Autowired
-    ClassSectionRepository classSectionRepository;
+    private final RoleRepository roleRepository;
+    private final EmploymentTypeRepository employmentTypeRepository;
+    private final SubjectRepository subjectRepository;
+    private final ClassMasterRepository classMasterRepository;
+    private final ClassSectionRepository classSectionRepository;
 
     @Override
     public List<Role> getAllRoles() {
