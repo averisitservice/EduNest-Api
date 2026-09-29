@@ -66,10 +66,6 @@ public class FirebaseConfig {
         }
     }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
-
     public void sendToStudents(Integer tenantId, List<Integer> studentIds, String title, String body,
                                 Map<String, String> data) {
         if (!enabled) {
