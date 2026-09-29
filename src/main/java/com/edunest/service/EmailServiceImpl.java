@@ -1,38 +1,40 @@
 package com.edunest.service;
 
-import com.edunest.dto.fee.ByteArrayMultipartFile;
 import com.edunest.dto.fee.FeeReceiptDetails;
 import com.edunest.dto.mobile.StudentResetCredential;
 import com.edunest.error.CustomException;
-import com.ibm.icu.text.RuleBasedNumberFormat;
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import jakarta.mail.internet.MimeMessage;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.WordUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
+import com.edunest.dto.fee.ByteArrayMultipartFile;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import org.springframework.core.io.ByteArrayResource;
 import java.io.ByteArrayOutputStream;
+import java.util.Map;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
-import java.util.List;
+import com.ibm.icu.text.RuleBasedNumberFormat;
+import org.apache.commons.text.WordUtils;
 import java.util.Locale;
-import java.util.Map;
+import java.util.List;
 
 @Slf4j
 @Service
-@AllArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
-    private final FileStorageService fileStorageService;
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -75,7 +77,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             String multiAccountNotice = accounts.size() > 1
                     ? "<p>This email is linked to <b>" + accounts.size()
-                    + "</b> student accounts. New credentials for each are listed below.</p>"
+                            + "</b> student accounts. New credentials for each are listed below.</p>"
                     : "";
 
             StringBuilder accountRows = new StringBuilder();
@@ -200,7 +202,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private void sendEmailWithAttachment(String toEmail, String subject, String html, String attachmentName,
-                                         byte[] attachmentBytes) throws Exception {
+            byte[] attachmentBytes) throws Exception {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 

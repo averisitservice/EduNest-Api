@@ -7,7 +7,7 @@ import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
 import org.springframework.beans.BeanUtils;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,18 +18,34 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-@AllArgsConstructor
 public class ExamServiceImpl implements ExamService {
 
-    private final ExamRepository examRepository;
-    private final ExamMarkRepository examMarkRepository;
-    private final StudentClassRepository studentClassRepository;
-    private final ClassSubjectRepository classSubjectRepository;
-    private final SubjectRepository subjectRepository;
-    private final ExamScheduleRepository examScheduleRepository;
-    private final ClassMasterRepository classMasterRepository;
-    private final CommonHelper commonHelper;
-    private final StudentNotificationService studentNotificationService;
+    @Autowired
+    ExamRepository examRepository;
+
+    @Autowired
+    ExamMarkRepository examMarkRepository;
+
+    @Autowired
+    StudentClassRepository studentClassRepository;
+
+    @Autowired
+    ClassSubjectRepository classSubjectRepository;
+
+    @Autowired
+    SubjectRepository subjectRepository;
+
+    @Autowired
+    ExamScheduleRepository examScheduleRepository;
+
+    @Autowired
+    ClassMasterRepository classMasterRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
+
+    @Autowired
+    StudentNotificationService studentNotificationService;
 
     private List<Subject> classSubjects(Integer classId, Integer tenantId) {
         List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classId, tenantId);

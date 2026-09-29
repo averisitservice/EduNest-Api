@@ -14,8 +14,8 @@ import com.edunest.repository.TeacherClassRepository;
 import com.edunest.repository.TeacherRepository;
 import com.edunest.repository.TeacherSubjectRepository;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,13 +23,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
 public class TeacherServiceImpl implements TeacherService {
 
-    private final TeacherRepository teacherRepository;
-    private final TeacherClassRepository teacherClassRepository;
-    private final TeacherSubjectRepository teacherSubjectRepository;
-    private final CommonHelper commonHelper;
+    @Autowired
+    TeacherRepository teacherRepository;
+
+    @Autowired
+    TeacherClassRepository teacherClassRepository;
+
+    @Autowired
+    TeacherSubjectRepository teacherSubjectRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public List<TeacherListResponse> getTeacherList(Integer tenantId, Integer teacherId) {

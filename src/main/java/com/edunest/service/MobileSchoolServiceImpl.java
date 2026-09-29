@@ -5,14 +5,14 @@ import com.edunest.entity.Tenant;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.TenantRepository;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-@AllArgsConstructor
 public class MobileSchoolServiceImpl implements MobileSchoolService {
 
-    private final TenantRepository tenantRepository;
+    @Autowired
+    TenantRepository tenantRepository;
 
     @Override
     public SchoolContactResponse getSchoolContact(Integer tenantId) {

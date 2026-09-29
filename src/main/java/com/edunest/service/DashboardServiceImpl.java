@@ -8,7 +8,7 @@ import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Announcement;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,16 +17,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
 public class DashboardServiceImpl implements DashboardService {
 
-    private final StudentRepository studentRepository;
-    private final TeacherRepository teacherRepository;
-    private final ClassMasterRepository classMasterRepository;
-    private final AttendanceRepository attendanceRepository;
-    private final FeePaymentRepository feePaymentRepository;
-    private final AnnouncementRepository announcementRepository;
-    private final CommonHelper commonHelper;
+    @Autowired
+    StudentRepository studentRepository;
+
+    @Autowired
+    TeacherRepository teacherRepository;
+
+    @Autowired
+    ClassMasterRepository classMasterRepository;
+
+    @Autowired
+    AttendanceRepository attendanceRepository;
+
+    @Autowired
+    FeePaymentRepository feePaymentRepository;
+
+    @Autowired
+    AnnouncementRepository announcementRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public DashboardSummaryResponse getSummary(Integer tenantId) {

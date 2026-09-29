@@ -7,19 +7,23 @@ import com.edunest.entity.TenantFeeSetting;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.TenantFeeSettingRepository;
 import com.edunest.repository.TenantRepository;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
 @Service
-@AllArgsConstructor
 public class TenantServiceImpl implements TenantService {
 
-    private final TenantFeeSettingRepository tenantFeeSettingRepository;
-    private final TenantRepository tenantRepository;
-    private final CommonHelper commonHelper;
+    @Autowired
+    private TenantFeeSettingRepository tenantFeeSettingRepository;
+
+    @Autowired
+    private TenantRepository tenantRepository;
+
+    @Autowired
+    private CommonHelper commonHelper;
 
     @Override
     public TenantFeeSetting getFeeSetting(Integer tenantId) {

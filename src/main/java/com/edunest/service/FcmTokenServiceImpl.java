@@ -4,7 +4,7 @@ import com.edunest.dto.notification.FcmTokenRequest;
 import com.edunest.entity.StudentDeviceToken;
 import com.edunest.error.CustomException;
 import com.edunest.repository.StudentDeviceTokenRepository;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -12,10 +12,10 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 
 @Service
-@AllArgsConstructor
 public class FcmTokenServiceImpl implements FcmTokenService {
 
-    private final StudentDeviceTokenRepository studentDeviceTokenRepository;
+    @Autowired
+    StudentDeviceTokenRepository studentDeviceTokenRepository;
 
     @Override
     @Transactional

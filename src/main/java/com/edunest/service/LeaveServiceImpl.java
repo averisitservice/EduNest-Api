@@ -13,7 +13,7 @@ import com.edunest.helper.CommonHelper;
 import com.edunest.repository.LeaveRepository;
 import com.edunest.repository.StudentClassRepository;
 import com.edunest.repository.StudentRepository;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -23,14 +23,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
 public class LeaveServiceImpl implements LeaveService {
 
-    private final LeaveRepository leaveRepository;
-    private final StudentClassRepository studentClassRepository;
-    private final StudentRepository studentRepository;
-    private final CommonHelper commonHelper;
-    private final StudentNotificationService studentNotificationService;
+    @Autowired
+    LeaveRepository leaveRepository;
+
+    @Autowired
+    StudentClassRepository studentClassRepository;
+
+    @Autowired
+    StudentRepository studentRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
+
+    @Autowired
+    StudentNotificationService studentNotificationService;
 
     @Override
     public List<LeaveResponse> getLeaveList(Integer tenantId, Integer studentId) {

@@ -8,22 +8,32 @@ import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 @Service
-@AllArgsConstructor
 public class TimetableServiceImpl implements TimetableService {
 
-    private final WorkingDayRepository workingDayRepository;
-    private final TimeSlotRepository timeSlotRepository;
-    private final TimetableRepository timetableRepository;
-    private final SubjectRepository subjectRepository;
-    private final TeacherRepository teacherRepository;
-    private final CommonHelper commonHelper;
+    @Autowired
+    WorkingDayRepository workingDayRepository;
+
+    @Autowired
+    TimeSlotRepository timeSlotRepository;
+
+    @Autowired
+    TimetableRepository timetableRepository;
+
+    @Autowired
+    SubjectRepository subjectRepository;
+
+    @Autowired
+    TeacherRepository teacherRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     @Transactional

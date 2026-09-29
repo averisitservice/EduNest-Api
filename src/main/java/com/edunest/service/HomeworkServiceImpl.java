@@ -9,7 +9,7 @@ import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.HomeworkRepository;
 import com.edunest.repository.StudentClassRepository;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,16 +20,24 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@AllArgsConstructor
 public class HomeworkServiceImpl implements HomeworkService {
 
     private static final String ATTACHMENT_FOLDER = "edunest/homework";
 
-    private final HomeworkRepository homeworkRepository;
-    private final CommonHelper commonHelper;
-    private final FileStorageService fileStorageService;
-    private final StudentClassRepository studentClassRepository;
-    private final StudentNotificationService studentNotificationService;
+    @Autowired
+    HomeworkRepository homeworkRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
+
+    @Autowired
+    FileStorageService fileStorageService;
+
+    @Autowired
+    StudentClassRepository studentClassRepository;
+
+    @Autowired
+    StudentNotificationService studentNotificationService;
 
     @Override
     public List<HomeworkResponse> getHomeWorkList(Integer tenantId, Integer classId, Integer sectionId) {

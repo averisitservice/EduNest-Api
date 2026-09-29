@@ -1,12 +1,12 @@
 package com.edunest.service;
 
-import com.edunest.dto.classes.ClassDTO;
 import com.edunest.dto.classes.ClassListResponse;
+import com.edunest.dto.classes.ClassDTO;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,16 +16,28 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-@AllArgsConstructor
 public class ClassServiceImpl implements ClassService {
 
-    private final ClassMasterRepository classMasterRepository;
-    private final ClassSectionRepository classSectionRepository;
-    private final ClassSubjectRepository classSubjectRepository;
-    private final StudentClassRepository studentClassRepository;
-    private final ClassFeeRepository classFeeRepository;
-    private final SubjectRepository subjectRepository;
-    private final CommonHelper commonHelper;
+    @Autowired
+    ClassMasterRepository classMasterRepository;
+
+    @Autowired
+    ClassSectionRepository classSectionRepository;
+
+    @Autowired
+    ClassSubjectRepository classSubjectRepository;
+
+    @Autowired
+    StudentClassRepository studentClassRepository;
+
+    @Autowired
+    ClassFeeRepository classFeeRepository;
+
+    @Autowired
+    SubjectRepository subjectRepository;
+
+    @Autowired
+    CommonHelper commonHelper;
 
     @Override
     public List<ClassListResponse> getClassList(Integer tenantId) {
