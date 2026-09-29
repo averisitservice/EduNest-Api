@@ -24,9 +24,7 @@ public class AnnouncementScheduler {
     @Scheduled(fixedRate = 60000)
     @Transactional
     public void publishScheduledAnnouncements() {
-        List<Announcement> due = announcementRepository
-                .findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(
-                        Constant.ANNOUNCEMENT_STATUS_SCHEDULED, LocalDate.now());
+        List<Announcement> due = announcementRepository.findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(Constant.ANNOUNCEMENT_STATUS_SCHEDULED, LocalDate.now());
 
         for (Announcement announcement : due) {
             announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_PUBLISHED);
