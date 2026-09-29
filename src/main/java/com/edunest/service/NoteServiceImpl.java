@@ -69,10 +69,10 @@ public class NoteServiceImpl implements NoteService {
     public boolean saveNote(Integer tenantId, Integer loginTeacherId, NoteRequest request, MultipartFile file) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        boolean isNew = request.getNoteId() == null;
-
+        boolean isEdit = request.getNoteId() == null;
         Note note;
-        if (!isNew) {
+
+        if (!isEdit) {
             note = noteRepository.findById(request.getNoteId())
                     .orElseThrow(() -> new CustomException("noteId", "Item not found"));
         } else {
@@ -100,11 +100,11 @@ public class NoteServiceImpl implements NoteService {
         note.setUpdatedDate(LocalDateTime.now());
         noteRepository.save(note);
 
-        sendNotePush(note, isNew);
+        sendNotePush(note, isEdit);
         return true;
     }
 
-    private void sendNotePush(Note note, boolean isNew) {
+    private void sendNotePush(Note note, boolean isEdit) {
         List<Integer> studentIds = studentClassRepository.findStudentIdsByClassAndSection(
                 note.getTenantId(), note.getAcademicYearId(), note.getClassId(), note.getSectionId());
         if (studentIds.isEmpty()) {
@@ -112,7 +112,7 @@ public class NoteServiceImpl implements NoteService {
         }
 
         String subjectName = commonHelper.subjectName(note.getSubjectId());
-        String title = (isNew ? "New Note: " : "Note Updated: ") + note.getTitle();
+        String title = (isEdit ? "New Note: " : "Note Updated: ") + note.getTitle();
         studentNotificationService.notify(note.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_NOTE,
                 note.getNoteId(), title, subjectName != null ? subjectName : note.getTitle());
     }
