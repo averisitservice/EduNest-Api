@@ -56,33 +56,6 @@ public class TeacherServiceImpl implements TeacherService {
     }
 
     @Override
-    public List<TeacherListResponse> getTeachersBySubject(Integer tenantId, Integer subjectId) {
-        List<TeacherSubject> teacherSubjects = teacherSubjectRepository.findBySubjectIdAndTenantIdAndIsActiveTrue(subjectId, tenantId);
-
-        List<TeacherListResponse> responseList = new ArrayList<>();
-        for (TeacherSubject teacherSubject : teacherSubjects) {
-            Teacher teacher = teacherRepository.findById(teacherSubject.getTeacherId()).orElse(null);
-            if (teacher == null || !Boolean.TRUE.equals(teacher.getIsActive())) continue;
-
-            TeacherListResponse response = new TeacherListResponse();
-            response.setTeacherId(teacher.getTeacherId());
-            response.setTeacherName(CommonHelper.teacherNameForTeacher(teacher));
-            responseList.add(response);
-        }
-        return responseList;
-    }
-
-    @Override
-    public boolean deleteTeacher(Integer teacherId, Integer loginTeacherId) {
-        Teacher teacher = teacherRepository.findById(teacherId).orElseThrow(() -> new CustomException("Teacher", "Teacher not found"));
-        teacher.setIsActive(false);
-        teacher.setUpdatedBy(loginTeacherId);
-        teacher.setUpdatedDate(LocalDateTime.now());
-        teacherRepository.save(teacher);
-        return true;
-    }
-
-    @Override
     @Transactional
     public boolean saveTeacher(Integer teacherId, Integer tenantId, Integer loginTeacherId, TeacherDTO request) {
 
@@ -92,8 +65,6 @@ public class TeacherServiceImpl implements TeacherService {
         if (isEdit) {
             teacher = teacherRepository.findById(teacherId).orElseThrow(() -> new CustomException("Teacher", "Teacher not found"));
             BeanUtils.copyProperties(request, teacher, "teacherId", "password");
-            teacher.setUpdatedBy(loginTeacherId);
-            teacher.setUpdatedDate(LocalDateTime.now());
         } else {
             teacher = new Teacher();
             BeanUtils.copyProperties(request, teacher, "teacherId", "password");
@@ -102,9 +73,9 @@ public class TeacherServiceImpl implements TeacherService {
             teacher.setPassword(CryptoHelper.encryptPassword(request.getPassword(), CryptoHelper.getHashKey()));
             teacher.setIsActive(true);
             teacher.setCreatedBy(loginTeacherId);
-            teacher.setUpdatedBy(loginTeacherId);
-            teacher.setUpdatedDate(LocalDateTime.now());
         }
+        teacher.setUpdatedBy(loginTeacherId);
+        teacher.setUpdatedDate(LocalDateTime.now());
 
         Teacher savedTeacher = teacherRepository.save(teacher);
         Integer savedTeacherId = savedTeacher.getTeacherId();
@@ -145,11 +116,27 @@ public class TeacherServiceImpl implements TeacherService {
     }
 
     @Override
+    public List<TeacherListResponse> getTeachersBySubject(Integer tenantId, Integer subjectId) {
+        List<TeacherSubject> teacherSubjects = teacherSubjectRepository.findBySubjectIdAndTenantIdAndIsActiveTrue(subjectId, tenantId);
+
+        List<TeacherListResponse> responseList = new ArrayList<>();
+        for (TeacherSubject teacherSubject : teacherSubjects) {
+            Teacher teacher = teacherRepository.findById(teacherSubject.getTeacherId()).orElse(null);
+            if (teacher == null || !Boolean.TRUE.equals(teacher.getIsActive())) continue;
+
+            TeacherListResponse response = new TeacherListResponse();
+            response.setTeacherId(teacher.getTeacherId());
+            response.setTeacherName(CommonHelper.teacherNameForTeacher(teacher));
+            responseList.add(response);
+        }
+        return responseList;
+    }
+
+    @Override
     public TeacherDTO getTeacherById(Integer teacherId) {
         Teacher teacher = teacherRepository.findById(teacherId).orElseThrow(() -> new CustomException("Teacher", "Teacher not found"));
 
         List<TeacherClass> teacherClasses = teacherClassRepository.findByTeacherIdAndTenantId(teacherId, teacher.getTenantId());
-
         List<TeacherSubject> teacherSubjects = teacherSubjectRepository.findByTeacherIdAndTenantId(teacherId, teacher.getTenantId());
 
         List<TeacherClassDTO> teacherClassDTOList = new ArrayList<>();
@@ -175,4 +162,15 @@ public class TeacherServiceImpl implements TeacherService {
 
         return teacherDTO;
     }
+
+    @Override
+    public boolean deleteTeacher(Integer teacherId, Integer loginTeacherId) {
+        Teacher teacher = teacherRepository.findById(teacherId).orElseThrow(() -> new CustomException("Teacher", "Teacher not found"));
+        teacher.setIsActive(false);
+        teacher.setUpdatedBy(loginTeacherId);
+        teacher.setUpdatedDate(LocalDateTime.now());
+        teacherRepository.save(teacher);
+        return true;
+    }
+
 }
