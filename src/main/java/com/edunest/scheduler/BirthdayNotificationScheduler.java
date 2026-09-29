@@ -36,7 +36,6 @@ public class BirthdayNotificationScheduler {
         String title = "Happy Birthday " + student.getFirstName() + "! 🎉";
         String body = "Turning " + age + " today! Wishing you a wonderful birthday filled with happiness and success!";
 
-        studentNotificationService.notify(tenantId, List.of(student.getStudentId()),
-                Constant.NOTIFICATION_TYPE_BIRTHDAY, student.getStudentId(), title, body);
+        studentNotificationService.notify(tenantId, List.of(student.getStudentId()), Constant.NOTIFICATION_TYPE_BIRTHDAY, student.getStudentId(), title, body);
     }
 }
