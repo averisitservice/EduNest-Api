@@ -12,6 +12,7 @@ import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import java.security.MessageDigest;
 @Configuration
 public class RazorpayConfiguration {
 
+    @Getter
     @Value("${razorpay.key-id}")
     private String keyId;
 
@@ -162,7 +164,4 @@ public class RazorpayConfiguration {
                 .orElseThrow(() -> new CustomException("razorpayOrderId", "Razorpay order not found"));
     }
 
-    public String getKeyId() {
-        return keyId;
-    }
 }
