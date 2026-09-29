@@ -179,6 +179,19 @@ Runtime config lives in `src/main/resources/application.properties`. Key propert
 |---|---|
 | `spring.application.name` | Application name |
 | `server.port` | HTTP port (default `8081`) |
+| `spring.datasource.url` / `username` / `password` | PostgreSQL connection |
+| `spring.jpa.hibernate.ddl-auto` | Schema management (`update` — see note below) |
+| `spring.jpa.database-platform` | Hibernate dialect |
+| `spring.mail.*` | SMTP host/port/username/password + auth/starttls flags for outgoing email |
+| `security.jwt.secret-key` | JWT signing key (HS512) |
+| `security.jwt.expiration-time` | Teacher access token TTL (ms) |
+| `security.jwt.refresh-expiration-time` | Teacher refresh/session TTL (s) |
+| `security.jwt.student-expiration-time` | Student (mobile) access/refresh token TTL (ms) |
+| `APP_KEY` / `APP_IV` | Symmetric AES key/IV used by `CryptoHelper.encrypt`/`decrypt` |
+| `razorpay.key-id` / `razorpay.key-secret` | Razorpay API credentials used by `RazorpayConfiguration` |
+| `aws.access-key` / `aws.secret-key` / `aws.region` / `aws.s3.bucket-name` | AWS S3 credentials used by `AwsConfiguration` |
+| `firebase.credentials-file` | Classpath path to the Firebase service account JSON used by `FirebaseConfig`; if unset, push notifications are silently disabled (`FirebaseConfig.isEnabled()` returns `false`) |
+
 > **Security note:** `application.properties` currently contains real credentials (DB password, mail app password, JWT secret, Razorpay keys) and is **not** in `.gitignore` — only `src/main/resources/firebase-service-account.json` is gitignored. Move these to environment variables or a local, git-ignored properties file before pushing/sharing the repo.
 
 ## Running Locally
