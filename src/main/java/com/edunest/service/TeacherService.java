@@ -8,11 +8,11 @@ import java.util.List;
 public interface TeacherService {
     List<TeacherListResponse> getTeacherList(Integer tenantId, Integer teacherId);
 
-    List<TeacherListResponse> getTeachersBySubject(Integer tenantId, Integer subjectId);
-
-    boolean deleteTeacher(Integer teacherId, Integer loginTeacherId);
-
     boolean saveTeacher(Integer teacherId, Integer tenantId, Integer loginTeacherId, TeacherDTO request);
 
+    List<TeacherListResponse> getTeachersBySubject(Integer tenantId, Integer subjectId);
+
     TeacherDTO getTeacherById(Integer teacherId);
+
+    boolean deleteTeacher(Integer teacherId, Integer loginTeacherId);
 }
