@@ -11,6 +11,8 @@ import java.util.List;
 @AllArgsConstructor
 public class AttendanceRosterResponse {
     private LocalDate attendanceDate;
+    private Boolean isHoliday;
+    private String holidayName;
     private List<StudentRow> records;
 
     @Getter

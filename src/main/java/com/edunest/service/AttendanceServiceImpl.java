@@ -19,6 +19,7 @@ import com.edunest.repository.StudentClassRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.edunest.error.CustomException;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -114,6 +115,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         AttendanceRosterResponse attendanceRosterResponse = new AttendanceRosterResponse();
         attendanceRosterResponse.setAttendanceDate(date);
+        attendanceRosterResponse.setIsHoliday(activeHoliday != null);
+        attendanceRosterResponse.setHolidayName(activeHoliday != null ? activeHoliday.getHolidayName() : null);
         attendanceRosterResponse.setRecords(rows);
         return attendanceRosterResponse;
     }
@@ -122,6 +125,14 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional
     public boolean saveAttendance(Integer tenantId, Integer markedBy, AttendanceSaveRequest request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+
+        List<Holiday> holidaysOnDate = holidayRepository
+                .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(
+                        tenantId, request.getAttendanceDate(), request.getAttendanceDate());
+        if (!holidaysOnDate.isEmpty()) {
+            Holiday holiday = holidaysOnDate.get(0);
+            throw new CustomException("attendanceDate", "Cannot mark attendance on a holiday: " + holiday.getHolidayName());
+        }
 
         if (request.getRecords() == null) {
             return true;
