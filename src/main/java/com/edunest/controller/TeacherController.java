@@ -27,7 +27,7 @@ public class TeacherController {
     public ResponseEntity<ResponseObject<List<TeacherListResponse>>> getTeacherList(HttpServletRequest request) {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
-        int tenantId = jwtHelper.extractTenantId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
         int teacherId = jwtHelper.extractTeacherId(token);
 
         ResponseObject<List<TeacherListResponse>> response = new ResponseObject<>();

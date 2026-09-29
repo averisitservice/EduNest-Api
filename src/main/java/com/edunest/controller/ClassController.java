@@ -26,7 +26,6 @@ public class ClassController {
 
     @GetMapping("/list")
     public ResponseEntity<ResponseObject<List<ClassListResponse>>> getClassList(HttpServletRequest request) {
-
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
         Integer tenantId = jwtHelper.extractTenantId(token);
@@ -39,7 +38,6 @@ public class ClassController {
 
     @GetMapping("/{classId}")
     public ResponseEntity<ResponseObject<ClassDTO>> getClassById(HttpServletRequest request, @PathVariable Integer classId) {
-
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
         Integer tenantId = jwtHelper.extractTenantId(token);
@@ -50,22 +48,8 @@ public class ClassController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{classId}/subjects")
-    public ResponseEntity<ResponseObject<List<Subject>>> getClassSubjects(HttpServletRequest request, @PathVariable Integer classId) {
-
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        String token = jwtHelper.cleanToken(authHeader);
-        Integer tenantId = jwtHelper.extractTenantId(token);
-
-        ResponseObject<List<Subject>> response = new ResponseObject<>();
-        response.setSuccess(true);
-        response.setData(classService.getClassSubjects(classId, tenantId));
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping
     public ResponseEntity<ResponseObject<Boolean>> saveClass(HttpServletRequest request, @RequestBody ClassDTO classDTO) {
-
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
         Integer tenantId = jwtHelper.extractTenantId(token);
@@ -84,6 +68,18 @@ public class ClassController {
         ResponseObject<String> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(isDeleted ? "Class deleted successfully" : "Class not deleted");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{classId}/subjects")
+    public ResponseEntity<ResponseObject<List<Subject>>> getClassSubjects(HttpServletRequest request, @PathVariable Integer classId) {
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        String token = jwtHelper.cleanToken(authHeader);
+        Integer tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<List<Subject>> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(classService.getClassSubjects(classId, tenantId));
         return ResponseEntity.ok(response);
     }
 }

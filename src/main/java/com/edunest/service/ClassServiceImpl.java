@@ -42,10 +42,10 @@ public class ClassServiceImpl implements ClassService {
     @Override
     public List<ClassListResponse> getClassList(Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        List<ClassMaster> classes = classMasterRepository.findByTenantIdAndIsActiveTrue(tenantId);
+        List<ClassMaster> classMasters = classMasterRepository.findByTenantIdAndIsActiveTrue(tenantId);
 
         List<ClassListResponse> classListResponses = new ArrayList<>();
-        for (ClassMaster classMaster : classes) {
+        for (ClassMaster classMaster : classMasters) {
             List<ClassSection> classSections = classSectionRepository.findByClassIdAndTenantId(classMaster.getClassId(), tenantId);
             List<ClassSubject> classSubjects = classSubjectRepository.findByClassIdAndTenantId(classMaster.getClassId(), tenantId);
 

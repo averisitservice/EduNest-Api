@@ -48,7 +48,7 @@ public class LookupController {
     public ResponseEntity<ResponseObject<List<Subject>>> getAllSubject(HttpServletRequest request) {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
-        int tenantId = jwtHelper.extractTenantId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
 
         ResponseObject<List<Subject>> response = new ResponseObject<>();
         response.setSuccess(true);
@@ -61,7 +61,7 @@ public class LookupController {
     public ResponseEntity<ResponseObject<List<ClassMaster>>> getAllClassMaster(HttpServletRequest request) {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
-        int tenantId = jwtHelper.extractTenantId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
 
         ResponseObject<List<ClassMaster>> response = new ResponseObject<>();
         response.setSuccess(true);
@@ -87,7 +87,7 @@ public class LookupController {
     public ResponseEntity<ResponseObject<List<ClassSectionResponse>>> getAllClassSection(HttpServletRequest request) {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
-        int tenantId = jwtHelper.extractTenantId(token);
+        Integer tenantId = jwtHelper.extractTenantId(token);
 
         ResponseObject<List<ClassSectionResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
