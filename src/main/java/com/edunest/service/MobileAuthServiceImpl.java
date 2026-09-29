@@ -59,6 +59,7 @@ public class MobileAuthServiceImpl implements MobileAuthService {
     CommonHelper commonHelper;
 
     @Override
+    @Transactional
     public StudentLoginResponse studentLogin(StudentLoginRequest request) {
         Student student = studentRepository.findByUsernameIgnoreCase(request.getUsername().trim())
                 .orElseThrow(() -> new CustomException("username", "Invalid username or password"));

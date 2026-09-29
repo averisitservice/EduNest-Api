@@ -9,6 +9,9 @@ import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -335,21 +338,27 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
 
-        long monthPresent = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
-                        tenantId, studentId, yearId, monthStart, monthEnd, Constant.PRESENT);
-        long monthAbsent = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
-                        tenantId, studentId, yearId, monthStart, monthEnd, Constant.ABSENT);
-        long monthLate = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
-                        tenantId, studentId, yearId, monthStart, monthEnd, Constant.LEAVE);
-        long monthHolidays = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenAndStatus(
-                        tenantId, studentId, yearId, monthStart, monthEnd, Constant.HOLIDAY);
-        long monthTotal = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetween(
+        List<Attendance> monthAttendances = attendanceRepository
+                .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(
                         tenantId, studentId, yearId, monthStart, monthEnd);
+
+        long monthPresent = 0;
+        long monthAbsent = 0;
+        long monthLate = 0;
+        long monthHolidays = 0;
+
+        for (Attendance attendance : monthAttendances) {
+            if (Constant.PRESENT.equals(attendance.getStatus())) {
+                monthPresent++;
+            } else if (Constant.ABSENT.equals(attendance.getStatus())) {
+                monthAbsent++;
+            } else if (Constant.LEAVE.equals(attendance.getStatus())) {
+                monthLate++;
+            } else if (Constant.HOLIDAY.equals(attendance.getStatus())) {
+                monthHolidays++;
+            }
+        }
+        long monthTotal = monthAttendances.size();
 
         response.setPresentDays(monthPresent);
         response.setAbsentDays(monthAbsent);
@@ -376,7 +385,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
         if (attendance == null) {
             List<Holiday> holidays = holidayRepository
-                    .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, today, today);
+                    .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, today,
+                            today);
             if (!holidays.isEmpty()) {
                 return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
             }
@@ -644,6 +654,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     }
 
     @Override
+    @Transactional
     public boolean markNotificationAsRead(Integer studentId, Integer tenantId, Integer notificationId) {
         return studentNotificationService.markAsRead(tenantId, studentId, notificationId);
     }
