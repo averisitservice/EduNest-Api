@@ -4,7 +4,7 @@ import com.edunest.entity.TenantFeeSetting;
 
 public interface TenantService {
 
-    TenantFeeSetting getFeeSetting(Integer tenantId);
+    TenantFeeSetting getTenantFeeSetting (Integer tenantId);
 
-    boolean saveFeeSetting(Integer tenantId, TenantFeeSetting request);
+    boolean saveTenantFeeSetting(Integer tenantId, TenantFeeSetting request);
 }

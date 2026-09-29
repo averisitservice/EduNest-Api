@@ -21,19 +21,19 @@ public class TenantController {
     private JwtHelper jwtHelper;
 
     @GetMapping("/fee-setting")
-    public ResponseEntity<ResponseObject<TenantFeeSetting>> getFeeSetting(HttpServletRequest request) {
+    public ResponseEntity<ResponseObject<TenantFeeSetting>> getTenantFeeSetting(HttpServletRequest request) {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
         Integer tenantId = jwtHelper.extractTenantId(token);
 
         ResponseObject<TenantFeeSetting> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(tenantService.getFeeSetting(tenantId));
+        response.setData(tenantService.getTenantFeeSetting(tenantId));
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/fee-setting")
-    public ResponseEntity<ResponseObject<Boolean>> saveFeeSetting(
+    public ResponseEntity<ResponseObject<Boolean>> saveTenantFeeSetting(
             HttpServletRequest request,
             @RequestBody TenantFeeSetting settingRequest) {
 
@@ -43,7 +43,7 @@ public class TenantController {
 
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(tenantService.saveFeeSetting(tenantId, settingRequest));
+        response.setData(tenantService.saveTenantFeeSetting(tenantId, settingRequest));
         return ResponseEntity.ok(response);
     }
 }

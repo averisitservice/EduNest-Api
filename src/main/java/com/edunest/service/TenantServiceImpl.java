@@ -26,45 +26,45 @@ public class TenantServiceImpl implements TenantService {
     private CommonHelper commonHelper;
 
     @Override
-    public TenantFeeSetting getFeeSetting(Integer tenantId) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        return tenantFeeSettingRepository
-                .findByTenantIdAndAcademicYearId(tenantId, currentYear.getAcademicYearId())
-                .orElseGet(() -> TenantFeeSetting.builder()
-                        .tenantId(tenantId)
-                        .academicYearId(currentYear.getAcademicYearId())
-                        .paymentFrequency(Constant.PAYMENT_FREQUENCY_ANNUAL)
-                        .dueDayOfMonth(10)
-                        .gracePeriodDays(10)
-                        .overdueChargeAmount(BigDecimal.ZERO)
-                        .build());
+    public TenantFeeSetting getTenantFeeSetting (Integer tenantId) {
+
+        AcademicYear year = commonHelper.getCurrentYear(tenantId);
+
+        TenantFeeSetting tenantFeeSetting = tenantFeeSettingRepository.findByTenantIdAndAcademicYearId(tenantId, year.getAcademicYearId()).orElse(null);
+
+        if (tenantFeeSetting == null) {
+            tenantFeeSetting = new TenantFeeSetting();
+            tenantFeeSetting.setTenantId(tenantId);
+            tenantFeeSetting.setAcademicYearId(year.getAcademicYearId());
+            tenantFeeSetting.setPaymentFrequency(Constant.PAYMENT_FREQUENCY_ANNUAL);
+            tenantFeeSetting.setDueDayOfMonth(10);
+            tenantFeeSetting.setGracePeriodDays(10);
+            tenantFeeSetting.setOverdueChargeAmount(BigDecimal.ZERO);
+        }
+
+        return tenantFeeSetting;
     }
 
     @Override
     @Transactional
-    public boolean saveFeeSetting(Integer tenantId, TenantFeeSetting request) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+    public boolean saveTenantFeeSetting(Integer tenantId, TenantFeeSetting request) {
+        AcademicYear academicYear = commonHelper.getCurrentYear(tenantId);
+        TenantFeeSetting tenantFeeSetting = tenantFeeSettingRepository.findByTenantIdAndAcademicYearId(tenantId, academicYear.getAcademicYearId()).orElse(new TenantFeeSetting());
 
-        TenantFeeSetting setting = tenantFeeSettingRepository
-                .findByTenantIdAndAcademicYearId(tenantId, currentYear.getAcademicYearId())
-                .orElseGet(() -> TenantFeeSetting.builder()
-                        .tenantId(tenantId)
-                        .academicYearId(currentYear.getAcademicYearId())
-                        .build());
+        tenantFeeSetting.setTenantId(tenantId);
+        tenantFeeSetting.setAcademicYearId(academicYear.getAcademicYearId());
+        tenantFeeSetting.setPaymentFrequency(request.getPaymentFrequency() != null ? request.getPaymentFrequency() : Constant.PAYMENT_FREQUENCY_ANNUAL);
+        tenantFeeSetting.setDueDayOfMonth(request.getDueDayOfMonth() != null ? request.getDueDayOfMonth() : 10);
+        tenantFeeSetting.setGracePeriodDays(request.getGracePeriodDays() != null ? request.getGracePeriodDays() : 10);
+        tenantFeeSetting.setOverdueChargeAmount(request.getOverdueChargeAmount() != null ? request.getOverdueChargeAmount() : BigDecimal.ZERO);
 
-        setting.setPaymentFrequency(request.getPaymentFrequency() != null ? request.getPaymentFrequency() : Constant.PAYMENT_FREQUENCY_ANNUAL);
-        setting.setDueDayOfMonth(request.getDueDayOfMonth() != null ? request.getDueDayOfMonth() : 10);
-        setting.setGracePeriodDays(request.getGracePeriodDays() != null ? request.getGracePeriodDays() : 10);
-        setting.setOverdueChargeAmount(request.getOverdueChargeAmount() != null ? request.getOverdueChargeAmount() : BigDecimal.ZERO);
-
-        tenantFeeSettingRepository.save(setting);
+        tenantFeeSettingRepository.save(tenantFeeSetting);
 
         Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
         if (tenant != null) {
-            tenant.setPaymentFrequency(setting.getPaymentFrequency());
+            tenant.setPaymentFrequency(tenantFeeSetting.getPaymentFrequency());
             tenantRepository.save(tenant);
         }
-
         return true;
     }
 }
