@@ -70,19 +70,6 @@ public class LookupController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/classSection")
-    public ResponseEntity<ResponseObject<List<ClassSectionResponse>>> getAllClassMasterWithSections(HttpServletRequest request) {
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        String token = jwtHelper.cleanToken(authHeader);
-        int tenantId = jwtHelper.extractTenantId(token);
-
-        ResponseObject<List<ClassSectionResponse>> response = new ResponseObject<>();
-        response.setSuccess(true);
-        response.setData(lookupService.getAllClassMasterWithSections(tenantId));
-
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping("/subject/save")
     public ResponseEntity<ResponseObject<Boolean>> saveSubject(HttpServletRequest request, @RequestBody Subject subjectRequest) {
 
@@ -93,6 +80,19 @@ public class LookupController {
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(lookupService.saveSubject(tenantId, subjectRequest));
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/classSection")
+    public ResponseEntity<ResponseObject<List<ClassSectionResponse>>> getAllClassSection(HttpServletRequest request) {
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        String token = jwtHelper.cleanToken(authHeader);
+        int tenantId = jwtHelper.extractTenantId(token);
+
+        ResponseObject<List<ClassSectionResponse>> response = new ResponseObject<>();
+        response.setSuccess(true);
+        response.setData(lookupService.getAllClassSection(tenantId));
+
         return ResponseEntity.ok(response);
     }
 }

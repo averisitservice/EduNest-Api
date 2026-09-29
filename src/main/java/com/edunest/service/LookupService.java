@@ -22,5 +22,5 @@ public interface LookupService {
 
     boolean saveSubject(Integer tenantId, Subject subject);
 
-    List<ClassSectionResponse> getAllClassMasterWithSections(int tenantId);
+    List<ClassSectionResponse> getAllClassSection(int tenantId);
 }

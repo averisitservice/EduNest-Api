@@ -61,7 +61,7 @@ public class LookupServiceImpl implements LookupService {
 
 
     @Override
-    public List<ClassSectionResponse> getAllClassMasterWithSections(int tenantId) {
+    public List<ClassSectionResponse> getAllClassSection(int tenantId) {
         List<ClassSectionResponse> classSectionResponses = new ArrayList<>();
         List<ClassMaster> classMasters = classMasterRepository.findByTenantIdAndIsActiveTrue(tenantId);
 
