@@ -62,33 +62,33 @@ public class LookupServiceImpl implements LookupService {
 
     @Override
     public List<ClassSectionResponse> getAllClassMasterWithSections(int tenantId) {
-        List<ClassSectionResponse> responseList = new ArrayList<>();
+        List<ClassSectionResponse> classSectionResponses = new ArrayList<>();
         List<ClassMaster> classMasters = classMasterRepository.findByTenantIdAndIsActiveTrue(tenantId);
 
         for (ClassMaster classMaster : classMasters) {
             List<ClassSection> sections = classSectionRepository.findByTenantIdAndClassIdAndIsActiveTrue(tenantId, classMaster.getClassId());
 
             if (sections.isEmpty()) {
-                responseList.add(new ClassSectionResponse(
-                        classMaster.getClassId(),
-                        classMaster.getClassName(),
-                        null,
-                        null,
-                        classMaster.getIsActive()
-                ));
+                ClassSectionResponse classSectionResponse = new ClassSectionResponse();
+                classSectionResponse.setClassId(classMaster.getClassId());
+                classSectionResponse.setClassName(classMaster.getClassName());
+                classSectionResponse.setIsActive(classMaster.getIsActive());
+
+                classSectionResponses.add(classSectionResponse);
             } else {
                 for (ClassSection section : sections) {
-                    responseList.add(new ClassSectionResponse(
-                            classMaster.getClassId(),
-                            classMaster.getClassName(),
-                            section.getSectionId(),
-                            section.getSectionName(),
-                            section.getIsActive()
-                    ));
+
+                    ClassSectionResponse response = new ClassSectionResponse();
+                    response.setClassId(classMaster.getClassId());
+                    response.setClassName(classMaster.getClassName());
+                    response.setSectionId(section.getSectionId());
+                    response.setSectionName(section.getSectionName());
+                    response.setIsActive(section.getIsActive());
+
+                    classSectionResponses.add(response);
                 }
             }
         }
-        return responseList;
+        return classSectionResponses;
     }
-
 }
