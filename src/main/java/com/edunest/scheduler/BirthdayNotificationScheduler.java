@@ -26,16 +26,12 @@ public class BirthdayNotificationScheduler {
         List<Student> birthdayStudents = studentRepository.findTodaysBirthdays();
 
         for (Student student : birthdayStudents) {
-            sendBirthdayCard(student.getTenantId(), student);
+            int age = Period.between(student.getDateOfBirth(), LocalDate.now()).getYears();
+
+            String title = "Happy Birthday " + student.getFirstName() + "! 🎉";
+            String body = "Turning " + age + " today! Wishing you a wonderful birthday filled with happiness and success!";
+
+            studentNotificationService.notify(student.getTenantId(), List.of(student.getStudentId()), Constant.NOTIFICATION_TYPE_BIRTHDAY, student.getStudentId(), title, body);
         }
-    }
-
-    private void sendBirthdayCard(Integer tenantId, Student student) {
-        int age = Period.between(student.getDateOfBirth(), LocalDate.now()).getYears();
-
-        String title = "Happy Birthday " + student.getFirstName() + "! 🎉";
-        String body = "Turning " + age + " today! Wishing you a wonderful birthday filled with happiness and success!";
-
-        studentNotificationService.notify(tenantId, List.of(student.getStudentId()), Constant.NOTIFICATION_TYPE_BIRTHDAY, student.getStudentId(), title, body);
     }
 }
