@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class TenantFeeSetting {
 
     @Id
@@ -33,15 +32,12 @@ public class TenantFeeSetting {
     private String paymentFrequency;
 
     @Column(name = "due_day_of_month", nullable = false)
-    @Builder.Default
     private Integer dueDayOfMonth = 10;
 
     @Column(name = "grace_period_days", nullable = false)
-    @Builder.Default
     private Integer gracePeriodDays = 10;
 
     @Column(name = "overdue_charge_amount", nullable = false, precision = 10, scale = 2)
-    @Builder.Default
     private BigDecimal overdueChargeAmount = BigDecimal.ZERO;
 
     @CreationTimestamp

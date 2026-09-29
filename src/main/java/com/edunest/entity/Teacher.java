@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Teacher {
 
     @Id
@@ -74,7 +73,6 @@ public class Teacher {
     private String postalCode;
 
     @Column(name = "is_active")
-    @Builder.Default
     private Boolean isActive = true;
 
     @CreationTimestamp

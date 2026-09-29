@@ -12,7 +12,6 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class HolidayResponse {
     private Integer holidayId;
     private Integer tenantId;

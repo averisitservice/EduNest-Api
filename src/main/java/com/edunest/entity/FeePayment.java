@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class FeePayment {
 
     @Id
@@ -42,7 +41,6 @@ public class FeePayment {
     private BigDecimal amount;
 
     @Column(name = "overdue_charge", precision = 10, scale = 2)
-    @Builder.Default
     private BigDecimal overdueCharge = BigDecimal.ZERO;
 
     @Column(name = "payment_date", nullable = false)

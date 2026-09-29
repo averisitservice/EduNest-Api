@@ -11,7 +11,6 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Holiday {
 
     @Id
@@ -40,7 +39,6 @@ public class Holiday {
     @Column(name = "description", length = 255)
     private String description;
 
-    @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
 }

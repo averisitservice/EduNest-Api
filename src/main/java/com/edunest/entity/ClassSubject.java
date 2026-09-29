@@ -9,7 +9,6 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class ClassSubject {
 
     @Id
@@ -30,6 +29,5 @@ public class ClassSubject {
     private Integer academicYearId;
 
     @Column(name = "is_active")
-    @Builder.Default
     private Boolean isActive = true;
 }

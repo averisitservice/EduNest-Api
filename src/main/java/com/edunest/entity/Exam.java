@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Exam {
 
     @Id
@@ -43,7 +42,6 @@ public class Exam {
     private LocalDate examDate;
 
     @Column(name = "is_active")
-    @Builder.Default
     private Boolean isActive = true;
 
     @CreationTimestamp

@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Announcement {
 
     @Id
@@ -45,11 +44,9 @@ public class Announcement {
     private LocalDate publishDate;
 
     @Column(name = "status", length = 20)
-    @Builder.Default
     private String status = Constant.ANNOUNCEMENT_STATUS_PUBLISHED;
 
     @Column(name = "is_active")
-    @Builder.Default
     private Boolean isActive = true;
 
     @CreationTimestamp
