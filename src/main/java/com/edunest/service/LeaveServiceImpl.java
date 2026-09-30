@@ -41,7 +41,7 @@ public class LeaveServiceImpl implements LeaveService {
     StudentNotificationService studentNotificationService;
 
     @Override
-    public List<LeaveResponse> getLeaveList(Integer tenantId, Integer studentId) {
+    public List<LeaveResponse> getStudentLeaveList(Integer tenantId, Integer studentId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         List<Leave> leaves = leaveRepository.findByStudentId(tenantId, currentYear.getAcademicYearId(), studentId);
 
@@ -60,7 +60,7 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     @Transactional
-    public boolean submitLeave(Integer tenantId, Integer studentId, LeaveRequest request) {
+    public boolean submitStudentLeave(Integer tenantId, Integer studentId, LeaveRequest request) {
         if (request.getLeaveDate() == null) {
             throw new CustomException("leaveDate", "Leave date is required");
         }
@@ -88,7 +88,7 @@ public class LeaveServiceImpl implements LeaveService {
 
     @Override
     @Transactional
-    public boolean deleteLeave(Integer tenantId, Integer studentId, Integer leaveId) {
+    public boolean deleteStudentLeave(Integer tenantId, Integer studentId, Integer leaveId) {
         Leave leave = leaveRepository.findById(leaveId)
                 .orElseThrow(() -> new CustomException("leaveId", "Leave request not found"));
 

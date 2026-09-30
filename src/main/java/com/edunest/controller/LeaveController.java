@@ -2,8 +2,8 @@ package com.edunest.controller;
 
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
-import com.edunest.dto.leave.LeaveRequest;
-import com.edunest.dto.leave.LeaveResponse;
+import com.edunest.dto.leave.LeaveListResponse;
+import com.edunest.dto.leave.LeaveStatusRequest;
 import com.edunest.service.LeaveService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/student/leave")
+@RequestMapping("/leave")
 public class LeaveController {
 
     @Autowired
@@ -23,43 +23,34 @@ public class LeaveController {
     @Autowired
     JwtHelper jwtHelper;
 
-    @GetMapping("/list")
-    public ResponseEntity<ResponseObject<List<LeaveResponse>>> getLeaveList(HttpServletRequest request) {
+    @GetMapping("/list/{classId}")
+    public ResponseEntity<ResponseObject<List<LeaveListResponse>>> getLeaveList(
+            HttpServletRequest request,
+            @PathVariable Integer classId,
+            @RequestParam(required = false) Integer sectionId) {
+
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
-        Integer studentId = jwtHelper.extractStudentId(token);
         Integer tenantId = jwtHelper.extractTenantId(token);
 
-        ResponseObject<List<LeaveResponse>> response = new ResponseObject<>();
+        ResponseObject<List<LeaveListResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(leaveService.getLeaveList(tenantId, studentId));
+        response.setData(leaveService.getLeaveListForClass(tenantId, classId, sectionId));
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping
-    public ResponseEntity<ResponseObject<Boolean>> submitLeave(
-            HttpServletRequest request, @RequestBody LeaveRequest leaveRequest) {
+    @PatchMapping("/{leaveId}/status")
+    public ResponseEntity<ResponseObject<Boolean>> updateStatus(
+            HttpServletRequest request,
+            @PathVariable Integer leaveId,
+            @RequestBody LeaveStatusRequest leaveStatusRequest) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
-        Integer studentId = jwtHelper.extractStudentId(token);
         Integer tenantId = jwtHelper.extractTenantId(token);
+        Integer teacherId = jwtHelper.extractTeacherId(token);
 
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(leaveService.submitLeave(tenantId, studentId, leaveRequest));
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/{leaveId}")
-    public ResponseEntity<ResponseObject<Boolean>> deleteLeave(
-            HttpServletRequest request, @PathVariable Integer leaveId) {
-
-        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
-        Integer studentId = jwtHelper.extractStudentId(token);
-        Integer tenantId = jwtHelper.extractTenantId(token);
-
-        ResponseObject<Boolean> response = new ResponseObject<>();
-        response.setSuccess(true);
-        response.setData(leaveService.deleteLeave(tenantId, studentId, leaveId));
+        response.setData(leaveService.updateLeaveStatus(tenantId, teacherId, leaveId, leaveStatusRequest.getStatus()));
         return ResponseEntity.ok(response);
     }
 }

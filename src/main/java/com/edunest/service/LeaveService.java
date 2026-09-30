@@ -8,11 +8,11 @@ import java.util.List;
 
 public interface LeaveService {
 
-    List<LeaveResponse> getLeaveList(Integer tenantId, Integer studentId);
+    List<LeaveResponse> getStudentLeaveList(Integer tenantId, Integer studentId);
 
-    boolean submitLeave(Integer tenantId, Integer studentId, LeaveRequest request);
+    boolean submitStudentLeave(Integer tenantId, Integer studentId, LeaveRequest request);
 
-    boolean deleteLeave(Integer tenantId, Integer studentId, Integer leaveId);
+    boolean deleteStudentLeave(Integer tenantId, Integer studentId, Integer leaveId);
 
     List<LeaveListResponse> getLeaveListForClass(Integer tenantId, Integer classId, Integer sectionId);
 
