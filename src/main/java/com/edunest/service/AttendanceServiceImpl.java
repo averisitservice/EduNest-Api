@@ -200,12 +200,12 @@ public class AttendanceServiceImpl implements AttendanceService {
                 }
             }
             long total = records.size();
-            long netAcademicDays = total - holiday;
+            long AcademicDays = total - holiday;
 
             // Present + Half-day (counted as half) contribute to attendance.
             // Net academic days excludes holidays so percentage is accurate.
             double attended = present + (halfDay * 0.5);
-            double percentage = netAcademicDays > 0 ? Math.round((attended / netAcademicDays) * 1000.0) / 10.0 : 0.0;
+            double percentage = AcademicDays > 0 ? Math.round((attended / AcademicDays) * 1000.0) / 10.0 : 0.0;
 
             AttendanceSummaryResponse summary = new AttendanceSummaryResponse();
             summary.setStudentId(studentClass.getStudentId());
