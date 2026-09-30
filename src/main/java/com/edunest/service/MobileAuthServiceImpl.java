@@ -2,25 +2,12 @@ package com.edunest.service;
 
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.auth.TenantResponse;
-import com.edunest.dto.mobile.StudentChangePasswordRequest;
-import com.edunest.dto.mobile.StudentForgotPasswordRequest;
-import com.edunest.dto.mobile.StudentLoginRequest;
-import com.edunest.dto.mobile.StudentLoginResponse;
-import com.edunest.dto.mobile.StudentProfileResponse;
-import com.edunest.dto.mobile.StudentResetCredential;
-import com.edunest.entity.ClassMaster;
-import com.edunest.entity.ClassSection;
-import com.edunest.entity.Student;
-import com.edunest.entity.StudentClass;
-import com.edunest.entity.Tenant;
+import com.edunest.dto.mobile.*;
+import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.helper.CryptoHelper;
-import com.edunest.repository.ClassMasterRepository;
-import com.edunest.repository.ClassSectionRepository;
-import com.edunest.repository.StudentClassRepository;
-import com.edunest.repository.StudentRepository;
-import com.edunest.repository.TenantRepository;
+import com.edunest.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -94,7 +81,22 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         profile.setMobileNo(student.getMobileNo());
         profile.setPhotoUrl(student.getPhotoUrl());
 
-        applyClassPlacement(profile, student);
+        StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(student.getStudentId(), student.getTenantId())
+                .orElse(null);
+
+        if (studentClass != null) {
+            ClassMaster classMaster = classMasterRepository.findById(studentClass.getClassId()).orElse(null);
+            String className = classMaster != null ? classMaster.getClassName() : null;
+            String sectionName = null;
+            if (studentClass.getSectionId() != null) {
+                ClassSection classSection = classSectionRepository.findById(studentClass.getSectionId()).orElse(null);
+
+                sectionName = classSection != null ? classSection.getSectionName() : null;
+            }
+            profile.setDisplayClass((className != null && sectionName != null) ? className + " - " + sectionName : className);
+            profile.setRollNo(studentClass.getRollNo());
+        }
+
 
         TenantResponse tenantResponse = new TenantResponse();
         tenantResponse.setTenantId(tenant.getTenantId());
@@ -139,29 +141,6 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         emailService.sendStudentPasswordResetEmail(email, accounts);
     }
 
-    private void applyClassPlacement(StudentProfileResponse profile, Student student) {
-        StudentClass studentClass = studentClassRepository
-                .findByStudentIdAndTenantId(student.getStudentId(), student.getTenantId())
-                .orElse(null);
-
-        if (studentClass == null) {
-            return;
-        }
-
-        ClassMaster classMaster = classMasterRepository.findById(studentClass.getClassId()).orElse(null);
-        String className = classMaster != null ? classMaster.getClassName() : null;
-
-        String sectionName = null;
-        if (studentClass.getSectionId() != null) {
-            ClassSection classSection = classSectionRepository.findById(studentClass.getSectionId()).orElse(null);
-            sectionName = classSection != null ? classSection.getSectionName() : null;
-        }
-
-        profile.setDisplayClass(
-                (className != null && sectionName != null) ? className + " - " + sectionName : className);
-        profile.setRollNo(studentClass.getRollNo());
-    }
-
     @Override
     @Transactional
     public void changePassword(Integer studentId, StudentChangePasswordRequest request) {
@@ -177,5 +156,25 @@ public class MobileAuthServiceImpl implements MobileAuthService {
         student.setHashkey(hashKey);
         student.setPassword(CryptoHelper.encryptPassword(request.getNewPassword().trim(), hashKey));
         studentRepository.save(student);
+    }
+
+    @Override
+    public SchoolContactResponse getSchoolContact(Integer tenantId) {
+
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new CustomException("tenant", "School not found"));
+
+        SchoolContactResponse response = new SchoolContactResponse();
+        response.setSchoolName(tenant.getTenantName());
+        response.setLogoUrl((tenant.getMobileLogoUrl() != null && !tenant.getMobileLogoUrl().isBlank())
+                ? tenant.getMobileLogoUrl()
+                : tenant.getLogoUrl());
+        response.setContactName(tenant.getContactName());
+        response.setContactEmail(tenant.getContactEmail());
+        response.setContactPhone(tenant.getContactPhone());
+        response.setWebsite(tenant.getDomainName());
+        response.setAddress(CommonHelper.fullAddressForTenant(tenant));
+
+        return response;
     }
 }

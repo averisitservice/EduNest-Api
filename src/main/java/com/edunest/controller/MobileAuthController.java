@@ -4,7 +4,6 @@ import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.mobile.*;
 import com.edunest.service.MobileAuthService;
-import com.edunest.service.MobileSchoolService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -17,9 +16,6 @@ public class MobileAuthController {
 
     @Autowired
     MobileAuthService mobileAuthService;
-
-    @Autowired
-    MobileSchoolService mobileSchoolService;
 
     @Autowired
     JwtHelper jwtHelper;
@@ -72,7 +68,7 @@ public class MobileAuthController {
 
         ResponseObject<SchoolContactResponse> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(mobileSchoolService.getSchoolContact(tenantId));
+        response.setData(mobileAuthService.getSchoolContact(tenantId));
 
         return ResponseEntity.ok(response);
     }
