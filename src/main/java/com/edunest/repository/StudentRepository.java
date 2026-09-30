@@ -1,5 +1,6 @@
 package com.edunest.repository;
 
+import com.edunest.dto.AttendanceRosterProjection;
 import com.edunest.entity.Student;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,8 +15,8 @@ import java.util.Optional;
 @Repository
 public interface StudentRepository extends JpaRepository<Student, Integer> {
 
-    @Query("SELECT DISTINCT s, sc FROM Student s "
-            + "JOIN StudentClass sc ON sc.studentId = s.studentId AND sc.tenantId = :tenantId "
+    @Query("SELECT DISTINCT s AS student, sc AS studentClass FROM Student s "
+            + "INNER JOIN StudentClass sc ON sc.studentId = s.studentId AND sc.tenantId = :tenantId "
             + "WHERE s.tenantId = :tenantId AND s.isActive = true "
             + "AND sc.isActive = true "
             + "AND sc.classId = :classId "
@@ -23,7 +24,7 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
             + "AND (:search = '' "
             + "  OR LOWER(CONCAT(s.firstName, ' ', s.lastName)) LIKE CONCAT('%', :search, '%') "
             + "  OR (sc.rollNo IS NOT NULL AND LOWER(sc.rollNo) LIKE CONCAT('%', :search, '%')))")
-    List<Object[]> findStudentsForAttendanceRoster(
+    List<AttendanceRosterProjection> findStudentsForAttendanceRoster(
             @Param("tenantId") Integer tenantId,
             @Param("classId") Integer classId,
             @Param("sectionId") Integer sectionId,

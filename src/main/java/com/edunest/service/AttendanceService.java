@@ -13,5 +13,5 @@ public interface AttendanceService {
 
     boolean saveAttendance(Integer tenantId, Integer markedBy, AttendanceSaveRequest request);
 
-    List<AttendanceSummaryResponse> getSummary(Integer tenantId, Integer classId, Integer sectionId, LocalDate fromDate, LocalDate toDate);
+    List<AttendanceSummaryResponse> getAttendanceReport(Integer tenantId, Integer classId, Integer sectionId, LocalDate fromDate, LocalDate toDate);
 }

@@ -60,7 +60,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/summary/{classId}")
-    public ResponseEntity<ResponseObject<List<AttendanceSummaryResponse>>> getSummary(
+    public ResponseEntity<ResponseObject<List<AttendanceSummaryResponse>>> getAttendanceReport(
             HttpServletRequest request,
             @PathVariable Integer classId,
             @RequestParam(required = false) Integer sectionId,
@@ -73,7 +73,7 @@ public class AttendanceController {
 
         ResponseObject<List<AttendanceSummaryResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(attendanceService.getSummary(tenantId, classId, sectionId, fromDate, toDate));
+        response.setData(attendanceService.getAttendanceReport(tenantId, classId, sectionId, fromDate, toDate));
         return ResponseEntity.ok(response);
     }
 }
