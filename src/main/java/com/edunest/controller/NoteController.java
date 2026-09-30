@@ -57,15 +57,10 @@ public class NoteController {
     }
 
     @DeleteMapping("/{noteId}")
-    public ResponseEntity<ResponseObject<Boolean>> deleteNote(
-            HttpServletRequest request, @PathVariable Integer noteId) {
-
-        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
-        Integer tenantId = jwtHelper.extractTenantId(token);
-
+    public ResponseEntity<ResponseObject<Boolean>> deleteNote(@PathVariable Integer noteId) {
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(noteService.deleteNote(tenantId, noteId));
+        response.setData(noteService.deleteNote(noteId));
         return ResponseEntity.ok(response);
     }
 }

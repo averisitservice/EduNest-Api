@@ -12,5 +12,5 @@ public interface NoteService {
 
     boolean saveNote(Integer tenantId, Integer loginTeacherId, NoteRequest request, MultipartFile file);
 
-    boolean deleteNote(Integer tenantId, Integer noteId);
+    boolean deleteNote(Integer noteId);
 }

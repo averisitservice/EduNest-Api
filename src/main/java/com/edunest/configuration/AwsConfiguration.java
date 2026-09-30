@@ -113,7 +113,7 @@ public class AwsConfiguration {
         }
     }
 
-    public String getPresignedUrl(String key, String documentName) {
+    public String getPresignedUrl(String documentName) {
         try {
             GetObjectPresignRequest getObjectPresignRequest = GetObjectPresignRequest.builder()
                     .getObjectRequest(GetObjectRequest.builder()
