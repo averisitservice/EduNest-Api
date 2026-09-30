@@ -12,5 +12,5 @@ public interface HomeworkService {
 
     boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request, MultipartFile file);
 
-    boolean deleteHomeWork(Integer tenantId, Integer homeworkId);
+    boolean deleteHomeWork(Integer homeworkId);
 }

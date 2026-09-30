@@ -19,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class NoteServiceImpl implements NoteService {
@@ -77,8 +76,7 @@ public class NoteServiceImpl implements NoteService {
         Note note;
 
         if (!isEdit) {
-            note = noteRepository.findById(request.getNoteId())
-                    .orElseThrow(() -> new CustomException("noteId", "Item not found"));
+            note = noteRepository.findById(request.getNoteId()).orElseThrow(() -> new CustomException("noteId", "Item not found"));
         } else {
             note = new Note();
             note.setTenantId(tenantId);
@@ -94,10 +92,10 @@ public class NoteServiceImpl implements NoteService {
         note.setDescription(request.getDescription());
 
         if (file != null && !file.isEmpty()) {
-            String filename = UUID.randomUUID().toString().substring(0, 6) + file.getOriginalFilename();
+            String filename = FileHandler.generateUniqueS3Key(file);
             awsConfiguration.uploadFile(filename, FileHandler.convertMultipartFileToFile(file));
             note.setAttachmentUrl(filename);
-        } else if (request.getNoteId() == null) {
+        } else if (isEdit) {
             note.setAttachmentUrl(request.getAttachmentUrl());
         }
 

@@ -57,15 +57,10 @@ public class HomeworkController {
     }
 
     @DeleteMapping("/{homeworkId}")
-    public ResponseEntity<ResponseObject<Boolean>> deleteHomeWork(
-            HttpServletRequest request, @PathVariable Integer homeworkId) {
-
-        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
-        Integer tenantId = jwtHelper.extractTenantId(token);
-
+    public ResponseEntity<ResponseObject<Boolean>> deleteHomeWork(@PathVariable Integer homeworkId) {
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(homeworkService.deleteHomeWork(tenantId, homeworkId));
+        response.setData(homeworkService.deleteHomeWork(homeworkId));
         return ResponseEntity.ok(response);
     }
 }

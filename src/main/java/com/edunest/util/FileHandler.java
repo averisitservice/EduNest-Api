@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 
 public class FileHandler {
     public static File convertMultipartFileToFile(MultipartFile multipartFile) {
@@ -19,5 +20,14 @@ public class FileHandler {
         } catch (IOException e) {
             throw new CustomException("FILE_CONVERSION_ERROR", "Error while converting to file");
         }
+    }
+
+    public static String generateUniqueS3Key(MultipartFile file) {
+        String originalFilename = file.getOriginalFilename();
+
+        if (originalFilename == null || originalFilename.isBlank()) {
+            originalFilename = "document";
+        }
+        return UUID.randomUUID().toString().substring(0, 6) + "_" + originalFilename;
     }
 }

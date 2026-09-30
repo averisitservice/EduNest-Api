@@ -10,6 +10,7 @@ import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.HomeworkRepository;
 import com.edunest.repository.StudentClassRepository;
+import com.edunest.util.FileHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class HomeworkServiceImpl implements HomeworkService {
@@ -57,7 +57,11 @@ public class HomeworkServiceImpl implements HomeworkService {
             homeworkResponse.setTitle(homework.getTitle());
             homeworkResponse.setDescription(homework.getDescription());
             homeworkResponse.setDueDate(homework.getDueDate());
-            homeworkResponse.setAttachmentUrl(homework.getAttachmentUrl());
+            if (homework.getAttachmentUrl() != null && !homework.getAttachmentUrl().isEmpty()) {
+                homeworkResponse.setAttachmentUrl(awsConfiguration.getPresignedUrl(homework.getAttachmentUrl()));
+            } else {
+                homeworkResponse.setAttachmentUrl(null);
+            }
             homeworkResponse.setCreatedBy(commonHelper.teacherNameForId(homework.getCreatedBy()));
             homeworkResponse.setUpdatedBy(commonHelper.teacherNameForId(homework.getUpdatedBy()));
             homeworkResponse.setUpdatedDate(homework.getUpdatedDate());
@@ -71,12 +75,11 @@ public class HomeworkServiceImpl implements HomeworkService {
     public boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request, MultipartFile file) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        boolean isNew = request.getHomeworkId() == null;
+        boolean isEdit = request.getHomeworkId() == null;
 
         Homework homework;
-        if (!isNew) {
-            homework = homeworkRepository.findById(request.getHomeworkId())
-                    .orElseThrow(() -> new CustomException("homeworkId", "Item not found"));
+        if (!isEdit) {
+            homework = homeworkRepository.findById(request.getHomeworkId()).orElseThrow(() -> new CustomException("homeworkId", "Item not found"));
         } else {
             homework = new Homework();
             homework.setTenantId(tenantId);
@@ -93,17 +96,17 @@ public class HomeworkServiceImpl implements HomeworkService {
         homework.setDueDate(request.getDueDate());
 
         if (file != null && !file.isEmpty()) {
-            Map<String, Object> uploadResult = awsConfiguration.uploadFile(file, ATTACHMENT_FOLDER);
-            homework.setAttachmentUrl(String.valueOf(uploadResult.get("secure_url")));
-        } else if (request.getHomeworkId() == null) {
+            String filename = FileHandler.generateUniqueS3Key(file);
+            awsConfiguration.uploadFile(filename, FileHandler.convertMultipartFileToFile(file));
+            homework.setAttachmentUrl(filename);
+        } else if (isEdit) {
             homework.setAttachmentUrl(request.getAttachmentUrl());
         }
-
         homework.setUpdatedBy(loginTeacherId);
         homework.setUpdatedDate(LocalDateTime.now());
         homeworkRepository.save(homework);
 
-        sendHomeworkPush(homework, isNew);
+        sendHomeworkPush(homework, isEdit);
         return true;
     }
 
@@ -121,9 +124,11 @@ public class HomeworkServiceImpl implements HomeworkService {
     }
 
     @Override
-    public boolean deleteHomeWork(Integer tenantId, Integer homeworkId) {
-        Homework homework = homeworkRepository.findById(homeworkId)
-                .orElseThrow(() -> new CustomException("homeworkId", "Item not found"));
+    public boolean deleteHomeWork(Integer homeworkId) {
+        Homework homework = homeworkRepository.findById(homeworkId).orElseThrow(() -> new CustomException("homeworkId", "Item not found"));
+        if (homework.getAttachmentUrl() != null && !homework.getAttachmentUrl().isEmpty()) {
+            awsConfiguration.deleteFile(homework.getAttachmentUrl());
+        }
         homework.setIsActive(false);
         homeworkRepository.save(homework);
         return true;
