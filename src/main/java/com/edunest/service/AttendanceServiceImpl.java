@@ -46,13 +46,13 @@ public class AttendanceServiceImpl implements AttendanceService {
     StudentRepository studentRepository;
 
     @Override
-    public AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date, String search) {
+    public AttendanceRosterResponse getAttendanceRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date, String search) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim().toLowerCase() : "";
+        String Search = (search != null && !search.isBlank()) ? search.trim().toLowerCase() : "";
 
         List<Object[]> studentData = studentRepository.findStudentsForAttendanceRoster(
-                tenantId, classId, sectionId, normalizedSearch);
+                tenantId, classId, sectionId, Search);
 
         List<Integer> studentIds = new ArrayList<>();
         for (Object[] pair : studentData) {
@@ -81,7 +81,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         List<Holiday> holidaysOnDate = holidayRepository
                 .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, date, date);
-        Holiday activeHoliday = holidaysOnDate.isEmpty() ? null : holidaysOnDate.get(0);
+        Holiday activeHoliday = holidaysOnDate.isEmpty() ? null : holidaysOnDate.getFirst();
 
         List<AttendanceRosterResponse.StudentRow> rows = new ArrayList<>();
         for (Object[] pair : studentData) {
@@ -164,7 +164,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public List<AttendanceSummaryResponse> getSummary(Integer tenantId, Integer classId, Integer sectionId,
-            LocalDate fromDate, LocalDate toDate) {
+                                                      LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId,

@@ -27,7 +27,7 @@ public class AttendanceController {
     JwtHelper jwtHelper;
 
     @GetMapping("/roster/{classId}")
-    public ResponseEntity<ResponseObject<AttendanceRosterResponse>> getRoster(
+    public ResponseEntity<ResponseObject<AttendanceRosterResponse>> getAttendanceRoster(
             HttpServletRequest request,
             @PathVariable Integer classId,
             @RequestParam(required = false) Integer sectionId,
@@ -40,7 +40,7 @@ public class AttendanceController {
 
         ResponseObject<AttendanceRosterResponse> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(attendanceService.getRoster(tenantId, classId, sectionId, date, search));
+        response.setData(attendanceService.getAttendanceRoster(tenantId, classId, sectionId, date, search));
         return ResponseEntity.ok(response);
     }
 

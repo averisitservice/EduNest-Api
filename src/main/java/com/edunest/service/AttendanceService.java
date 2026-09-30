@@ -9,11 +9,7 @@ import java.util.List;
 
 public interface AttendanceService {
 
-        AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date, String search);
-
-    default AttendanceRosterResponse getRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date) {
-        return getRoster(tenantId, classId, sectionId, date, null);
-    }
+    AttendanceRosterResponse getAttendanceRoster(Integer tenantId, Integer classId, Integer sectionId, LocalDate date, String search);
 
     boolean saveAttendance(Integer tenantId, Integer markedBy, AttendanceSaveRequest request);
 
