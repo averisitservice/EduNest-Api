@@ -23,13 +23,13 @@ public class DashboardController {
     JwtHelper jwtHelper;
 
     @GetMapping("/summary")
-    public ResponseEntity<ResponseObject<DashboardSummaryResponse>> getSummary(HttpServletRequest request) {
+    public ResponseEntity<ResponseObject<DashboardSummaryResponse>> getDashboardSummary(HttpServletRequest request) {
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer tenantId = jwtHelper.extractTenantId(token);
 
         ResponseObject<DashboardSummaryResponse> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(dashboardService.getSummary(tenantId));
+        response.setData(dashboardService.getDashboardSummary(tenantId));
         return ResponseEntity.ok(response);
     }
 }

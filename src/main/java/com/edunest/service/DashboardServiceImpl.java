@@ -41,7 +41,7 @@ public class DashboardServiceImpl implements DashboardService {
     CommonHelper commonHelper;
 
     @Override
-    public DashboardSummaryResponse getSummary(Integer tenantId) {
+    public DashboardSummaryResponse getDashboardSummary(Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         DashboardSummaryResponse dashboardSummaryResponse = new DashboardSummaryResponse();
