@@ -21,7 +21,7 @@ public class AnnouncementScheduler {
     @Autowired
     AnnouncementService announcementService;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "0 0 6 * * *")
     @Transactional
     public void publishScheduledAnnouncements() {
         List<Announcement> due = announcementRepository.findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(Constant.ANNOUNCEMENT_STATUS_SCHEDULED, LocalDate.now());

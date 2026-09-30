@@ -80,12 +80,12 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Override
     @Transactional
-    public boolean saveAnnouncement(Integer tenantId, Integer loginTeacherId, AnnouncementRequest request) {
+    public boolean saveAnnouncement(Integer tenantId, Integer loginTeacherId, AnnouncementRequest announcementRequest) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         Announcement announcement;
-        if (request.getAnnouncementId() != null) {
-            announcement = announcementRepository.findById(request.getAnnouncementId())
+        if (announcementRequest.getAnnouncementId() != null) {
+            announcement = announcementRepository.findById(announcementRequest.getAnnouncementId())
                     .orElseThrow(() -> new CustomException("announcementId", "Announcement not found"));
         } else {
             announcement = new Announcement();
@@ -95,15 +95,15 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             announcement.setCreatedBy(loginTeacherId);
         }
 
-        announcement.setTitle(request.getTitle());
-        announcement.setMessage(request.getMessage());
-        announcement.setAudience(request.getAudience() != null ? request.getAudience() : Constant.All);
-        announcement.setClassIds(convertClassIdsListToString(request.getClassIds()));
-        boolean isScheduled = Constant.ANNOUNCEMENT_STATUS_SCHEDULED.equalsIgnoreCase(request.getPublishMode())
-                && request.getPublishDate() != null;
+        announcement.setTitle(announcementRequest.getTitle());
+        announcement.setMessage(announcementRequest.getMessage());
+        announcement.setAudience(announcementRequest.getAudience() != null ? announcementRequest.getAudience() : Constant.All);
+        announcement.setClassIds(convertClassIdsListToString(announcementRequest.getClassIds()));
+        boolean isScheduled = Constant.ANNOUNCEMENT_STATUS_SCHEDULED.equalsIgnoreCase(announcementRequest.getPublishMode())
+                && announcementRequest.getPublishDate() != null;
 
         if (isScheduled) {
-            announcement.setPublishDate(request.getPublishDate());
+            announcement.setPublishDate(announcementRequest.getPublishDate());
             announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_SCHEDULED);
         } else {
             announcement.setPublishDate(LocalDate.now());
@@ -130,7 +130,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Override
     public void sendAnnouncementPush(Announcement announcement) {
-        List<Integer> studentIds = getStudentIds(announcement);
+        List<Integer> studentIds;
+        if (Constant.All.equalsIgnoreCase(announcement.getAudience()) || announcement.getClassIds() == null) {
+            studentIds = studentRepository.findStudentIdByTenantIdAndIsActiveTrue(announcement.getTenantId());
+        } else {
+            studentIds = studentClassRepository.findStudentIdsByClassIds(
+                    announcement.getTenantId(), announcement.getAcademicYearId(),
+                    commonHelper.convertClassIdsStringToList(announcement.getClassIds()));
+        }
         if (studentIds.isEmpty()) {
             return;
         }
@@ -138,16 +145,6 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         studentNotificationService.notify(announcement.getTenantId(), studentIds,
                 Constant.NOTIFICATION_TYPE_ANNOUNCEMENT, announcement.getAnnouncementId(), announcement.getTitle(),
                 announcement.getMessage());
-    }
-
-    private List<Integer> getStudentIds(Announcement announcement) {
-        if (Constant.All.equalsIgnoreCase(announcement.getAudience())
-                || announcement.getClassIds() == null) {
-            return studentRepository.findActiveStudentIds(announcement.getTenantId());
-        }
-        return studentClassRepository.findStudentIdsByClassIds(
-                announcement.getTenantId(), announcement.getAcademicYearId(),
-                commonHelper.convertClassIdsStringToList(announcement.getClassIds()));
     }
 
     private String convertClassIdsListToString(List<Integer> classIds) {

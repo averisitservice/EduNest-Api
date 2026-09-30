@@ -65,6 +65,8 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
 
     long countByTenantIdAndIsActiveTrue(Integer tenantId);
 
+    List<Integer> findStudentIdByTenantIdAndIsActiveTrue(Integer tenantId);
+
     @Query(value = """
             SELECT admission_no FROM auth.student
             WHERE tenant_id = :tenantId
@@ -75,8 +77,6 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
     String findLastAdmissionNo(@Param("tenantId") Integer tenantId,
                                @Param("year") String year);
 
-    @Query("SELECT s.studentId FROM Student s WHERE s.tenantId = :tenantId AND s.isActive = true")
-    List<Integer> findActiveStudentIds(@Param("tenantId") Integer tenantId);
 
     @Query("SELECT s FROM Student s WHERE s.isActive = true "
             + "AND EXTRACT(MONTH FROM s.dateOfBirth) = EXTRACT(MONTH FROM CURRENT_DATE) "
