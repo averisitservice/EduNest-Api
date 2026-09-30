@@ -24,20 +24,16 @@ public class FcmTokenServiceImpl implements FcmTokenService {
             throw new CustomException("fcmToken", "FCM token is required");
         }
 
-        // A token is unique per device, so re-registering the same device (even for a
-        // different student, e.g. shared device or account switch) just re-points it.
-        StudentDeviceToken deviceToken = studentDeviceTokenRepository
-                .findByFcmToken(request.getFcmToken())
-                .orElseGet(StudentDeviceToken::new);
+        StudentDeviceToken studentDeviceToken = studentDeviceTokenRepository.findByFcmToken(request.getFcmToken()).orElseGet(StudentDeviceToken::new);
 
-        deviceToken.setTenantId(tenantId);
-        deviceToken.setStudentId(studentId);
-        deviceToken.setFcmToken(request.getFcmToken());
-        deviceToken.setDeviceId(request.getDeviceId());
-        deviceToken.setPlatform(request.getPlatform());
-        deviceToken.setUpdatedDate(LocalDateTime.now());
+        studentDeviceToken.setTenantId(tenantId);
+        studentDeviceToken.setStudentId(studentId);
+        studentDeviceToken.setFcmToken(request.getFcmToken());
+        studentDeviceToken.setDeviceId(request.getDeviceId());
+        studentDeviceToken.setPlatform(request.getPlatform());
+        studentDeviceToken.setUpdatedDate(LocalDateTime.now());
 
-        studentDeviceTokenRepository.save(deviceToken);
+        studentDeviceTokenRepository.save(studentDeviceToken);
         return true;
     }
 

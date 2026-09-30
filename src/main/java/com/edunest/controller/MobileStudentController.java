@@ -4,8 +4,8 @@ import com.edunest.common.PagedResponse;
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.exam.ReportCardResponse;
-import com.edunest.dto.holiday.HolidayResponse;
 import com.edunest.dto.mobile.*;
+import com.edunest.entity.Holiday;
 import com.edunest.service.HolidayService;
 import com.edunest.service.MobileStudentService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -259,12 +259,12 @@ public class MobileStudentController {
     }
 
     @GetMapping("/holidays")
-    public ResponseEntity<ResponseObject<List<HolidayResponse>>> getHolidays(HttpServletRequest request) {
+    public ResponseEntity<ResponseObject<List<Holiday>>> getHolidays(HttpServletRequest request) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer tenantId = jwtHelper.extractTenantId(token);
 
-        ResponseObject<List<HolidayResponse>> response = new ResponseObject<>();
+        ResponseObject<List<Holiday>> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(holidayService.getHolidays(tenantId));
 

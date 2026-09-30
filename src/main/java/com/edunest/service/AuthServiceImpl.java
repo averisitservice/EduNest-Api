@@ -107,7 +107,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String newPassword = CommonHelper.generateRandomPassword();
-
         String hashKey = CryptoHelper.getHashKey();
 
         teacher.setHashkey(hashKey);

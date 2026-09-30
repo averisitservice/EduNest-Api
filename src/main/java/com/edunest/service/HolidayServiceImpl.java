@@ -1,17 +1,14 @@
 package com.edunest.service;
 
 import com.edunest.dto.holiday.HolidayRequest;
-import com.edunest.dto.holiday.HolidayResponse;
 import com.edunest.entity.AcademicYear;
 import com.edunest.entity.Holiday;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
 import com.edunest.repository.HolidayRepository;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,22 +21,13 @@ public class HolidayServiceImpl implements HolidayService {
     private CommonHelper commonHelper;
 
     @Override
-    public List<HolidayResponse> getHolidays(Integer tenantId) {
+    public List<Holiday> getHolidays(Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        List<Holiday> holidays = holidayRepository.findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByStartDateAsc(
-                tenantId, currentYear.getAcademicYearId());
-
-        List<HolidayResponse> responses = new ArrayList<>();
-        for (Holiday holiday : holidays) {
-            HolidayResponse res = new HolidayResponse();
-            BeanUtils.copyProperties(holiday, res);
-            responses.add(res);
-        }
-        return responses;
+        return holidayRepository.findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByStartDateAsc(tenantId, currentYear.getAcademicYearId());
     }
 
     @Override
-    public HolidayResponse saveHoliday(Integer tenantId, HolidayRequest request) {
+    public Holiday saveHoliday(Integer tenantId, HolidayRequest request) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         Holiday holiday;
@@ -59,15 +47,11 @@ public class HolidayServiceImpl implements HolidayService {
         holiday.setHolidayType(request.getHolidayType());
         holiday.setDescription(request.getDescription());
 
-        Holiday saved = holidayRepository.save(holiday);
-
-        HolidayResponse response = new HolidayResponse();
-        BeanUtils.copyProperties(saved, response);
-        return response;
+        return holidayRepository.save(holiday);
     }
 
     @Override
-    public boolean deleteHoliday(Integer tenantId, Integer holidayId) {
+    public boolean deleteHoliday(Integer holidayId) {
         Holiday holiday = holidayRepository.findById(holidayId)
                 .orElseThrow(() -> new CustomException("holidayId", "Holiday not found"));
         holiday.setIsActive(false);
