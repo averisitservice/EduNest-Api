@@ -82,18 +82,18 @@ public class AwsConfiguration {
         }
     }
 
-    public void updateFile(File file, String key) {
+    public void updateFile(String keyName, File file) {
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(key)
+                    .key(keyName)
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromFile(file));
 
-            log.info("Successfully updated S3 file: bucket={}, key={}", bucketName, key);
+            log.info("Successfully updated S3 file: bucket={}, key={}", bucketName, keyName);
         } catch (Exception e) {
-            log.error("Error updating file on S3: key={}, error={}", key, e.getMessage(), e);
+            log.error("Error updating file on S3: key={}, error={}", keyName, e.getMessage(), e);
             throw new CustomException("aws", "Failed to update file on S3: " + e.getMessage());
         }
     }

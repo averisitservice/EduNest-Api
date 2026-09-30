@@ -72,10 +72,10 @@ public class NoteServiceImpl implements NoteService {
     public boolean saveNote(Integer tenantId, Integer loginTeacherId, NoteRequest request, MultipartFile file) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        boolean isEdit = request.getNoteId() == null;
+        boolean isEdit = request.getNoteId() != null;
         Note note;
 
-        if (!isEdit) {
+        if (isEdit) {
             note = noteRepository.findById(request.getNoteId()).orElseThrow(() -> new CustomException("noteId", "Item not found"));
         } else {
             note = new Note();
@@ -93,12 +93,17 @@ public class NoteServiceImpl implements NoteService {
 
         if (file != null && !file.isEmpty()) {
             String filename = FileHandler.generateUniqueS3Key(file);
-            awsConfiguration.uploadFile(filename, FileHandler.convertMultipartFileToFile(file));
+            if (isEdit && note.getAttachmentUrl() != null && !note.getAttachmentUrl().isEmpty()) {
+                awsConfiguration.updateFile(filename, FileHandler.convertMultipartFileToFile(file));
+            } else {
+                awsConfiguration.uploadFile(filename, FileHandler.convertMultipartFileToFile(file));
+            }
             note.setAttachmentUrl(filename);
-        } else if (isEdit) {
+        } else if (!isEdit) {
+            note.setAttachmentUrl(request.getAttachmentUrl());
+        } else if (request.getAttachmentUrl() != null) {
             note.setAttachmentUrl(request.getAttachmentUrl());
         }
-
         note.setUpdatedBy(loginTeacherId);
         note.setUpdatedDate(LocalDateTime.now());
         noteRepository.save(note);
@@ -115,7 +120,7 @@ public class NoteServiceImpl implements NoteService {
         }
 
         String subjectName = commonHelper.subjectName(note.getSubjectId());
-        String title = (isEdit ? "New Note: " : "Note Updated: ") + note.getTitle();
+        String title = (!isEdit ? "New Note: " : "Note Updated: ") + note.getTitle();
         studentNotificationService.notify(note.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_NOTE,
                 note.getNoteId(), title, subjectName != null ? subjectName : note.getTitle());
     }

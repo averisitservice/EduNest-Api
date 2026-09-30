@@ -75,10 +75,9 @@ public class HomeworkServiceImpl implements HomeworkService {
     public boolean saveHomeWork(Integer tenantId, Integer loginTeacherId, HomeworkRequest request, MultipartFile file) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        boolean isEdit = request.getHomeworkId() == null;
-
+        boolean isEdit = request.getHomeworkId() != null;
         Homework homework;
-        if (!isEdit) {
+        if (isEdit) {
             homework = homeworkRepository.findById(request.getHomeworkId()).orElseThrow(() -> new CustomException("homeworkId", "Item not found"));
         } else {
             homework = new Homework();
@@ -97,9 +96,15 @@ public class HomeworkServiceImpl implements HomeworkService {
 
         if (file != null && !file.isEmpty()) {
             String filename = FileHandler.generateUniqueS3Key(file);
-            awsConfiguration.uploadFile(filename, FileHandler.convertMultipartFileToFile(file));
+            if (isEdit && homework.getAttachmentUrl() != null && !homework.getAttachmentUrl().isEmpty()) {
+                awsConfiguration.updateFile(filename, FileHandler.convertMultipartFileToFile(file));
+            } else {
+                awsConfiguration.uploadFile(filename, FileHandler.convertMultipartFileToFile(file));
+            }
             homework.setAttachmentUrl(filename);
-        } else if (isEdit) {
+        } else if (!isEdit) {
+            homework.setAttachmentUrl(request.getAttachmentUrl());
+        } else if (request.getAttachmentUrl() != null) {
             homework.setAttachmentUrl(request.getAttachmentUrl());
         }
         homework.setUpdatedBy(loginTeacherId);
@@ -110,7 +115,7 @@ public class HomeworkServiceImpl implements HomeworkService {
         return true;
     }
 
-    private void sendHomeworkPush(Homework homework, boolean isNew) {
+    private void sendHomeworkPush(Homework homework, boolean isEdit) {
         List<Integer> studentIds = studentClassRepository.findStudentIdsByClassAndSection(
                 homework.getTenantId(), homework.getAcademicYearId(), homework.getClassId(), homework.getSectionId());
         if (studentIds.isEmpty()) {
@@ -118,12 +123,13 @@ public class HomeworkServiceImpl implements HomeworkService {
         }
 
         String subjectName = commonHelper.subjectName(homework.getSubjectId());
-        String title = (isNew ? "New Homework: " : "Homework Updated: ") + homework.getTitle();
+        String title = (!isEdit ? "New Homework: " : "Homework Updated: ") + homework.getTitle();
         studentNotificationService.notify(homework.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_HOMEWORK,
                 homework.getHomeworkId(), title, subjectName != null ? subjectName : homework.getTitle());
     }
 
     @Override
+    @Transactional
     public boolean deleteHomeWork(Integer homeworkId) {
         Homework homework = homeworkRepository.findById(homeworkId).orElseThrow(() -> new CustomException("homeworkId", "Item not found"));
         if (homework.getAttachmentUrl() != null && !homework.getAttachmentUrl().isEmpty()) {
