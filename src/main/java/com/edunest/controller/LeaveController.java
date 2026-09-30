@@ -3,7 +3,6 @@ package com.edunest.controller;
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
 import com.edunest.dto.leave.LeaveListResponse;
-import com.edunest.dto.leave.LeaveStatusRequest;
 import com.edunest.service.LeaveService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +41,7 @@ public class LeaveController {
     public ResponseEntity<ResponseObject<Boolean>> updateStatus(
             HttpServletRequest request,
             @PathVariable Integer leaveId,
-            @RequestBody LeaveStatusRequest leaveStatusRequest) {
+            @RequestParam String status) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer tenantId = jwtHelper.extractTenantId(token);
@@ -50,7 +49,7 @@ public class LeaveController {
 
         ResponseObject<Boolean> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(leaveService.updateLeaveStatus(tenantId, teacherId, leaveId, leaveStatusRequest.getStatus()));
+        response.setData(leaveService.updateLeaveStatus(tenantId, teacherId, leaveId, status));
         return ResponseEntity.ok(response);
     }
 }
