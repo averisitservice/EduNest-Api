@@ -2,9 +2,9 @@ package com.edunest.service;
 
 import com.edunest.constant.Constant;
 import com.edunest.dto.AttendanceRosterProjection;
+import com.edunest.dto.attendance.AttendanceReportResponse;
 import com.edunest.dto.attendance.AttendanceRosterResponse;
 import com.edunest.dto.attendance.AttendanceSaveRequest;
-import com.edunest.dto.attendance.AttendanceSummaryResponse;
 import com.edunest.entity.*;
 import com.edunest.error.CustomException;
 import com.edunest.helper.CommonHelper;
@@ -154,7 +154,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    public List<AttendanceSummaryResponse> getAttendanceReport(Integer tenantId, Integer classId, Integer sectionId,
+    public List<AttendanceReportResponse> getAttendanceReport(Integer tenantId, Integer classId, Integer sectionId,
                                                                LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
@@ -177,7 +177,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
         }
 
-        List<AttendanceSummaryResponse> attendanceSummaryResponses = new ArrayList<>();
+        List<AttendanceReportResponse> attendanceSummaryResponses = new ArrayList<>();
         for (StudentClass studentClass : studentClasses) {
             List<Attendance> records = byStudent.getOrDefault(studentClass.getStudentId(), new ArrayList<>());
 
@@ -207,18 +207,18 @@ public class AttendanceServiceImpl implements AttendanceService {
             double attended = present + (halfDay * 0.5);
             double percentage = AcademicDays > 0 ? Math.round((attended / AcademicDays) * 1000.0) / 10.0 : 0.0;
 
-            AttendanceSummaryResponse summary = new AttendanceSummaryResponse();
-            summary.setStudentId(studentClass.getStudentId());
-            summary.setStudentName(commonHelper.studentNameForId(studentClass.getStudentId()));
-            summary.setRollNo(studentClass.getRollNo());
-            summary.setPresentCount(present);
-            summary.setAbsentCount(absent);
-            summary.setLateCount(leave);
-            summary.setHalfDayCount(halfDay);
-            summary.setHolidayCount(holiday);
-            summary.setTotalMarked(total);
-            summary.setPresentPercentage(percentage);
-            attendanceSummaryResponses.add(summary);
+            AttendanceReportResponse attendanceReportResponse = new AttendanceReportResponse();
+            attendanceReportResponse.setStudentId(studentClass.getStudentId());
+            attendanceReportResponse.setStudentName(commonHelper.studentNameForId(studentClass.getStudentId()));
+            attendanceReportResponse.setRollNo(studentClass.getRollNo());
+            attendanceReportResponse.setPresentCount(present);
+            attendanceReportResponse.setAbsentCount(absent);
+            attendanceReportResponse.setLateCount(leave);
+            attendanceReportResponse.setHalfDayCount(halfDay);
+            attendanceReportResponse.setHolidayCount(holiday);
+            attendanceReportResponse.setTotalMarked(total);
+            attendanceReportResponse.setPresentPercentage(percentage);
+            attendanceSummaryResponses.add(attendanceReportResponse);
         }
 
         attendanceSummaryResponses.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));

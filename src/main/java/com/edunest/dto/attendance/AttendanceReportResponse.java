@@ -6,7 +6,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AttendanceSummaryResponse {
+public class AttendanceReportResponse {
     private Integer studentId;
     private String studentName;
     private String rollNo;

@@ -2,9 +2,9 @@ package com.edunest.controller;
 
 import com.edunest.common.ResponseObject;
 import com.edunest.configuration.JwtHelper;
+import com.edunest.dto.attendance.AttendanceReportResponse;
 import com.edunest.dto.attendance.AttendanceRosterResponse;
 import com.edunest.dto.attendance.AttendanceSaveRequest;
-import com.edunest.dto.attendance.AttendanceSummaryResponse;
 import com.edunest.service.AttendanceService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +60,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/summary/{classId}")
-    public ResponseEntity<ResponseObject<List<AttendanceSummaryResponse>>> getAttendanceReport(
+    public ResponseEntity<ResponseObject<List<AttendanceReportResponse>>> getAttendanceReport(
             HttpServletRequest request,
             @PathVariable Integer classId,
             @RequestParam(required = false) Integer sectionId,
@@ -71,7 +71,7 @@ public class AttendanceController {
         String token = jwtHelper.cleanToken(authHeader);
         Integer tenantId = jwtHelper.extractTenantId(token);
 
-        ResponseObject<List<AttendanceSummaryResponse>> response = new ResponseObject<>();
+        ResponseObject<List<AttendanceReportResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
         response.setData(attendanceService.getAttendanceReport(tenantId, classId, sectionId, fromDate, toDate));
         return ResponseEntity.ok(response);
