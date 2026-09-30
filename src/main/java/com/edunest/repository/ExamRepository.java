@@ -9,9 +9,7 @@ import java.util.List;
 @Repository
 public interface ExamRepository extends JpaRepository<Exam, Integer> {
 
-    List<Exam> findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
-            Integer tenantId, Integer academicYearId, Integer classId);
+    List<Exam> findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(Integer tenantId, Integer academicYearId, Integer classId);
 
-    List<Exam> findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByExamIdDesc(
-            Integer tenantId, Integer academicYearId);
+    List<Exam> findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByExamIdDesc(Integer tenantId, Integer academicYearId);
 }

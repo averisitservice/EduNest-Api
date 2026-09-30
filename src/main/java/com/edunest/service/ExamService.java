@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface ExamService {
 
-    List<ExamSummaryResponse> getExams(Integer tenantId, Integer classId);
+    List<ExamSummaryResponse> getExamsList(Integer tenantId, Integer classId);
 
     ExamListResponse getExamById(Integer tenantId, Integer examId);
 

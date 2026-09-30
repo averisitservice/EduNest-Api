@@ -71,7 +71,7 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
-    public List<ExamSummaryResponse> getExams(Integer tenantId, Integer classId) {
+    public List<ExamSummaryResponse> getExamsList(Integer tenantId, Integer classId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         List<Exam> exams = classId != null
@@ -85,7 +85,8 @@ public class ExamServiceImpl implements ExamService {
             ExamSummaryResponse examSummaryResponse = new ExamSummaryResponse();
             BeanUtils.copyProperties(exam, examSummaryResponse);
             examSummaryResponse.setClassName(classMaster != null ? classMaster.getClassName() : null);
-            List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
+
+            List<ExamScheduleResponse> schedule = buildExamSchedule(exam.getExamId(), tenantId);
             if (!schedule.isEmpty()) {
                 examSummaryResponse.setStartDate(schedule.getFirst().getExamDate());
                 examSummaryResponse.setEndDate(schedule.getLast().getExamDate());
@@ -111,7 +112,7 @@ public class ExamServiceImpl implements ExamService {
         ExamListResponse examListResponse = new ExamListResponse();
         BeanUtils.copyProperties(exam, examListResponse);
         examListResponse.setClassName(classMaster != null ? classMaster.getClassName() : null);
-        List<ExamScheduleResponse> schedule = buildScheduleResponse(exam.getExamId(), tenantId);
+        List<ExamScheduleResponse> schedule = buildExamSchedule(exam.getExamId(), tenantId);
         examListResponse.setSubjects(schedule);
         if (!schedule.isEmpty()) {
             examListResponse.setStartDate(schedule.getFirst().getExamDate());
@@ -148,7 +149,20 @@ public class ExamServiceImpl implements ExamService {
         exam.setUpdatedDate(LocalDateTime.now());
         examRepository.save(exam);
 
-        saveSchedule(tenantId, exam.getExamId(), request.getSubjects());
+        examScheduleRepository.deleteByExamIdAndTenantId(exam.getExamId(), tenantId);
+
+        if (request.getSubjects() != null && !request.getSubjects().isEmpty()) {
+            for (ExamScheduleRequest examScheduleRequest : request.getSubjects()) {
+                if (examScheduleRequest.getSubjectId() == null || examScheduleRequest.getExamDate() == null) {
+                    continue;
+                }
+                ExamSchedule schedule = new ExamSchedule();
+                schedule.setTenantId(tenantId);
+                schedule.setExamId(exam.getExamId());
+                BeanUtils.copyProperties(examScheduleRequest, schedule);
+                examScheduleRepository.save(schedule);
+            }
+        }
 
         sendExamScheduledPush(exam, isNew);
         return true;
@@ -178,32 +192,13 @@ public class ExamServiceImpl implements ExamService {
         return earliest != null ? earliest : request.getExamDate();
     }
 
-    private void saveSchedule(Integer tenantId, Integer examId, List<ExamScheduleRequest> subjects) {
-        examScheduleRepository.deleteByExamIdAndTenantId(examId, tenantId);
-
-        if (subjects == null || subjects.isEmpty()) {
-            return;
-        }
-
-        for (ExamScheduleRequest examScheduleRequest : subjects) {
-            if (examScheduleRequest.getSubjectId() == null || examScheduleRequest.getExamDate() == null) {
-                continue;
-            }
-            ExamSchedule schedule = new ExamSchedule();
-            schedule.setTenantId(tenantId);
-            schedule.setExamId(examId);
-            BeanUtils.copyProperties(examScheduleRequest, schedule);
-            examScheduleRepository.save(schedule);
-        }
-    }
-
-    private List<ExamScheduleResponse> buildScheduleResponse(Integer examId, Integer tenantId) {
-        List<ExamSchedule> rows = examScheduleRepository
+    private List<ExamScheduleResponse> buildExamSchedule(Integer examId, Integer tenantId) {
+        List<ExamSchedule> examSchedules = examScheduleRepository
                 .findByExamIdAndTenantIdOrderByExamDateAscExamScheduleIdAsc(examId, tenantId);
 
         List<ExamScheduleResponse> examScheduleResponses = new ArrayList<>();
 
-        for (ExamSchedule examSchedule : rows) {
+        for (ExamSchedule examSchedule : examSchedules) {
             Subject subject = subjectRepository.findById(examSchedule.getSubjectId()).orElse(null);
 
             ExamScheduleResponse response = new ExamScheduleResponse();
@@ -225,8 +220,7 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     public ExamMarksEntryResponse getMarksEntry(Integer tenantId, Integer examId, Integer classId, Integer sectionId) {
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() -> new CustomException("examId", "Exam not found"));
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new CustomException("examId", "Exam not found"));
 
         List<Subject> subjects = classSubjects(exam.getClassId(), tenantId);
 
@@ -235,9 +229,9 @@ public class ExamServiceImpl implements ExamService {
             subjectItems.add(new ExamMarksEntryResponse.SubjectItem(subject.getSubjectId(), subject.getSubjectName()));
         }
 
-        List<StudentClass> roster = studentClassRepository.findStudentClasses(classId, sectionId, exam.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId, exam.getAcademicYearId(), tenantId);
         List<Integer> studentIds = new ArrayList<>();
-        for (StudentClass studentClass : roster) {
+        for (StudentClass studentClass : studentClasses) {
             studentIds.add(studentClass.getStudentId());
         }
 
@@ -255,14 +249,14 @@ public class ExamServiceImpl implements ExamService {
             }
         }
 
-        List<ExamMarksEntryResponse.StudentRow> rows = new ArrayList<>();
-        for (StudentClass studentClass : roster) {
-            ExamMarksEntryResponse.StudentRow row = new ExamMarksEntryResponse.StudentRow();
-            row.setStudentId(studentClass.getStudentId());
-            row.setStudentName(commonHelper.studentNameForId(studentClass.getStudentId()));
-            row.setRollNo(studentClass.getRollNo());
-            row.setMarks(marksMap.getOrDefault(studentClass.getStudentId(), new HashMap<>()));
-            rows.add(row);
+        List<ExamMarksEntryResponse.StudentDetail> rows = new ArrayList<>();
+        for (StudentClass studentClass : studentClasses) {
+            ExamMarksEntryResponse.StudentDetail detail = new ExamMarksEntryResponse.StudentDetail();
+            detail.setStudentId(studentClass.getStudentId());
+            detail.setStudentName(commonHelper.studentNameForId(studentClass.getStudentId()));
+            detail.setRollNo(studentClass.getRollNo());
+            detail.setMarks(marksMap.getOrDefault(studentClass.getStudentId(), new HashMap<>()));
+            rows.add(detail);
         }
         rows.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
 
@@ -278,8 +272,7 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public boolean saveMarks(Integer tenantId, ExamMarksSaveRequest request) {
-        Exam exam = examRepository.findById(request.getExamId())
-                .orElseThrow(() -> new CustomException("examId", "Exam not found"));
+        Exam exam = examRepository.findById(request.getExamId()).orElseThrow(() -> new CustomException("examId", "Exam not found"));
 
         if (request.getRecords() == null || request.getRecords().isEmpty()) {
             throw new CustomException("records", "Please enter marks for at least one student.");
@@ -323,25 +316,12 @@ public class ExamServiceImpl implements ExamService {
                 affectedStudentIds.add(item.getStudentId());
             }
         }
-
-        sendResultPublishedPush(exam, new ArrayList<>(affectedStudentIds));
         return true;
-    }
-
-    private void sendResultPublishedPush(Exam exam, List<Integer> studentIds) {
-        if (studentIds.isEmpty()) {
-            return;
-        }
-
-        studentNotificationService.notify(exam.getTenantId(), studentIds, Constant.NOTIFICATION_TYPE_RESULT_PUBLISHED,
-                exam.getExamId(), "Result Published: " + exam.getExamName(),
-                "Your marks for " + exam.getExamName() + " have been published.");
     }
 
     @Override
     public ReportCardResponse getReportCard(Integer tenantId, Integer examId, Integer studentId) {
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() -> new CustomException("examId", "Exam not found"));
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new CustomException("examId", "Exam not found"));
 
         List<Subject> subjects = classSubjects(exam.getClassId(), tenantId);
 

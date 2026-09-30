@@ -15,7 +15,7 @@ public class ExamMarksEntryResponse {
     private String examName;
     private Integer maxMarks;
     private List<SubjectItem> subjects;
-    private List<StudentRow> students;
+    private List<StudentDetail> students;
 
     @Getter
     @Setter
@@ -30,7 +30,7 @@ public class ExamMarksEntryResponse {
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class StudentRow {
+    public static class StudentDetail {
         private Integer studentId;
         private String studentName;
         private String rollNo;

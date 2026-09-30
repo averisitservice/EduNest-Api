@@ -23,7 +23,7 @@ public class ExamController {
     JwtHelper jwtHelper;
 
     @GetMapping("/list")
-    public ResponseEntity<ResponseObject<List<ExamSummaryResponse>>> getExams(
+    public ResponseEntity<ResponseObject<List<ExamSummaryResponse>>> getExamsList(
             HttpServletRequest request, @RequestParam(required = false) Integer classId) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
@@ -31,7 +31,7 @@ public class ExamController {
 
         ResponseObject<List<ExamSummaryResponse>> response = new ResponseObject<>();
         response.setSuccess(true);
-        response.setData(examService.getExams(tenantId, classId));
+        response.setData(examService.getExamsList(tenantId, classId));
         return ResponseEntity.ok(response);
     }
 

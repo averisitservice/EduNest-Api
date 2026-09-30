@@ -16,9 +16,7 @@ public class ReportCardResponse {
     private String examName;
     private Integer maxMarksPerSubject;
     private Integer passMarks;
-
     private List<SubjectMark> subjects;
-
     private BigDecimal totalObtained;
     private Integer totalMax;
     private double percentage;
