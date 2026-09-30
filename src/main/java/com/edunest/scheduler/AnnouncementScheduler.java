@@ -24,9 +24,9 @@ public class AnnouncementScheduler {
     @Scheduled(cron = "0 0 6 * * *")
     @Transactional
     public void publishScheduledAnnouncements() {
-        List<Announcement> due = announcementRepository.findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(Constant.ANNOUNCEMENT_STATUS_SCHEDULED, LocalDate.now());
+        List<Announcement> announcements = announcementRepository.findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(Constant.ANNOUNCEMENT_STATUS_SCHEDULED, LocalDate.now());
 
-        for (Announcement announcement : due) {
+        for (Announcement announcement : announcements) {
             announcement.setStatus(Constant.ANNOUNCEMENT_STATUS_PUBLISHED);
             announcementRepository.save(announcement);
             announcementService.sendAnnouncementPush(announcement);
