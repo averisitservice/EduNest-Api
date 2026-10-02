@@ -12,12 +12,7 @@ import java.util.List;
 @Repository
 public interface LeaveRepository extends JpaRepository<Leave, Integer> {
 
-    @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.academicYearId = :academicYearId "
-            + "AND l.studentId = :studentId "
-            + "ORDER BY l.leaveId DESC")
-    List<Leave> findByStudentId(
-            @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
-            @Param("studentId") Integer studentId);
+    List<Leave> findByTenantIdAndAcademicYearIdAndStudentIdOrderByLeaveIdDesc(Integer tenantId, Integer academicYearId, Integer studentId);
 
     @Query("SELECT l FROM Leave l WHERE l.tenantId = :tenantId AND l.academicYearId = :academicYearId "
             + "AND l.classId = :classId "

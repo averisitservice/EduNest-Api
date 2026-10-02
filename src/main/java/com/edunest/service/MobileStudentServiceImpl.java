@@ -290,8 +290,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     }
 
     @Override
-    public StudentAttendanceResponse getAttendance(Integer studentId, Integer tenantId, LocalDate fromDate,
-                                                   LocalDate toDate) {
+    public StudentAttendanceResponse getAttendance(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         LocalDate resolvedToDate = toDate != null ? toDate : LocalDate.now();
@@ -301,8 +300,10 @@ public class MobileStudentServiceImpl implements MobileStudentService {
                 tenantId, studentId, currentYear.getAcademicYearId(), resolvedFromDate, toDate);
 
         Set<LocalDate> approvedLeaveDates = new HashSet<>();
-        for (Leave leave : leaveRepository.findByTenantIdAndStudentIdAndLeaveDateBetweenAndStatus(
-                tenantId, studentId, resolvedFromDate, resolvedToDate, Constant.LEAVE_STATUS_APPROVED)) {
+
+        List<Leave> approvedLeaves = leaveRepository.findByTenantIdAndStudentIdAndLeaveDateBetweenAndStatus(tenantId, studentId, resolvedFromDate, resolvedToDate, Constant.LEAVE_STATUS_APPROVED);
+
+        for (Leave leave : approvedLeaves) {
             approvedLeaveDates.add(leave.getLeaveDate());
         }
 
@@ -319,23 +320,25 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
             boolean onApprovedLeave = approvedLeaveDates.contains(attendance.getAttendanceDate());
 
-            if (Constant.PRESENT.equals(attendance.getStatus())) {
-                item.setStatus(Constant.ATTENDANCE_DISPLAY_PRESENT);
-                presentDays++;
-            } else if (Constant.ABSENT.equals(attendance.getStatus())) {
-                item.setStatus(
-                        onApprovedLeave ? Constant.ATTENDANCE_DISPLAY_LEAVE : Constant.ATTENDANCE_DISPLAY_ABSENT);
-                absentDays++;
-            } else if (Constant.LEAVE.equals(attendance.getStatus())) {
-                item.setStatus(Constant.ATTENDANCE_DISPLAY_LEAVE);
-                lateDays++;
-            } else if (Constant.HOLIDAY.equals(attendance.getStatus())) {
-                item.setStatus(Constant.ATTENDANCE_DISPLAY_HOLIDAY);
-                holidayDays++;
-            } else {
-                item.setStatus(Constant.ATTENDANCE_DISPLAY_NOT_MARKED);
+            switch (attendance.getStatus()) {
+                case Constant.PRESENT -> {
+                    item.setStatus(Constant.ATTENDANCE_DISPLAY_PRESENT);
+                    presentDays++;
+                }
+                case Constant.ABSENT -> {
+                    item.setStatus(onApprovedLeave ? Constant.ATTENDANCE_DISPLAY_LEAVE : Constant.ATTENDANCE_DISPLAY_ABSENT);
+                    absentDays++;
+                }
+                case Constant.LEAVE -> {
+                    item.setStatus(Constant.ATTENDANCE_DISPLAY_LEAVE);
+                    lateDays++;
+                }
+                case Constant.HOLIDAY -> {
+                    item.setStatus(Constant.ATTENDANCE_DISPLAY_HOLIDAY);
+                    holidayDays++;
+                }
+                case null, default -> item.setStatus(Constant.ATTENDANCE_DISPLAY_NOT_MARKED);
             }
-
             records.add(item);
         }
 

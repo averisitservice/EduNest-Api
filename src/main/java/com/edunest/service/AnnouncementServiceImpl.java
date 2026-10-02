@@ -134,7 +134,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         if (Constant.All.equalsIgnoreCase(announcement.getAudience()) || announcement.getClassIds() == null) {
             studentIds = studentRepository.findStudentIdByTenantIdAndIsActiveTrue(announcement.getTenantId());
         } else {
-            studentIds = studentClassRepository.findStudentIdsByClassIds(
+            studentIds = studentClassRepository.findDistinctStudentIdByTenantIdAndAcademicYearIdAndIsActiveTrueAndClassIdIn(
                     announcement.getTenantId(), announcement.getAcademicYearId(),
                     commonHelper.convertClassIdsStringToList(announcement.getClassIds()));
         }
