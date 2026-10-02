@@ -118,8 +118,7 @@ public class RazorpayConfiguration {
     }
 
     @Transactional
-    public RazorpayTransaction recordTransaction(Integer razorpayOrderId, String razorpayPaymentId,
-                                                  String razorpaySignature, String status, String failureReason) {
+    public void recordTransaction(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature, String status, String failureReason) {
         RazorpayOrder razorpayOrder = razorpayOrderRepository.findById(razorpayOrderId)
                 .orElseThrow(() -> new CustomException("razorpayOrderId", "Razorpay order not found"));
 
@@ -129,13 +128,12 @@ public class RazorpayConfiguration {
         transaction.setRazorpaySignature(razorpaySignature);
         transaction.setStatus(status);
         transaction.setFailureReason(failureReason);
-        RazorpayTransaction savedTransaction = razorpayTransactionRepository.save(transaction);
+        razorpayTransactionRepository.save(transaction);
 
         razorpayOrder.setStatus(status);
         razorpayOrderRepository.save(razorpayOrder);
 
         log.info("Recorded Razorpay transaction: razorpayOrderId={}, paymentId={}, status={}", razorpayOrderId, razorpayPaymentId, status);
-        return savedTransaction;
     }
 
     public void saveWebhookPayload(String payRequestId, String paymentJson) {

@@ -41,7 +41,7 @@ public class FeeServiceImpl implements FeeService {
     CommonHelper commonHelper;
 
     @Autowired
-    RazorpayConfiguration razorpayService;
+    RazorpayConfiguration razorpayConfiguration;
 
     @Autowired
     TenantRepository tenantRepository;
@@ -137,9 +137,8 @@ public class FeeServiceImpl implements FeeService {
     public List<FeePaymentResponse> getPaymentHistory(Integer tenantId, Integer studentId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        List<FeePayment> payments = feePaymentRepository
-                .findByTenantIdAndStudentIdAndAcademicYearIdOrderByPaymentDateDescFeePaymentIdDesc(
-                        tenantId, studentId, currentYear.getAcademicYearId());
+        List<FeePayment> payments = feePaymentRepository.findByTenantIdAndStudentIdAndAcademicYearIdOrderByPaymentDateDescFeePaymentIdDesc(
+                tenantId, studentId, currentYear.getAcademicYearId());
 
         List<FeePaymentResponse> feePaymentResponses = new ArrayList<>();
 
@@ -164,18 +163,16 @@ public class FeeServiceImpl implements FeeService {
     public StudentFeeDetailResponse getStudentFeeDetail(Integer tenantId, Integer studentId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new CustomException("studentId", "Student not found"));
+        Student student = studentRepository.findById(studentId).orElseThrow(() -> new CustomException("studentId", "Student not found"));
 
         StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId)
                 .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
 
-        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(
-                studentClass.getClassId(), currentYear.getAcademicYearId(), tenantId);
-        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee()
-                : BigDecimal.ZERO;
-        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee()
-                : BigDecimal.ZERO;
+        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(studentClass.getClassId(), currentYear.getAcademicYearId(), tenantId);
+
+        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee() : BigDecimal.ZERO;
+        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee() : BigDecimal.ZERO;
+
         boolean isHostel = Boolean.TRUE.equals(student.getIsHostel());
         BigDecimal totalFee = isHostel ? annualFee.add(hostelFee) : annualFee;
 
@@ -219,26 +216,24 @@ public class FeeServiceImpl implements FeeService {
         }
 
         String receipt = "FEE-" + studentId + "-" + System.currentTimeMillis();
-        RazorpayOrder razorpayOrder = razorpayService.createOrder(tenantId, studentId, amount, "INR", receipt);
+        RazorpayOrder razorpayOrder = razorpayConfiguration.createOrder(tenantId, studentId, amount, "INR", receipt);
 
         FeeOrderResponse feeOrderResponse = new FeeOrderResponse();
         feeOrderResponse.setRazorpayOrderId(razorpayOrder.getRazorpayOrderId());
         feeOrderResponse.setRazorpayOrderRef(razorpayOrder.getRazorpayOrderRef());
         feeOrderResponse.setAmount(razorpayOrder.getAmount());
         feeOrderResponse.setCurrency(razorpayOrder.getCurrency());
-        feeOrderResponse.setKeyId(razorpayService.getKeyId());
+        feeOrderResponse.setKeyId(razorpayConfiguration.getKeyId());
         return feeOrderResponse;
     }
 
     @Override
     @Transactional
-    public VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId,
-                                                  String razorpaySignature) {
-        boolean verified = razorpayService.verifyAndRecordPayment(razorpayOrderId, razorpayPaymentId,
-                razorpaySignature);
+    public VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature) {
+        boolean verified = razorpayConfiguration.verifyAndRecordPayment(razorpayOrderId, razorpayPaymentId, razorpaySignature);
 
         if (verified) {
-            RazorpayOrder razorpayOrder = razorpayService.getOrder(razorpayOrderId);
+            RazorpayOrder razorpayOrder = razorpayConfiguration.getOrder(razorpayOrderId);
             recordOnlinePayment(razorpayOrder.getTenantId(), razorpayOrder.getStudentId(), razorpayOrder.getAmount(),
                     razorpayPaymentId);
         }
@@ -330,12 +325,10 @@ public class FeeServiceImpl implements FeeService {
             return BigDecimal.ZERO;
         }
 
-        TenantFeeSetting setting = tenantFeeSettingRepository
-                .findByTenantIdAndAcademicYearId(tenantId, academicYear.getAcademicYearId())
+        TenantFeeSetting setting = tenantFeeSettingRepository.findByTenantIdAndAcademicYearId(tenantId, academicYear.getAcademicYearId())
                 .orElse(null);
 
-        if (setting == null || setting.getOverdueChargeAmount() == null
-                || setting.getOverdueChargeAmount().compareTo(BigDecimal.ZERO) <= 0) {
+        if (setting == null || setting.getOverdueChargeAmount() == null || setting.getOverdueChargeAmount().compareTo(BigDecimal.ZERO) <= 0) {
             return BigDecimal.ZERO;
         }
 
@@ -393,5 +386,4 @@ public class FeeServiceImpl implements FeeService {
         }
         return displayClass.replaceFirst("(?i)^Class\\s*", "").replaceAll("\\s*-\\s*", "-").trim();
     }
-
 }
