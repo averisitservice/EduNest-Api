@@ -26,9 +26,7 @@ public class FeeController {
 
     @GetMapping("/status/{classId}")
     public ResponseEntity<ResponseObject<List<FeeStatusResponse>>> getFeeStatus(
-            HttpServletRequest request,
-            @PathVariable Integer classId,
-            @RequestParam(required = false) Integer sectionId) {
+            HttpServletRequest request, @PathVariable Integer classId, @RequestParam(required = false) Integer sectionId) {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
@@ -41,8 +39,7 @@ public class FeeController {
     }
 
     @PostMapping("/payment")
-    public ResponseEntity<ResponseObject<String>> collectPayment(
-            HttpServletRequest request, @RequestBody FeePaymentRequest paymentRequest) {
+    public ResponseEntity<ResponseObject<String>> collectPayment(HttpServletRequest request, @RequestBody FeePaymentRequest paymentRequest) {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);
@@ -56,8 +53,7 @@ public class FeeController {
     }
 
     @GetMapping("/history/{studentId}")
-    public ResponseEntity<ResponseObject<List<FeePaymentResponse>>> getPaymentHistory(
-            HttpServletRequest request, @PathVariable Integer studentId) {
+    public ResponseEntity<ResponseObject<List<FeePaymentResponse>>> getPaymentHistory(HttpServletRequest request, @PathVariable Integer studentId) {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = jwtHelper.cleanToken(authHeader);

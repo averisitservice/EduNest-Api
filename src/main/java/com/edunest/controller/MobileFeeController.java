@@ -41,8 +41,7 @@ public class MobileFeeController {
 
     @PostMapping("/create-order")
     public ResponseEntity<ResponseObject<FeeOrderResponse>> createOrder(
-            HttpServletRequest request,
-            @RequestBody(required = false) CreateFeeOrderRequest createFeeOrderRequest) {
+            HttpServletRequest request, @RequestBody(required = false) CreateFeeOrderRequest createFeeOrderRequest) {
 
         String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
         Integer studentId = jwtHelper.extractStudentId(token);
@@ -57,13 +56,10 @@ public class MobileFeeController {
     }
 
     @PostMapping("/verify-payment")
-    public ResponseEntity<ResponseObject<VerifyPaymentResponse>> verifyPayment(
-            @RequestBody VerifyPaymentRequest verifyPaymentRequest) {
+    public ResponseEntity<ResponseObject<VerifyPaymentResponse>> verifyPayment(@RequestBody VerifyPaymentRequest verifyPaymentRequest) {
 
         VerifyPaymentResponse verifyPaymentResponse = feeService.verifyFeePayment(
-                verifyPaymentRequest.getRazorpayOrderId(),
-                verifyPaymentRequest.getRazorpayPaymentId(),
-                verifyPaymentRequest.getRazorpaySignature());
+                verifyPaymentRequest.getRazorpayOrderId(), verifyPaymentRequest.getRazorpayPaymentId(), verifyPaymentRequest.getRazorpaySignature());
 
         ResponseObject<VerifyPaymentResponse> response = new ResponseObject<>();
         response.setSuccess(verifyPaymentResponse.isVerified());

@@ -2,11 +2,7 @@ package com.edunest.service;
 
 import com.edunest.configuration.RazorpayConfiguration;
 import com.edunest.constant.Constant;
-import com.edunest.dto.fee.FeePaymentRequest;
-import com.edunest.dto.fee.FeePaymentResponse;
-import com.edunest.dto.fee.FeeReceiptDetails;
-import com.edunest.dto.fee.FeeStatusResponse;
-import com.edunest.dto.fee.StudentFeeDetailResponse;
+import com.edunest.dto.fee.*;
 import com.edunest.dto.mobile.FeeOrderResponse;
 import com.edunest.dto.mobile.VerifyPaymentResponse;
 import com.edunest.entity.*;
@@ -60,15 +56,11 @@ public class FeeServiceImpl implements FeeService {
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(classId,
-                currentYear.getAcademicYearId(), tenantId);
-        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee()
-                : BigDecimal.ZERO;
-        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee()
-                : BigDecimal.ZERO;
+        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(classId, currentYear.getAcademicYearId(), tenantId);
+        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee() : BigDecimal.ZERO;
+        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee() : BigDecimal.ZERO;
 
-        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId,
-                currentYear.getAcademicYearId(), tenantId);
+        List<StudentClass> studentClasses = studentClassRepository.findStudentClasses(classId, sectionId, currentYear.getAcademicYearId(), tenantId);
 
         List<Integer> studentIds = new ArrayList<>();
         for (StudentClass studentClass : studentClasses) {
@@ -77,8 +69,7 @@ public class FeeServiceImpl implements FeeService {
 
         Map<Integer, BigDecimal> paidByStudent = new HashMap<>();
         if (!studentIds.isEmpty()) {
-            List<FeePayment> payments = feePaymentRepository.findByTenantIdAndAcademicYearIdAndStudentIdIn(
-                    tenantId, currentYear.getAcademicYearId(), studentIds);
+            List<FeePayment> payments = feePaymentRepository.findByTenantIdAndAcademicYearIdAndStudentIdIn(tenantId, currentYear.getAcademicYearId(), studentIds);
             for (FeePayment feePayment : payments) {
                 BigDecimal existingAmount = paidByStudent.get(feePayment.getStudentId());
                 if (existingAmount == null) {
@@ -88,7 +79,7 @@ public class FeeServiceImpl implements FeeService {
             }
         }
 
-        List<FeeStatusResponse> result = new ArrayList<>();
+        List<FeeStatusResponse> feeStatusResponses = new ArrayList<>();
         for (StudentClass studentClass : studentClasses) {
             Student student = studentRepository.findById(studentClass.getStudentId()).orElse(null);
             boolean isHostel = student != null && Boolean.TRUE.equals(student.getIsHostel());
@@ -106,11 +97,11 @@ public class FeeServiceImpl implements FeeService {
             response.setOverdueCharge(overdueCharge);
             response.setPaidAmount(paid);
             response.setDueAmount(studentAnnual.add(overdueCharge).subtract(paid));
-            result.add(response);
+            feeStatusResponses.add(response);
         }
 
-        result.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
-        return result;
+        feeStatusResponses.sort(Comparator.comparing(r -> CommonHelper.rollNo(r.getRollNo())));
+        return feeStatusResponses;
     }
 
     @Override
@@ -132,8 +123,7 @@ public class FeeServiceImpl implements FeeService {
         payment.setAmount(request.getAmount());
         payment.setOverdueCharge(request.getOverdueCharge() != null ? request.getOverdueCharge() : BigDecimal.ZERO);
         payment.setPaymentDate(request.getPaymentDate() != null ? request.getPaymentDate() : LocalDate.now());
-        payment.setPaymentMode(
-                request.getPaymentMode() != null ? request.getPaymentMode() : Constant.PAYMENT_MODE_CASH);
+        payment.setPaymentMode(request.getPaymentMode() != null ? request.getPaymentMode() : Constant.PAYMENT_MODE_CASH);
         payment.setReceiptNo(receiptNo);
         payment.setRemarks(request.getRemarks());
         payment.setCollectedBy(collectedBy);
@@ -141,6 +131,122 @@ public class FeeServiceImpl implements FeeService {
 
         sendFeeReceiptEmail(payment, studentClass);
         return receiptNo;
+    }
+
+    @Override
+    public List<FeePaymentResponse> getPaymentHistory(Integer tenantId, Integer studentId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+
+        List<FeePayment> payments = feePaymentRepository
+                .findByTenantIdAndStudentIdAndAcademicYearIdOrderByPaymentDateDescFeePaymentIdDesc(
+                        tenantId, studentId, currentYear.getAcademicYearId());
+
+        List<FeePaymentResponse> feePaymentResponses = new ArrayList<>();
+
+        for (FeePayment payment : payments) {
+            String collectedByName = null;
+            if (payment.getCollectedBy() != null) {
+                Teacher teacher = teacherRepository.findById(payment.getCollectedBy()).orElse(null);
+                if (teacher != null) {
+                    collectedByName = CommonHelper.teacherNameForTeacher(teacher);
+                }
+            }
+
+            FeePaymentResponse response = new FeePaymentResponse();
+            BeanUtils.copyProperties(payment, response);
+            response.setCollectedBy(collectedByName);
+            feePaymentResponses.add(response);
+        }
+        return feePaymentResponses;
+    }
+
+    @Override
+    public StudentFeeDetailResponse getStudentFeeDetail(Integer tenantId, Integer studentId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new CustomException("studentId", "Student not found"));
+
+        StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId)
+                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
+
+        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(
+                studentClass.getClassId(), currentYear.getAcademicYearId(), tenantId);
+        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee()
+                : BigDecimal.ZERO;
+        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee()
+                : BigDecimal.ZERO;
+        boolean isHostel = Boolean.TRUE.equals(student.getIsHostel());
+        BigDecimal totalFee = isHostel ? annualFee.add(hostelFee) : annualFee;
+
+        List<FeePaymentResponse> payments = getPaymentHistory(tenantId, studentId);
+        BigDecimal paidAmount = BigDecimal.ZERO;
+        for (FeePaymentResponse payment : payments) {
+            paidAmount = paidAmount.add(payment.getAmount());
+        }
+
+        StudentFeeDetailResponse response = new StudentFeeDetailResponse();
+        BigDecimal overdueChargeAmount = calculateOverdueCharge(tenantId, studentId, currentYear, totalFee, paidAmount);
+        BigDecimal totalFeeWithOverdue = totalFee.add(overdueChargeAmount);
+
+        response.setStudentId(studentId);
+        response.setStudentName(CommonHelper.studentNameForStudent(student));
+        response.setDisplayClass(formatFeeDisplayClass(studentClass));
+        response.setRollNo(studentClass.getRollNo());
+        response.setAcademicYearName(currentYear.getYearName());
+        response.setTotalFee(totalFee);
+        response.setOverdueChargeAmount(overdueChargeAmount);
+        response.setTotalFeeWithOverdue(totalFeeWithOverdue);
+        response.setPaidAmount(paidAmount);
+        response.setPendingAmount(totalFeeWithOverdue.subtract(paidAmount));
+        response.setPayments(payments);
+        return response;
+    }
+
+    @Override
+    public FeeOrderResponse createFeeOrder(Integer tenantId, Integer studentId, BigDecimal requestedAmount) {
+        BigDecimal pendingAmount = getStudentFeeDetail(tenantId, studentId).getPendingAmount();
+        if (pendingAmount == null || pendingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException("amount", "No pending fee to pay");
+        }
+
+        BigDecimal amount = requestedAmount != null ? requestedAmount : pendingAmount;
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException("amount", "Amount must be greater than zero");
+        }
+        if (amount.compareTo(pendingAmount) > 0) {
+            throw new CustomException("amount", "Amount cannot be more than the pending fee");
+        }
+
+        String receipt = "FEE-" + studentId + "-" + System.currentTimeMillis();
+        RazorpayOrder razorpayOrder = razorpayService.createOrder(tenantId, studentId, amount, "INR", receipt);
+
+        FeeOrderResponse feeOrderResponse = new FeeOrderResponse();
+        feeOrderResponse.setRazorpayOrderId(razorpayOrder.getRazorpayOrderId());
+        feeOrderResponse.setRazorpayOrderRef(razorpayOrder.getRazorpayOrderRef());
+        feeOrderResponse.setAmount(razorpayOrder.getAmount());
+        feeOrderResponse.setCurrency(razorpayOrder.getCurrency());
+        feeOrderResponse.setKeyId(razorpayService.getKeyId());
+        return feeOrderResponse;
+    }
+
+    @Override
+    @Transactional
+    public VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId,
+                                                  String razorpaySignature) {
+        boolean verified = razorpayService.verifyAndRecordPayment(razorpayOrderId, razorpayPaymentId,
+                razorpaySignature);
+
+        if (verified) {
+            RazorpayOrder razorpayOrder = razorpayService.getOrder(razorpayOrderId);
+            recordOnlinePayment(razorpayOrder.getTenantId(), razorpayOrder.getStudentId(), razorpayOrder.getAmount(),
+                    razorpayPaymentId);
+        }
+
+        VerifyPaymentResponse verifyPaymentResponse = new VerifyPaymentResponse();
+        verifyPaymentResponse.setVerified(verified);
+        verifyPaymentResponse.setStatus(verified ? Constant.PAYMENT_STATUS_PAID : Constant.PAYMENT_STATUS_FAILED);
+        return verifyPaymentResponse;
     }
 
     @Override
@@ -218,82 +324,13 @@ public class FeeServiceImpl implements FeeService {
         }
     }
 
-    @Override
-    public List<FeePaymentResponse> getPaymentHistory(Integer tenantId, Integer studentId) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-
-        List<FeePayment> payments = feePaymentRepository
-                .findByTenantIdAndStudentIdAndAcademicYearIdOrderByPaymentDateDescFeePaymentIdDesc(
-                        tenantId, studentId, currentYear.getAcademicYearId());
-
-        List<FeePaymentResponse> feePaymentResponses = new ArrayList<>();
-
-        for (FeePayment payment : payments) {
-            String collectedByName = null;
-            if (payment.getCollectedBy() != null) {
-                Teacher teacher = teacherRepository.findById(payment.getCollectedBy()).orElse(null);
-                if (teacher != null) {
-                    collectedByName = CommonHelper.teacherNameForTeacher(teacher);
-                }
-            }
-
-            FeePaymentResponse response = new FeePaymentResponse();
-            BeanUtils.copyProperties(payment, response);
-            response.setCollectedBy(collectedByName);
-            feePaymentResponses.add(response);
-        }
-        return feePaymentResponses;
-    }
-
-    @Override
-    public StudentFeeDetailResponse getStudentFeeDetail(Integer tenantId, Integer studentId) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new CustomException("studentId", "Student not found"));
-
-        StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId)
-                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
-
-        ClassFee classFee = classFeeRepository.findByClassIdAndAcademicYearIdAndTenantId(
-                studentClass.getClassId(), currentYear.getAcademicYearId(), tenantId);
-        BigDecimal annualFee = classFee != null && classFee.getAnnualFee() != null ? classFee.getAnnualFee()
-                : BigDecimal.ZERO;
-        BigDecimal hostelFee = classFee != null && classFee.getHostelFee() != null ? classFee.getHostelFee()
-                : BigDecimal.ZERO;
-        boolean isHostel = Boolean.TRUE.equals(student.getIsHostel());
-        BigDecimal totalFee = isHostel ? annualFee.add(hostelFee) : annualFee;
-
-        List<FeePaymentResponse> payments = getPaymentHistory(tenantId, studentId);
-        BigDecimal paidAmount = BigDecimal.ZERO;
-        for (FeePaymentResponse payment : payments) {
-            paidAmount = paidAmount.add(payment.getAmount());
-        }
-
-        StudentFeeDetailResponse response = new StudentFeeDetailResponse();
-        BigDecimal overdueChargeAmount = calculateOverdueCharge(tenantId, studentId, currentYear, totalFee, paidAmount);
-        BigDecimal totalFeeWithOverdue = totalFee.add(overdueChargeAmount);
-
-        response.setStudentId(studentId);
-        response.setStudentName(CommonHelper.studentNameForStudent(student));
-        response.setDisplayClass(formatFeeDisplayClass(studentClass));
-        response.setRollNo(studentClass.getRollNo());
-        response.setAcademicYearName(currentYear.getYearName());
-        response.setTotalFee(totalFee);
-        response.setOverdueChargeAmount(overdueChargeAmount);
-        response.setTotalFeeWithOverdue(totalFeeWithOverdue);
-        response.setPaidAmount(paidAmount);
-        response.setPendingAmount(totalFeeWithOverdue.subtract(paidAmount));
-        response.setPayments(payments);
-        return response;
-    }
 
     private BigDecimal calculateOverdueCharge(Integer tenantId, Integer studentId, AcademicYear academicYear, BigDecimal baseFee, BigDecimal paidAmount) {
         if (baseFee == null || baseFee.compareTo(BigDecimal.ZERO) <= 0 || studentId == null) {
             return BigDecimal.ZERO;
         }
 
-       TenantFeeSetting setting = tenantFeeSettingRepository
+        TenantFeeSetting setting = tenantFeeSettingRepository
                 .findByTenantIdAndAcademicYearId(tenantId, academicYear.getAcademicYearId())
                 .orElse(null);
 
@@ -355,52 +392,6 @@ public class FeeServiceImpl implements FeeService {
             return null;
         }
         return displayClass.replaceFirst("(?i)^Class\\s*", "").replaceAll("\\s*-\\s*", "-").trim();
-    }
-
-    @Override
-    public FeeOrderResponse createFeeOrder(Integer tenantId, Integer studentId, BigDecimal requestedAmount) {
-        BigDecimal pendingAmount = getStudentFeeDetail(tenantId, studentId).getPendingAmount();
-        if (pendingAmount == null || pendingAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException("amount", "No pending fee to pay");
-        }
-
-        BigDecimal amount = requestedAmount != null ? requestedAmount : pendingAmount;
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException("amount", "Amount must be greater than zero");
-        }
-        if (amount.compareTo(pendingAmount) > 0) {
-            throw new CustomException("amount", "Amount cannot be more than the pending fee");
-        }
-
-        String receipt = "FEE-" + studentId + "-" + System.currentTimeMillis();
-        RazorpayOrder razorpayOrder = razorpayService.createOrder(tenantId, studentId, amount, "INR", receipt);
-
-        FeeOrderResponse feeOrderResponse = new FeeOrderResponse();
-        feeOrderResponse.setRazorpayOrderId(razorpayOrder.getRazorpayOrderId());
-        feeOrderResponse.setRazorpayOrderRef(razorpayOrder.getRazorpayOrderRef());
-        feeOrderResponse.setAmount(razorpayOrder.getAmount());
-        feeOrderResponse.setCurrency(razorpayOrder.getCurrency());
-        feeOrderResponse.setKeyId(razorpayService.getKeyId());
-        return feeOrderResponse;
-    }
-
-    @Override
-    @Transactional
-    public VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId,
-            String razorpaySignature) {
-        boolean verified = razorpayService.verifyAndRecordPayment(razorpayOrderId, razorpayPaymentId,
-                razorpaySignature);
-
-        if (verified) {
-            RazorpayOrder razorpayOrder = razorpayService.getOrder(razorpayOrderId);
-            recordOnlinePayment(razorpayOrder.getTenantId(), razorpayOrder.getStudentId(), razorpayOrder.getAmount(),
-                    razorpayPaymentId);
-        }
-
-        VerifyPaymentResponse verifyPaymentResponse = new VerifyPaymentResponse();
-        verifyPaymentResponse.setVerified(verified);
-        verifyPaymentResponse.setStatus(verified ? Constant.PAYMENT_STATUS_PAID : Constant.PAYMENT_STATUS_FAILED);
-        return verifyPaymentResponse;
     }
 
 }

@@ -418,9 +418,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         int overallMax = 0;
 
         for (Exam exam : exams) {
-            List<ExamMark> marks = examMarkRepository
-                    .findByTenantIdAndExamIdAndStudentId(tenantId, exam.getExamId(), studentId);
-            if (marks.isEmpty()) {
+            List<ExamMark> examMarks = examMarkRepository.findByTenantIdAndExamIdAndStudentId(tenantId, exam.getExamId(), studentId);
+            if (examMarks.isEmpty()) {
                 continue;
             }
 

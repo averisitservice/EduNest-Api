@@ -20,9 +20,9 @@ public interface FeeService {
 
     StudentFeeDetailResponse getStudentFeeDetail(Integer tenantId, Integer studentId);
 
-    void recordOnlinePayment(Integer tenantId, Integer studentId, BigDecimal amount, String razorpayPaymentId);
-
     FeeOrderResponse createFeeOrder(Integer tenantId, Integer studentId, BigDecimal requestedAmount);
 
     VerifyPaymentResponse verifyFeePayment(Integer razorpayOrderId, String razorpayPaymentId, String razorpaySignature);
+
+    void recordOnlinePayment(Integer tenantId, Integer studentId, BigDecimal amount, String razorpayPaymentId);
 }
