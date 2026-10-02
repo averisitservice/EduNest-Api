@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -29,5 +29,5 @@ public interface NoteRepository extends JpaRepository<Note, Integer> {
     List<Note> findNoteForStudentInDateRange(
             @Param("tenantId") Integer tenantId, @Param("academicYearId") Integer academicYearId,
             @Param("classId") Integer classId, @Param("sectionId") Integer sectionId,
-            @Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
+            @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 }

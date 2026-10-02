@@ -10,8 +10,7 @@ import java.util.List;
 @Repository
 public interface AnnouncementRepository extends JpaRepository<Announcement, Integer> {
 
-    List<Announcement> findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
-            Integer tenantId, Integer academicYearId);
+    List<Announcement> findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(Integer tenantId, Integer academicYearId);
 
     List<Announcement> findByStatusAndPublishDateLessThanEqualAndIsActiveTrue(String status, LocalDate today);
 }

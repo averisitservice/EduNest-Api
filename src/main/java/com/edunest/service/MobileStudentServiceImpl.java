@@ -10,6 +10,9 @@ import com.edunest.helper.CommonHelper;
 import com.edunest.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -74,9 +77,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     HolidayRepository holidayRepository;
 
     @Autowired
-    HolidayService holidayService;
-
-    @Autowired
     CommonHelper commonHelper;
 
     @Autowired
@@ -84,9 +84,9 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Override
     public StudentHomeResponse getStudentHome(Integer studentId, Integer tenantId) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-
         Student student = studentRepository.findById(studentId).orElseThrow(() -> new CustomException("student", "Student not found"));
+
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
         if (!student.getTenantId().equals(tenantId)) {
             throw new CustomException("student", "Student not found");
@@ -153,154 +153,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return response;
     }
 
-
-    @Override
-    public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate,
-                                                 LocalDate toDate) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
-
-        List<Homework> homeworkList = homeworkRepository.findHomeForStudentInDateRange(
-                tenantId, currentYear.getAcademicYearId(),
-                studentClass.getClassId(), studentClass.getSectionId(), fromDate, toDate);
-
-        List<StudentHomeworkItem> studentHomeworkItems = new ArrayList<>();
-        for (Homework homework : homeworkList) {
-            StudentHomeworkItem item = new StudentHomeworkItem();
-            item.setHomeworkId(homework.getHomeworkId());
-            item.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
-            item.setTitle(homework.getTitle());
-            item.setDueDate(homework.getDueDate());
-            item.setUpdatedDate(homework.getUpdatedDate());
-            studentHomeworkItems.add(item);
-        }
-        return studentHomeworkItems;
-    }
-
-    @Override
-    public List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
-
-        List<Note> notes = noteRepository.findNoteForStudentInDateRange(
-                tenantId, currentYear.getAcademicYearId(),
-                studentClass.getClassId(), studentClass.getSectionId(),
-                fromDate != null ? fromDate.atStartOfDay() : null,
-                toDate != null ? toDate.atTime(23, 59, 59) : null);
-
-        List<StudentNoteItem> studentNoteItems = new ArrayList<>();
-        for (Note note : notes) {
-            StudentNoteItem item = new StudentNoteItem();
-            item.setNoteId(note.getNoteId());
-            item.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
-            item.setTitle(note.getTitle());
-            item.setUpdatedDate(note.getUpdatedDate());
-            studentNoteItems.add(item);
-        }
-        return studentNoteItems;
-    }
-
-    @Override
-    public StudentHomeworkDetailResponse getHomeworkDetail(Integer studentId, Integer tenantId, Integer homeworkId) {
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
-
-        Homework homework = homeworkRepository.findById(homeworkId)
-                .orElseThrow(() -> new CustomException("homeworkId", "Homework not found"));
-
-        if (!homework.getTenantId().equals(tenantId) || !homework.getClassId().equals(studentClass.getClassId())
-                || (homework.getSectionId() != null && !homework.getSectionId().equals(studentClass.getSectionId()))) {
-            throw new CustomException("homeworkId", "Homework not found");
-        }
-
-        StudentHomeworkDetailResponse studentHomeworkDetailResponse = new StudentHomeworkDetailResponse();
-        studentHomeworkDetailResponse.setHomeworkId(homework.getHomeworkId());
-        studentHomeworkDetailResponse.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
-        studentHomeworkDetailResponse.setTitle(homework.getTitle());
-        studentHomeworkDetailResponse.setDescription(homework.getDescription());
-        studentHomeworkDetailResponse.setDueDate(homework.getDueDate());
-        studentHomeworkDetailResponse.setAttachmentUrl(homework.getAttachmentUrl());
-        studentHomeworkDetailResponse.setTeacherName(commonHelper.teacherNameForId(homework.getUpdatedBy()));
-        studentHomeworkDetailResponse.setUpdatedDate(homework.getUpdatedDate());
-        return studentHomeworkDetailResponse;
-    }
-
-    @Override
-    public StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId) {
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
-
-        Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new CustomException("noteId", "Note not found"));
-
-        if (!note.getTenantId().equals(tenantId) || !note.getClassId().equals(studentClass.getClassId())
-                || (note.getSectionId() != null && !note.getSectionId().equals(studentClass.getSectionId()))) {
-            throw new CustomException("noteId", "Note not found");
-        }
-
-        StudentNoteDetailResponse response = new StudentNoteDetailResponse();
-        response.setNoteId(note.getNoteId());
-        response.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
-        response.setTitle(note.getTitle());
-        response.setDescription(note.getDescription());
-        response.setAttachmentUrl(note.getAttachmentUrl());
-        response.setTeacherName(commonHelper.teacherNameForId(note.getUpdatedBy()));
-        response.setUpdatedDate(note.getUpdatedDate());
-        return response;
-    }
-
-    private StudentClass resolveStudentClass(Integer studentId, Integer tenantId) {
-        return studentClassRepository
-                .findByStudentIdAndTenantId(studentId, tenantId)
-                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
-    }
-
-    @Override
-    public StudentExamsResponse getExams(Integer studentId, Integer tenantId) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
-
-        List<Exam> exams = examRepository
-                .findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
-                        tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
-
-        List<StudentExamsResponse.ExamItem> upcoming = new ArrayList<>();
-        List<StudentExamsResponse.ExamItem> past = new ArrayList<>();
-
-        for (Exam exam : exams) {
-            List<ExamSchedule> examSchedules = examScheduleRepository
-                    .findByExamIdAndTenantIdOrderByExamDateAscExamScheduleIdAsc(exam.getExamId(), tenantId);
-
-            for (ExamSchedule examSchedule : examSchedules) {
-                StudentExamsResponse.ExamItem examItem = new StudentExamsResponse.ExamItem();
-                examItem.setExamName(exam.getExamName());
-                examItem.setSubjectId(examSchedule.getSubjectId());
-                examItem.setSubjectName(commonHelper.subjectName(examSchedule.getSubjectId()));
-                examItem.setExamDate(examSchedule.getExamDate());
-                examItem.setStartTime(examSchedule.getStartTime());
-                examItem.setEndTime(examSchedule.getEndTime());
-                examItem.setMaxMarks(
-                        examSchedule.getMaxMarks() != null ? examSchedule.getMaxMarks() : exam.getMaxMarks());
-                examItem.setPassMarks(
-                        examSchedule.getPassMarks() != null ? examSchedule.getPassMarks() : exam.getPassMarks());
-
-                if (examSchedule.getExamDate() != null && examSchedule.getExamDate().isBefore(LocalDate.now())) {
-                    examItem.setStatus(Constant.EXAM_STATUS_COMPLETED);
-                    past.add(examItem);
-                } else {
-                    examItem.setStatus(Constant.EXAM_STATUS_UPCOMING);
-                    upcoming.add(examItem);
-                }
-            }
-        }
-
-        upcoming.sort(Comparator.comparing(StudentExamsResponse.ExamItem::getExamDate,
-                Comparator.nullsLast(Comparator.naturalOrder())));
-        past.sort(Comparator.comparing(StudentExamsResponse.ExamItem::getExamDate,
-                Comparator.nullsLast(Comparator.reverseOrder())));
-
-        return new StudentExamsResponse(upcoming, past);
-    }
-
     @Override
     public StudentTimetableResponse getTimetable(Integer studentId, Integer tenantId, String day) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
@@ -358,125 +210,90 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return studentTimetableResponse;
     }
 
-    private String resolveTargetDay(String requestedDay, List<WorkingDay> workingDays) {
-        if (requestedDay != null && !requestedDay.isBlank()) {
-            for (WorkingDay wd : workingDays) {
-                if (wd.getDayName().equalsIgnoreCase(requestedDay.trim())) {
-                    return wd.getDayName();
+    @Override
+    public StudentExamsResponse getExams(Integer studentId, Integer tenantId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        List<Exam> exams = examRepository.findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
+                tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
+
+        List<StudentExamsResponse.ExamItem> upcoming = new ArrayList<>();
+        List<StudentExamsResponse.ExamItem> past = new ArrayList<>();
+
+        for (Exam exam : exams) {
+            List<ExamSchedule> examSchedules = examScheduleRepository.findByExamIdAndTenantIdOrderByExamDateAscExamScheduleIdAsc(exam.getExamId(), tenantId);
+
+            for (ExamSchedule examSchedule : examSchedules) {
+                StudentExamsResponse.ExamItem examItem = new StudentExamsResponse.ExamItem();
+                examItem.setExamName(exam.getExamName());
+                examItem.setSubjectId(examSchedule.getSubjectId());
+                examItem.setSubjectName(commonHelper.subjectName(examSchedule.getSubjectId()));
+                examItem.setExamDate(examSchedule.getExamDate());
+                examItem.setStartTime(examSchedule.getStartTime());
+                examItem.setEndTime(examSchedule.getEndTime());
+                examItem.setMaxMarks(examSchedule.getMaxMarks() != null ? examSchedule.getMaxMarks() : exam.getMaxMarks());
+                examItem.setPassMarks(examSchedule.getPassMarks() != null ? examSchedule.getPassMarks() : exam.getPassMarks());
+
+                if (examSchedule.getExamDate() != null && examSchedule.getExamDate().isBefore(LocalDate.now())) {
+                    examItem.setStatus(Constant.EXAM_STATUS_COMPLETED);
+                    past.add(examItem);
+                } else {
+                    examItem.setStatus(Constant.EXAM_STATUS_UPCOMING);
+                    upcoming.add(examItem);
                 }
             }
         }
 
-        String todayName = LocalDate.now().getDayOfWeek().name();
-        for (WorkingDay wd : workingDays) {
-            if (wd.getDayName().equalsIgnoreCase(todayName)) {
-                return wd.getDayName();
-            }
-        }
+        upcoming.sort(Comparator.comparing(StudentExamsResponse.ExamItem::getExamDate,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+        past.sort(Comparator.comparing(StudentExamsResponse.ExamItem::getExamDate,
+                Comparator.nullsLast(Comparator.reverseOrder())));
 
-        return workingDays.isEmpty() ? null : workingDays.getFirst().getDayName();
+        return new StudentExamsResponse(upcoming, past);
     }
 
-    private String resolveTodayStatus(Integer tenantId, Integer studentId, Integer yearId, LocalDate today) {
-        Attendance attendance = attendanceRepository
-                .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDate(tenantId, studentId, yearId, today)
-                .orElse(null);
 
-        if (attendance == null) {
-            List<Holiday> holidays = holidayRepository
-                    .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, today,
-                            today);
-            if (!holidays.isEmpty()) {
-                return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
-            }
-            return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
-        }
+    @Override
+    public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        if (Constant.PRESENT.equals(attendance.getStatus())) {
-            return Constant.ATTENDANCE_DISPLAY_PRESENT;
-        } else if (Constant.ABSENT.equals(attendance.getStatus())) {
-            return Constant.ATTENDANCE_DISPLAY_ABSENT;
-        } else if (Constant.LEAVE.equals(attendance.getStatus())) {
-            return Constant.ATTENDANCE_DISPLAY_LEAVE;
-        } else if (Constant.HOLIDAY.equals(attendance.getStatus())) {
-            return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
-        } else {
-            return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
-        }
-    }
+        List<Homework> homeworkList = homeworkRepository.findHomeForStudentInDateRange(
+                tenantId, currentYear.getAcademicYearId(), studentClass.getClassId(), studentClass.getSectionId(), fromDate, toDate);
 
-    private double percent(long attended, long total) {
-        if (total <= 0) {
-            return 0.0;
+        List<StudentHomeworkItem> studentHomeworkItems = new ArrayList<>();
+        for (Homework homework : homeworkList) {
+            StudentHomeworkItem item = new StudentHomeworkItem();
+            item.setHomeworkId(homework.getHomeworkId());
+            item.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
+            item.setTitle(homework.getTitle());
+            item.setDueDate(homework.getDueDate());
+            item.setUpdatedDate(homework.getUpdatedDate());
+            studentHomeworkItems.add(item);
         }
-        return Math.round((attended * 10000.0 / total)) / 100.0;
+        return studentHomeworkItems;
     }
 
     @Override
-    public StudentDetailResponse getStudentDetailsById(Integer studentId, Integer tenantId) {
+    public List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new CustomException("studentId", "Student not found"));
+        List<Note> notes = noteRepository.findNoteForStudentInDateRange(
+                tenantId, currentYear.getAcademicYearId(), studentClass.getClassId(), studentClass.getSectionId(), fromDate, toDate);
 
-        if (!student.getTenantId().equals(tenantId)) {
-            throw new CustomException("studentId", "Student not found");
+        List<StudentNoteItem> studentNoteItems = new ArrayList<>();
+        for (Note note : notes) {
+            StudentNoteItem item = new StudentNoteItem();
+            item.setNoteId(note.getNoteId());
+            item.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
+            item.setTitle(note.getTitle());
+            item.setUpdatedDate(note.getUpdatedDate());
+            studentNoteItems.add(item);
         }
-
-        StudentDetailResponse studentDetailResponse = new StudentDetailResponse();
-        studentDetailResponse.setStudentId(student.getStudentId());
-        studentDetailResponse.setAdmissionNo(student.getAdmissionNo());
-        studentDetailResponse.setStudentName(CommonHelper.studentNameForStudent(student));
-        studentDetailResponse.setPhotoUrl(student.getPhotoUrl());
-
-        studentDetailResponse.setDateOfBirth(student.getDateOfBirth());
-        studentDetailResponse.setGender(student.getGender() != null ? String.valueOf(student.getGender()) : null);
-        studentDetailResponse.setAadharNo(student.getAadharNo());
-        studentDetailResponse.setEmail(student.getEmail());
-        studentDetailResponse.setMobileNo(student.getMobileNo());
-
-        studentDetailResponse.setFatherName(student.getFatherName());
-        studentDetailResponse.setMotherName(student.getMotherName());
-        studentDetailResponse.setParentMobile(student.getParentMobile());
-        studentDetailResponse.setParentEmail(student.getParentEmail());
-        studentDetailResponse.setParentAadhar(student.getParentAadhar());
-
-        studentDetailResponse.setAddress(CommonHelper.fullAddressForStudent(student));
-
-        applyClassPlacement(studentDetailResponse, student, tenantId);
-
-        return studentDetailResponse;
-    }
-
-    private void applyClassPlacement(StudentDetailResponse response, Student student, Integer tenantId) {
-        StudentClass studentClass = studentClassRepository
-                .findByStudentIdAndTenantId(student.getStudentId(), tenantId)
-                .orElse(null);
-
-        if (studentClass == null) {
-            return;
-        }
-
-        response.setDisplayClass(commonHelper.displayClassForStudentClass(studentClass));
-        response.setRollNo(studentClass.getRollNo());
-        response.setClassTeacherName(
-                resolveClassTeacher(studentClass.getClassId(), studentClass.getSectionId(), tenantId));
-    }
-
-    private String resolveClassTeacher(Integer classId, Integer sectionId, Integer tenantId) {
-        List<TeacherClass> assignments = teacherClassRepository
-                .findByClassIdAndSectionIdAndTenantIdAndIsActiveTrue(classId, sectionId, tenantId);
-
-        if (assignments.isEmpty()) {
-            return null;
-        }
-
-        Teacher teacher = teacherRepository.findById(assignments.getFirst().getTeacherId()).orElse(null);
-        if (teacher == null) {
-            return null;
-        }
-
-        String name = CommonHelper.teacherNameForTeacher(teacher);
-        return name.isEmpty() ? teacher.getTeacherName() : name;
+        return studentNoteItems;
     }
 
     @Override
@@ -487,9 +304,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         LocalDate resolvedToDate = toDate != null ? toDate : LocalDate.now();
         LocalDate resolvedFromDate = fromDate != null ? fromDate : resolvedToDate.minusDays(6);
 
-        List<Attendance> attendanceList = attendanceRepository
-                .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(
-                        tenantId, studentId, currentYear.getAcademicYearId(), resolvedFromDate, resolvedToDate);
+        List<Attendance> attendanceList = attendanceRepository.findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(
+                tenantId, studentId, currentYear.getAcademicYearId(), resolvedFromDate, toDate);
 
         Set<LocalDate> approvedLeaveDates = new HashSet<>();
         for (Leave leave : leaveRepository.findByTenantIdAndStudentIdAndLeaveDateBetweenAndStatus(
@@ -546,14 +362,59 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return response;
     }
 
+
+    @Override
+    public StudentHomeworkDetailResponse getHomeworkDetail(Integer studentId, Integer tenantId, Integer homeworkId) {
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        Homework homework = homeworkRepository.findById(homeworkId).orElseThrow(() -> new CustomException("homeworkId", "Homework not found"));
+
+        if (!homework.getTenantId().equals(tenantId) || !homework.getClassId().equals(studentClass.getClassId())
+                || (homework.getSectionId() != null && !homework.getSectionId().equals(studentClass.getSectionId()))) {
+            throw new CustomException("homeworkId", "Homework not found");
+        }
+
+        StudentHomeworkDetailResponse studentHomeworkDetailResponse = new StudentHomeworkDetailResponse();
+        studentHomeworkDetailResponse.setHomeworkId(homework.getHomeworkId());
+        studentHomeworkDetailResponse.setSubjectName(commonHelper.subjectName(homework.getSubjectId()));
+        studentHomeworkDetailResponse.setTitle(homework.getTitle());
+        studentHomeworkDetailResponse.setDescription(homework.getDescription());
+        studentHomeworkDetailResponse.setDueDate(homework.getDueDate());
+        studentHomeworkDetailResponse.setAttachmentUrl(homework.getAttachmentUrl());
+        studentHomeworkDetailResponse.setTeacherName(commonHelper.teacherNameForId(homework.getUpdatedBy()));
+        studentHomeworkDetailResponse.setUpdatedDate(homework.getUpdatedDate());
+        return studentHomeworkDetailResponse;
+    }
+
+    @Override
+    public StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId) {
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        Note note = noteRepository.findById(noteId).orElseThrow(() -> new CustomException("noteId", "Note not found"));
+
+        if (!note.getTenantId().equals(tenantId) || !note.getClassId().equals(studentClass.getClassId())
+                || (note.getSectionId() != null && !note.getSectionId().equals(studentClass.getSectionId()))) {
+            throw new CustomException("noteId", "Note not found");
+        }
+
+        StudentNoteDetailResponse response = new StudentNoteDetailResponse();
+        response.setNoteId(note.getNoteId());
+        response.setSubjectName(commonHelper.subjectName(note.getSubjectId()));
+        response.setTitle(note.getTitle());
+        response.setDescription(note.getDescription());
+        response.setAttachmentUrl(note.getAttachmentUrl());
+        response.setTeacherName(commonHelper.teacherNameForId(note.getUpdatedBy()));
+        response.setUpdatedDate(note.getUpdatedDate());
+        return response;
+    }
+
     @Override
     public StudentResultsResponse getResults(Integer studentId, Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
         StudentClass studentClass = resolveStudentClass(studentId, tenantId);
 
-        List<Exam> exams = examRepository
-                .findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
-                        tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
+        List<Exam> exams = examRepository.findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
+                tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
 
         List<StudentResultsResponse.ExamResultItem> examItems = new ArrayList<>();
         List<StudentResultsResponse.SubjectResult> subjectResults = new ArrayList<>();
@@ -615,6 +476,199 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return response;
     }
 
+    @Override
+    public ReportCardResponse getResultDetail(Integer studentId, Integer tenantId, Integer examId) {
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        Exam exam = examRepository.findById(examId).orElseThrow(() -> new CustomException("examId", "Exam not found"));
+
+        if (!exam.getTenantId().equals(tenantId) || !exam.getClassId().equals(studentClass.getClassId())) {
+            throw new CustomException("examId", "Exam not found");
+        }
+
+        return examService.getReportCard(tenantId, examId, studentId);
+    }
+
+    @Override
+    public PagedResponse<StudentNotificationItem> getNotifications(Integer studentId, Integer tenantId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<StudentNotification> notificationPage = studentNotificationRepository
+                .findByTenantIdAndStudentIdOrderByStudentNotificationIdDesc(tenantId, studentId, pageable);
+
+        List<StudentNotificationItem> items = new ArrayList<>();
+        for (StudentNotification notification : notificationPage.getContent()) {
+            StudentNotificationItem item = new StudentNotificationItem();
+            item.setNotificationId(notification.getStudentNotificationId());
+            item.setType(notification.getType());
+            item.setReferenceId(notification.getReferenceId());
+            item.setTitle(notification.getTitle());
+            item.setBody(notification.getBody());
+            item.setIsRead(notification.getIsRead());
+            item.setCreatedDate(notification.getCreatedDate());
+            items.add(item);
+        }
+
+        return new PagedResponse<>(items, notificationPage.getTotalElements(), notificationPage.getTotalPages(),
+                notificationPage.getNumber(), notificationPage.getSize());
+    }
+
+    @Override
+    @Transactional
+    public boolean markNotificationAsRead(Integer studentId, Integer tenantId, Integer notificationId) {
+        StudentNotification notification = studentNotificationRepository.findById(notificationId)
+                .orElseThrow(() -> new CustomException("notificationId", "Notification not found"));
+
+        if (!notification.getTenantId().equals(tenantId) || !notification.getStudentId().equals(studentId)) {
+            throw new CustomException("notificationId", "Notification not found");
+        }
+
+        notification.setIsRead(true);
+        studentNotificationRepository.save(notification);
+        return true;
+    }
+
+    @Override
+    public List<StudentAnnouncementItem> getAnnouncements(Integer studentId, Integer tenantId) {
+        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
+        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+
+        List<Announcement> announcements = announcementRepository.findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
+                tenantId, currentYear.getAcademicYearId());
+
+        List<StudentAnnouncementItem> items = new ArrayList<>();
+
+        for (Announcement announcement : announcements) {
+            if (!Constant.ANNOUNCEMENT_STATUS_PUBLISHED.equalsIgnoreCase(announcement.getStatus())) {
+                continue;
+            }
+            String audience = announcement.getAudience();
+            String classIds = announcement.getClassIds();
+            if (!Constant.All.equalsIgnoreCase(audience) && classIds != null && !classIds.isBlank()
+                    && !commonHelper.convertClassIdsStringToList(classIds).contains(studentClass.getClassId())) {
+                continue;
+            }
+            StudentAnnouncementItem item = new StudentAnnouncementItem();
+            item.setAnnouncementId(announcement.getAnnouncementId());
+            item.setTitle(announcement.getTitle());
+            item.setMessage(announcement.getMessage());
+            item.setPublishDate(announcement.getPublishDate());
+
+            items.add(item);
+        }
+        return items;
+    }
+
+
+    @Override
+    public StudentDetailResponse getStudentDetailsById(Integer studentId, Integer tenantId) {
+        Student student = studentRepository.findById(studentId).orElseThrow(() -> new CustomException("studentId", "Student not found"));
+
+        if (!student.getTenantId().equals(tenantId)) {
+            throw new CustomException("studentId", "Student not found");
+        }
+
+        StudentDetailResponse response = new StudentDetailResponse();
+
+        response.setStudentId(student.getStudentId());
+        response.setAdmissionNo(student.getAdmissionNo());
+        response.setStudentName(CommonHelper.studentNameForStudent(student));
+        response.setPhotoUrl(student.getPhotoUrl());
+        response.setDateOfBirth(student.getDateOfBirth());
+        response.setGender(student.getGender() != null ? String.valueOf(student.getGender()) : null);
+        response.setAadharNo(student.getAadharNo());
+        response.setEmail(student.getEmail());
+        response.setMobileNo(student.getMobileNo());
+        response.setFatherName(student.getFatherName());
+        response.setMotherName(student.getMotherName());
+        response.setParentMobile(student.getParentMobile());
+        response.setParentEmail(student.getParentEmail());
+        response.setParentAadhar(student.getParentAadhar());
+        response.setAddress(CommonHelper.fullAddressForStudent(student));
+
+        StudentClass studentClass = studentClassRepository.findByStudentIdAndTenantId(student.getStudentId(), tenantId).orElse(null);
+
+        if (studentClass != null) {
+            response.setDisplayClass(commonHelper.displayClassForStudentClass(studentClass));
+            response.setRollNo(studentClass.getRollNo());
+            response.setClassTeacherName(classTeacherName(studentClass.getClassId(), studentClass.getSectionId(), tenantId)
+            );
+        }
+        return response;
+    }
+
+    private String classTeacherName(Integer classId, Integer sectionId, Integer tenantId) {
+        List<TeacherClass> assignments = teacherClassRepository.findByClassIdAndSectionIdAndTenantIdAndIsActiveTrue(classId, sectionId, tenantId);
+        if (assignments.isEmpty()) {
+            return null;
+        }
+        Teacher teacher = teacherRepository.findById(assignments.getFirst().getTeacherId()).orElse(null);
+        if (teacher == null) {
+            return null;
+        }
+        String name = CommonHelper.teacherNameForTeacher(teacher);
+        return name.isEmpty() ? teacher.getTeacherName() : name;
+    }
+
+    private StudentClass resolveStudentClass(Integer studentId, Integer tenantId) {
+        return studentClassRepository
+                .findByStudentIdAndTenantId(studentId, tenantId)
+                .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
+    }
+
+    private String resolveTargetDay(String requestedDay, List<WorkingDay> workingDays) {
+        if (requestedDay != null && !requestedDay.isBlank()) {
+            for (WorkingDay wd : workingDays) {
+                if (wd.getDayName().equalsIgnoreCase(requestedDay.trim())) {
+                    return wd.getDayName();
+                }
+            }
+        }
+
+        String todayName = LocalDate.now().getDayOfWeek().name();
+        for (WorkingDay wd : workingDays) {
+            if (wd.getDayName().equalsIgnoreCase(todayName)) {
+                return wd.getDayName();
+            }
+        }
+
+        return workingDays.isEmpty() ? null : workingDays.getFirst().getDayName();
+    }
+
+    private String resolveTodayStatus(Integer tenantId, Integer studentId, Integer yearId, LocalDate today) {
+        Attendance attendance = attendanceRepository
+                .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDate(tenantId, studentId, yearId, today)
+                .orElse(null);
+
+        if (attendance == null) {
+            List<Holiday> holidays = holidayRepository
+                    .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, today,
+                            today);
+            if (!holidays.isEmpty()) {
+                return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
+            }
+            return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
+        }
+
+        if (Constant.PRESENT.equals(attendance.getStatus())) {
+            return Constant.ATTENDANCE_DISPLAY_PRESENT;
+        } else if (Constant.ABSENT.equals(attendance.getStatus())) {
+            return Constant.ATTENDANCE_DISPLAY_ABSENT;
+        } else if (Constant.LEAVE.equals(attendance.getStatus())) {
+            return Constant.ATTENDANCE_DISPLAY_LEAVE;
+        } else if (Constant.HOLIDAY.equals(attendance.getStatus())) {
+            return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
+        } else {
+            return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
+        }
+    }
+
+    private double percent(long attended, long total) {
+        if (total <= 0) {
+            return 0.0;
+        }
+        return Math.round((attended * 10000.0 / total)) / 100.0;
+    }
+
     private StudentResultsResponse.SubjectResult findSubjectResult(
             List<StudentResultsResponse.SubjectResult> subjectResults, Integer subjectId) {
         for (StudentResultsResponse.SubjectResult subjectResult : subjectResults) {
@@ -630,66 +684,5 @@ public class MobileStudentServiceImpl implements MobileStudentService {
             return 0.0;
         }
         return Math.round(obtained.doubleValue() / max * 10000.0) / 100.0;
-    }
-
-    @Override
-    public ReportCardResponse getResultDetail(Integer studentId, Integer tenantId, Integer examId) {
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
-
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() -> new CustomException("examId", "Exam not found"));
-
-        if (!exam.getTenantId().equals(tenantId) || !exam.getClassId().equals(studentClass.getClassId())) {
-            throw new CustomException("examId", "Exam not found");
-        }
-
-        return examService.getReportCard(tenantId, examId, studentId);
-    }
-
-    @Override
-    public PagedResponse<StudentNotificationItem> getNotifications(Integer studentId, Integer tenantId, int page, int size) {
-        return studentNotificationService.getNotifications(tenantId, studentId, page, size);
-    }
-
-    @Override
-    @Transactional
-    public boolean markNotificationAsRead(Integer studentId, Integer tenantId, Integer notificationId) {
-        return studentNotificationService.markAsRead(tenantId, studentId, notificationId);
-    }
-
-    @Override
-    public List<StudentAnnouncementItem> getAnnouncements(Integer studentId, Integer tenantId) {
-        AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
-
-        List<Announcement> announcements = announcementRepository
-                .findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
-                        tenantId, currentYear.getAcademicYearId());
-
-        List<StudentAnnouncementItem> items = new ArrayList<>();
-        for (Announcement announcement : announcements) {
-            if (!Constant.ANNOUNCEMENT_STATUS_PUBLISHED.equalsIgnoreCase(announcement.getStatus())) {
-                continue;
-            }
-            if (!isForClass(announcement, studentClass.getClassId())) {
-                continue;
-            }
-
-            StudentAnnouncementItem item = new StudentAnnouncementItem();
-            item.setAnnouncementId(announcement.getAnnouncementId());
-            item.setTitle(announcement.getTitle());
-            item.setMessage(announcement.getMessage());
-            item.setPublishDate(announcement.getPublishDate());
-            items.add(item);
-        }
-        return items;
-    }
-
-    private boolean isForClass(Announcement announcement, Integer classId) {
-        if (Constant.All.equalsIgnoreCase(announcement.getAudience())
-                || announcement.getClassIds() == null || announcement.getClassIds().isBlank()) {
-            return true;
-        }
-        return commonHelper.convertClassIdsStringToList(announcement.getClassIds()).contains(classId);
     }
 }
