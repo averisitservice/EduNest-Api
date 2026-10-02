@@ -234,8 +234,7 @@ public class FeeServiceImpl implements FeeService {
 
         if (verified) {
             RazorpayOrder razorpayOrder = razorpayConfiguration.getOrder(razorpayOrderId);
-            recordOnlinePayment(razorpayOrder.getTenantId(), razorpayOrder.getStudentId(), razorpayOrder.getAmount(),
-                    razorpayPaymentId);
+            recordOnlinePayment(razorpayOrder.getTenantId(), razorpayOrder.getStudentId(), razorpayOrder.getAmount(), razorpayPaymentId);
         }
 
         VerifyPaymentResponse verifyPaymentResponse = new VerifyPaymentResponse();
