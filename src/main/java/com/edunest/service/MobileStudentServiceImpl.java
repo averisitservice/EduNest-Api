@@ -62,9 +62,6 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     ExamService examService;
 
     @Autowired
-    StudentNotificationService studentNotificationService;
-
-    @Autowired
     AnnouncementRepository announcementRepository;
 
     @Autowired
@@ -107,14 +104,13 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         }
 
         LocalDate today = LocalDate.now();
-        response.setTodayStatus(resolveTodayStatus(tenantId, studentId, yearId, today));
+        response.setTodayStatus(todayStudentAttendanceStatus(tenantId, studentId, yearId, today));
 
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
 
-        List<Attendance> monthAttendances = attendanceRepository
-                .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(
-                        tenantId, studentId, yearId, monthStart, monthEnd);
+        List<Attendance> monthAttendances = attendanceRepository.findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDateBetweenOrderByAttendanceDateDesc(
+                tenantId, studentId, yearId, monthStart, monthEnd);
 
         long monthPresent = 0;
         long monthAbsent = 0;
@@ -138,16 +134,13 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setAbsentDays(monthAbsent);
         response.setLateDays(monthLate);
         response.setHolidayDays(monthHolidays);
-        response.setThisMonthPercent(percent(monthPresent, monthTotal - monthHolidays));
+        response.setThisMonthPercent(attendancePercent(monthPresent, monthTotal - monthHolidays));
 
-        long yearPresent = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, Constant.PRESENT);
-        long yearTotal = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearId(tenantId, studentId, yearId);
-        long yearHolidays = attendanceRepository
-                .countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, Constant.HOLIDAY);
+        long yearPresent = attendanceRepository.countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, Constant.PRESENT);
+        long yearHolidays = attendanceRepository.countByTenantIdAndStudentIdAndAcademicYearIdAndStatus(tenantId, studentId, yearId, Constant.HOLIDAY);
+        long yearTotal = attendanceRepository.countByTenantIdAndStudentIdAndAcademicYearId(tenantId, studentId, yearId);
 
-        response.setAveragePercent(percent(yearPresent, yearTotal - yearHolidays));
+        response.setAveragePercent(attendancePercent(yearPresent, yearTotal - yearHolidays));
         response.setUnreadNotificationCount(studentNotificationRepository.countByTenantIdAndStudentIdAndIsReadFalse(tenantId, studentId));
 
         return response;
@@ -157,7 +150,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     public StudentTimetableResponse getTimetable(Integer studentId, Integer tenantId, String day) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         Integer classId = studentClass.getClassId();
         Integer sectionId = studentClass.getSectionId();
@@ -214,7 +207,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     public StudentExamsResponse getExams(Integer studentId, Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
 
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         List<Exam> exams = examRepository.findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
                 tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
@@ -258,7 +251,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     @Override
     public List<StudentHomeworkItem> getHomework(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         List<Homework> homeworkList = homeworkRepository.findHomeForStudentInDateRange(
                 tenantId, currentYear.getAcademicYearId(), studentClass.getClassId(), studentClass.getSectionId(), fromDate, toDate);
@@ -279,7 +272,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     @Override
     public List<StudentNoteItem> getNotes(Integer studentId, Integer tenantId, LocalDate fromDate, LocalDate toDate) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         List<Note> notes = noteRepository.findNoteForStudentInDateRange(
                 tenantId, currentYear.getAcademicYearId(), studentClass.getClassId(), studentClass.getSectionId(), fromDate, toDate);
@@ -356,7 +349,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         response.setLateDays(lateDays);
         response.setHolidayDays(holidayDays);
         response.setTotalDays(attendanceList.size());
-        response.setPercent(percent(presentDays, netDays));
+        response.setPercent(attendancePercent(presentDays, netDays));
         response.setRecords(records);
 
         return response;
@@ -365,7 +358,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Override
     public StudentHomeworkDetailResponse getHomeworkDetail(Integer studentId, Integer tenantId, Integer homeworkId) {
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         Homework homework = homeworkRepository.findById(homeworkId).orElseThrow(() -> new CustomException("homeworkId", "Homework not found"));
 
@@ -388,7 +381,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Override
     public StudentNoteDetailResponse getNoteDetail(Integer studentId, Integer tenantId, Integer noteId) {
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         Note note = noteRepository.findById(noteId).orElseThrow(() -> new CustomException("noteId", "Note not found"));
 
@@ -411,7 +404,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     @Override
     public StudentResultsResponse getResults(Integer studentId, Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         List<Exam> exams = examRepository.findByTenantIdAndAcademicYearIdAndClassIdAndIsActiveTrueOrderByExamIdDesc(
                 tenantId, currentYear.getAcademicYearId(), studentClass.getClassId());
@@ -478,7 +471,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
 
     @Override
     public ReportCardResponse getResultDetail(Integer studentId, Integer tenantId, Integer examId) {
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         Exam exam = examRepository.findById(examId).orElseThrow(() -> new CustomException("examId", "Exam not found"));
 
@@ -530,7 +523,7 @@ public class MobileStudentServiceImpl implements MobileStudentService {
     @Override
     public List<StudentAnnouncementItem> getAnnouncements(Integer studentId, Integer tenantId) {
         AcademicYear currentYear = commonHelper.getCurrentYear(tenantId);
-        StudentClass studentClass = resolveStudentClass(studentId, tenantId);
+        StudentClass studentClass = studentClass(studentId, tenantId);
 
         List<Announcement> announcements = announcementRepository.findByTenantIdAndAcademicYearIdAndIsActiveTrueOrderByPublishDateDescAnnouncementIdDesc(
                 tenantId, currentYear.getAcademicYearId());
@@ -609,9 +602,8 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return name.isEmpty() ? teacher.getTeacherName() : name;
     }
 
-    private StudentClass resolveStudentClass(Integer studentId, Integer tenantId) {
-        return studentClassRepository
-                .findByStudentIdAndTenantId(studentId, tenantId)
+    private StudentClass studentClass(Integer studentId, Integer tenantId) {
+        return studentClassRepository.findByStudentIdAndTenantId(studentId, tenantId)
                 .orElseThrow(() -> new CustomException("class", "You are not assigned to a class yet"));
     }
 
@@ -634,35 +626,28 @@ public class MobileStudentServiceImpl implements MobileStudentService {
         return workingDays.isEmpty() ? null : workingDays.getFirst().getDayName();
     }
 
-    private String resolveTodayStatus(Integer tenantId, Integer studentId, Integer yearId, LocalDate today) {
-        Attendance attendance = attendanceRepository
-                .findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDate(tenantId, studentId, yearId, today)
+    private String todayStudentAttendanceStatus(Integer tenantId, Integer studentId, Integer yearId, LocalDate today) {
+        Attendance attendance = attendanceRepository.findByTenantIdAndStudentIdAndAcademicYearIdAndAttendanceDate(tenantId, studentId, yearId, today)
                 .orElse(null);
 
         if (attendance == null) {
-            List<Holiday> holidays = holidayRepository
-                    .findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, today,
-                            today);
+            List<Holiday> holidays = holidayRepository.findByTenantIdAndStartDateLessThanEqualAndEndDateGreaterThanEqualAndIsActiveTrue(tenantId, today, today);
             if (!holidays.isEmpty()) {
                 return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
             }
             return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
         }
 
-        if (Constant.PRESENT.equals(attendance.getStatus())) {
-            return Constant.ATTENDANCE_DISPLAY_PRESENT;
-        } else if (Constant.ABSENT.equals(attendance.getStatus())) {
-            return Constant.ATTENDANCE_DISPLAY_ABSENT;
-        } else if (Constant.LEAVE.equals(attendance.getStatus())) {
-            return Constant.ATTENDANCE_DISPLAY_LEAVE;
-        } else if (Constant.HOLIDAY.equals(attendance.getStatus())) {
-            return Constant.ATTENDANCE_DISPLAY_HOLIDAY;
-        } else {
-            return Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
-        }
+        return switch (attendance.getStatus()) {
+            case Constant.PRESENT -> Constant.ATTENDANCE_DISPLAY_PRESENT;
+            case Constant.ABSENT -> Constant.ATTENDANCE_DISPLAY_ABSENT;
+            case Constant.LEAVE -> Constant.ATTENDANCE_DISPLAY_LEAVE;
+            case Constant.HOLIDAY -> Constant.ATTENDANCE_DISPLAY_HOLIDAY;
+            case null, default -> Constant.ATTENDANCE_DISPLAY_NOT_MARKED;
+        };
     }
 
-    private double percent(long attended, long total) {
+    private double attendancePercent(long attended, long total) {
         if (total <= 0) {
             return 0.0;
         }
