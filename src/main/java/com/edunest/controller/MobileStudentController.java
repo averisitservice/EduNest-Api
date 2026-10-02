@@ -216,20 +216,6 @@ public class MobileStudentController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/notifications/unread-count")
-    public ResponseEntity<ResponseObject<Long>> getUnreadNotificationCount(HttpServletRequest request) {
-
-        String token = jwtHelper.cleanToken(request.getHeader(HttpHeaders.AUTHORIZATION));
-        Integer studentId = jwtHelper.extractStudentId(token);
-        Integer tenantId = jwtHelper.extractTenantId(token);
-
-        ResponseObject<Long> response = new ResponseObject<>();
-        response.setSuccess(true);
-        response.setData(mobileStudentService.getUnreadNotificationCount(studentId, tenantId));
-
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/announcements")
     public ResponseEntity<ResponseObject<List<StudentAnnouncementItem>>> getAnnouncements(HttpServletRequest request) {
 

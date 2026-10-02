@@ -26,4 +26,6 @@ public class StudentHomeResponse {
     private long holidayDays;
     private double thisMonthPercent;
     private double averagePercent;
+
+    private long unreadNotificationCount;
 }

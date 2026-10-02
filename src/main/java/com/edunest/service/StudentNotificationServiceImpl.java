@@ -110,9 +110,4 @@ public class StudentNotificationServiceImpl implements StudentNotificationServic
         studentNotificationRepository.save(notification);
         return true;
     }
-
-    @Override
-    public long getUnreadCount(Integer tenantId, Integer studentId) {
-        return studentNotificationRepository.countByTenantIdAndStudentIdAndIsReadFalse(tenantId, studentId);
-    }
 }
