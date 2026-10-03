@@ -1,5 +1,6 @@
 package com.edunest.service;
 
+import com.edunest.configuration.AwsConfiguration;
 import com.edunest.configuration.RazorpayConfiguration;
 import com.edunest.constant.Constant;
 import com.edunest.dto.fee.*;
@@ -51,6 +52,9 @@ public class FeeServiceImpl implements FeeService {
 
     @Autowired
     TenantFeeSettingRepository tenantFeeSettingRepository;
+
+    @Autowired
+    AwsConfiguration awsConfiguration;
 
     @Override
     public List<FeeStatusResponse> getFeeStatus(Integer tenantId, Integer classId, Integer sectionId) {
@@ -153,6 +157,11 @@ public class FeeServiceImpl implements FeeService {
 
             FeePaymentResponse response = new FeePaymentResponse();
             BeanUtils.copyProperties(payment, response);
+            if (payment.getReceiptUrl() != null && !payment.getReceiptUrl().isEmpty()) {
+                response.setReceiptUrl(awsConfiguration.getPresignedUrl(payment.getReceiptUrl()));
+            } else {
+                response.setReceiptUrl(null);
+            }
             response.setCollectedBy(collectedByName);
             feePaymentResponses.add(response);
         }
@@ -281,9 +290,6 @@ public class FeeServiceImpl implements FeeService {
         String toEmail = (student.getParentEmail() != null && !student.getParentEmail().isBlank())
                 ? student.getParentEmail()
                 : student.getEmail();
-        if (toEmail == null || toEmail.isBlank()) {
-            return;
-        }
 
         Tenant tenant = tenantRepository.findById(payment.getTenantId()).orElse(null);
         AcademicYear currentYear = commonHelper.getCurrentYear(payment.getTenantId());

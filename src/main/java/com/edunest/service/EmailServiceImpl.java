@@ -1,31 +1,32 @@
 package com.edunest.service;
 
 import com.edunest.configuration.AwsConfiguration;
+import com.edunest.dto.fee.ByteArrayMultipartFile;
 import com.edunest.dto.fee.FeeReceiptDetails;
 import com.edunest.dto.mobile.StudentResetCredential;
 import com.edunest.error.CustomException;
+import com.edunest.util.FileHandler;
+import com.ibm.icu.text.RuleBasedNumberFormat;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.text.WordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
-import com.edunest.dto.fee.ByteArrayMultipartFile;
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import org.springframework.core.io.ByteArrayResource;
 import java.io.ByteArrayOutputStream;
-import java.util.Map;
+import java.io.File;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
-import com.ibm.icu.text.RuleBasedNumberFormat;
-import org.apache.commons.text.WordUtils;
-import java.util.Locale;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @Service
@@ -78,7 +79,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             String multiAccountNotice = accounts.size() > 1
                     ? "<p>This email is linked to <b>" + accounts.size()
-                            + "</b> student accounts. New credentials for each are listed below.</p>"
+                    + "</b> student accounts. New credentials for each are listed below.</p>"
                     : "";
 
             StringBuilder accountRows = new StringBuilder();
@@ -182,20 +183,19 @@ public class EmailServiceImpl implements EmailService {
                 pdfBytes = pdfOutputStream.toByteArray();
             }
 
-            String originalFileName = "Receipt_" + details.getReceiptNo() + ".pdf";
-            ByteArrayMultipartFile multipartFile = new ByteArrayMultipartFile(pdfBytes, originalFileName,
-                    "application/pdf");
-            Map<String, Object> uploadResult = awsConfiguration.uploadFile(multipartFile, "edunest/receipt");
-            String receiptUrl = String.valueOf(uploadResult.get("secure_url"));
+            String safeReceiptNo = (details.getReceiptNo() != null && !details.getReceiptNo().isBlank())
+                    ? details.getReceiptNo().replaceAll("[^a-zA-Z0-9.-]", "_")
+                    : "receipt";
+            String fileName = safeReceiptNo + ".pdf";
+            ByteArrayMultipartFile multipartFile = new ByteArrayMultipartFile(pdfBytes, fileName, "application/pdf");
+            File tempPdfFile = FileHandler.convertMultipartFileToFile(multipartFile);
 
-            String attachmentName = "FeeReceipt_" + details.getReceiptNo() + ".pdf";
+            awsConfiguration.uploadFile(fileName, tempPdfFile);
+            
             String studentName = details.getStudentName() != null ? details.getStudentName() : "";
             String subject = "Fee Payment Receipt – " + studentName;
-            sendEmailWithAttachment(toEmail, subject, emailHtml, attachmentName, pdfBytes);
-            log.info("Fee receipt email sent to {} for receipt {} with PDF attachment. URL: {}", toEmail,
-                    details.getReceiptNo(), receiptUrl);
-
-            return receiptUrl;
+            sendEmailWithAttachment(toEmail, subject, emailHtml, fileName, pdfBytes);
+            return fileName;
         } catch (Exception e) {
             log.error("Failed to process fee receipt PDF or send email to {}", toEmail, e);
             return null;
@@ -203,7 +203,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private void sendEmailWithAttachment(String toEmail, String subject, String html, String attachmentName,
-            byte[] attachmentBytes) throws Exception {
+                                         byte[] attachmentBytes) throws Exception {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
