@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.Collections;
 
@@ -22,6 +23,17 @@ public class CustomExceptionHandler {
         response.setSuccess(false);
         response.setData(null);
         response.setErrors(Collections.singletonList(new ErrorItem(ex.getParam(), ex.getMsg())));
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ResponseObject<Object>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+
+        ResponseObject<Object> response = new ResponseObject<>();
+        response.setSuccess(false);
+        response.setData(null);
+        response.setErrors(Collections.singletonList(new ErrorItem("file", "File size exceeds the maximum permitted limit of 50MB.")));
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
