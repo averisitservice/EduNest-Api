@@ -66,7 +66,8 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
 
     long countByTenantIdAndIsActiveTrue(Integer tenantId);
 
-    List<Integer> findStudentIdByTenantIdAndIsActiveTrue(Integer tenantId);
+    @Query("SELECT s.studentId FROM Student s WHERE s.tenantId = :tenantId AND s.isActive = true")
+    List<Integer> findStudentIdByTenantIdAndIsActiveTrue(@Param("tenantId") Integer tenantId);
 
     @Query(value = """
             SELECT admission_no FROM auth.student
